@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_line_list" model="ir.ui.view">
+        <field name="name">zenlenet.line.list</field>
+        <field name="model">zenlenet.line</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="kind"/>
+                <field name="a_end"/>
+                <field name="z_end"/>
+                <field name="bandwidth"/>
+                <field name="partner_name"/>
+                <field name="purpose" optional="hide"/>
+                <field name="stopped"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_line_form" model="ir.ui.view">
+        <field name="name">zenlenet.line.form</field>
+        <field name="model">zenlenet.line</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="kind"/>
+                            <field name="bandwidth"/>
+                            <field name="stopped"/>
+                        </group>
+                        <group>
+                            <field name="a_end"/>
+                            <field name="z_end"/>
+                            <field name="partner_name"/>
+                            <field name="purpose"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_line_search" model="ir.ui.view">
+        <field name="name">zenlenet.line.search</field>
+        <field name="model">zenlenet.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="a_end"/>
+                <field name="z_end"/>
+                <field name="partner_name"/>
+                <filter name="private" string="供应商专线" domain="[('kind','=','private')]"/>
+                <filter name="vxlan" string="VXLAN" domain="[('kind','=','vxlan')]"/>
+                <filter name="running" string="在用" domain="[('stopped','=',False)]"/>
+                <filter name="stopped_lines" string="已终止" domain="[('stopped','=',True)]"/>
+            </search>
+        </field>
+    </record>
+    <record id="action_lines" model="ir.actions.act_window">
+        <field name="name">线路</field>
+        <field name="res_model">zenlenet.line</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_line_search"/>
+    </record>
+</odoo>

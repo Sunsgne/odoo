@@ -4,6 +4,8 @@ import sqlite3
 
 from odoo import models
 
+from odoo.addons.zenlenet_ops.blocks import prefix_block
+
 _logger = logging.getLogger(__name__)
 
 PRODUCTS = (
@@ -152,6 +154,8 @@ class ZenlenetLoader(models.AbstractModel):
                 })],
             })
             status = row['status']
+            stage = status if status in {'active', 'testing', 'terminated'} else 'active'
+            order.zenlenet_stage = stage
             if status == 'active':
                 order.action_confirm()
             elif status == 'terminated':
@@ -160,7 +164,7 @@ class ZenlenetLoader(models.AbstractModel):
         return created
 
     def _invoices(self, orders):
-        confirmed = orders.filtered(lambda order: order.state == 'sale')
+        confirmed = orders.filtered(lambda order: order.state == 'sale' and order.amount_total)
         for partner in confirmed.partner_id:
             batch = confirmed.filtered(lambda order, partner=partner: order.partner_id == partner)
             try:
@@ -186,6 +190,146 @@ class ZenlenetLoader(models.AbstractModel):
                 'body': row['body'] or '',
                 'state': 'review',
             })
+
+    def load_operational(self):
+        path = self._snapshot_path()
+        self.env['zenlenet.notice.template'].sudo().load_workbook_templates()
+        if not path:
+            _logger.warning('ZENLENET snapshot was not found; menus were updated without new rows')
+            return
+        self.load(path)
+        connection = sqlite3.connect(path)
+        connection.row_factory = sqlite3.Row
+        self._stages(connection)
+        self._addresses(connection)
+        self._lines(connection)
+        self._returns(connection)
+        connection.close()
+
+    def _snapshot_path(self):
+        for candidate in (
+            os.environ.get('ZENLENET_SNAPSHOT', ''),
+            '/mnt/snapshot/zenlenet.db',
+            '/import/zenlenet.db',
+        ):
+            if candidate and os.path.isfile(candidate):
+                return candidate
+        return None
+
+    def _stages(self, connection):
+        Order = self.env['sale.order'].sudo()
+        grouped = {'active': [], 'testing': [], 'terminated': []}
+        for row in connection.execute('select id, status from service_orders'):
+            if row['status'] in grouped:
+                grouped[row['status']].append(str(row['id']))
+        for stage, keys in grouped.items():
+            if keys:
+                Order.search([
+                    ('zenlenet_key', 'in', keys),
+                    ('zenlenet_stage', '!=', stage),
+                ]).write({'zenlenet_stage': stage})
+
+    def _addresses(self, connection):
+        Address = self.env['zenlenet.address'].sudo()
+        existing = set(Address.search([]).mapped('snapshot_id'))
+        partners = {
+            partner.name: partner
+            for partner in self.env['res.partner'].sudo().search([('is_company', '=', True)])
+        }
+        names = {
+            row['id']: row['name']
+            for row in connection.execute('select id, name from customers')
+        }
+        roles = {
+            'idc': 'IDC',
+            'local': '本地',
+            'native': '原生',
+            'home': '家庭',
+            'bgp': 'BGP',
+            'other': '其他',
+        }
+        statuses = {'allocated', 'free', 'reserved', 'testing', 'returning', 'internal'}
+        batch = []
+        for row in connection.execute('select * from ip_records'):
+            if row['id'] in existing:
+                continue
+            partner = partners.get(names.get(row['customer_id']))
+            net_attr = row['net_attr'] if row['net_attr'] in {'公网', '内网'} else '公网'
+            dc_type = row['dc_type'] if row['dc_type'] in {'主营机房', '第三方', 'POP点', '公有云'} else False
+            batch.append({
+                'snapshot_id': row['id'],
+                'address': f"{row['address']}/{row['prefixlen']}",
+                'block': prefix_block(row['version'], row['address'], row['prefixlen']),
+                'pop': row['pop'] or '',
+                'supplier': row['supplier'] or '',
+                'partner_id': partner.id if partner else False,
+                'role': roles.get(row['role'], '其他'),
+                'net_attr': net_attr,
+                'dc_type': dc_type,
+                'status': row['status'] if row['status'] in statuses else 'free',
+                'usage': row['usage'] or '',
+                'expires_on': row['expires_on'] or False,
+                'remark': (row['remark'] or '')[:2000],
+            })
+            if len(batch) >= 500:
+                Address.create(batch)
+                batch = []
+        if batch:
+            Address.create(batch)
+
+    def _lines(self, connection):
+        Line = self.env['zenlenet.line'].sudo()
+        existing = set(Line.search([]).mapped('snapshot_key'))
+        batch = []
+        for row in connection.execute('select * from circuits'):
+            key = f"c{row['id']}"
+            if key in existing:
+                continue
+            bandwidth = row['bandwidth_mbps'] or 0
+            batch.append({
+                'snapshot_key': key,
+                'name': (row['circuit_no'] or f"{row['a_city']}-{row['z_city']}" or '专线')[:80],
+                'kind': 'private',
+                'a_end': ' '.join(part for part in (row['a_city'], row['a_vlan']) if part),
+                'z_end': ' '.join(part for part in (row['z_city'], row['z_vlan']) if part),
+                'bandwidth': f'{bandwidth:g}M' if bandwidth else '',
+            })
+        for row in connection.execute('select * from vxlan_links'):
+            key = f"v{row['id']}"
+            if key in existing:
+                continue
+            batch.append({
+                'snapshot_key': key,
+                'name': f"VNI-{row['vni'] or row['id']}"[:80],
+                'kind': 'vxlan',
+                'a_end': row['a_end'] or '',
+                'z_end': row['z_end'] or '',
+                'bandwidth': row['bandwidth'] or '',
+                'partner_name': row['customer_name'] or '',
+                'purpose': row['purpose'] or '',
+                'stopped': '回收' in (row['stopped'] or '') or '终止' in (row['stopped'] or ''),
+            })
+        if batch:
+            Line.create(batch)
+
+    def _returns(self, connection):
+        Return = self.env['zenlenet.supplier.return'].sudo()
+        existing = set(Return.search([]).mapped('snapshot_id'))
+        batch = []
+        for row in connection.execute('select * from supplier_returns'):
+            if row['id'] in existing:
+                continue
+            if not (row['supplier'] or row['resource']):
+                continue
+            batch.append({
+                'snapshot_id': row['id'],
+                'supplier': row['supplier'] or '未填写',
+                'resource': row['resource'] or '未填写',
+                'when_text': row['when_text'] or '',
+                'note': row['note'] or '',
+            })
+        if batch:
+            Return.create(batch)
 
 
 def _price(product, bandwidth):

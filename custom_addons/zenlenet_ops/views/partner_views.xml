@@ -1,20 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="view_partner_form_zenlenet" model="ir.ui.view">
-        <field name="name">res.partner.form.zenlenet</field>
+    <record id="view_partner_list" model="ir.ui.view">
+        <field name="name">zenlenet.partner.list</field>
         <field name="model">res.partner</field>
-        <field name="inherit_id" ref="base.view_partner_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//div[@name='button_box']" position="inside">
-                <button name="action_open_netbox" type="object" class="oe_stat_button" icon="fa-sitemap">
-                    <div class="o_stat_info">
-                        <span class="o_stat_text">NetBox 资源</span>
-                    </div>
-                </button>
-            </xpath>
-            <xpath expr="//field[@name='category_id']" position="after">
+            <list>
+                <field name="name" string="客户"/>
                 <field name="zenlenet_status"/>
-            </xpath>
+                <field name="country_id" string="国家"/>
+                <field name="phone" string="电话" optional="hide"/>
+                <field name="email" optional="hide"/>
+            </list>
         </field>
+    </record>
+    <record id="view_partner_form_simple" model="ir.ui.view">
+        <field name="name">zenlenet.partner.form</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_orders" type="object" class="oe_stat_button" icon="fa-file-text-o">
+                            <div class="o_stat_info"><span class="o_stat_text">订单</span></div>
+                        </button>
+                        <button name="action_open_resources" type="object" class="oe_stat_button" icon="fa-sitemap">
+                            <div class="o_stat_info"><span class="o_stat_text">IP资源</span></div>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="客户名称"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="zenlenet_status"/>
+                            <field name="phone"/>
+                            <field name="email"/>
+                        </group>
+                        <group>
+                            <field name="street" string="地址"/>
+                            <field name="city" string="城市"/>
+                            <field name="country_id" string="国家"/>
+                        </group>
+                    </group>
+                    <field name="comment" placeholder="备注"/>
+                    <field name="is_company" invisible="1"/>
+                    <field name="company_type" invisible="1"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_partner_search_zenlenet" model="ir.ui.view">
+        <field name="name">zenlenet.partner.search</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <filter name="active_customers" string="在网" domain="[('zenlenet_status','=','active')]"/>
+                <filter name="testing_customers" string="测试" domain="[('zenlenet_status','=','testing')]"/>
+                <filter name="churned_customers" string="已退租" domain="[('zenlenet_status','=','churned')]"/>
+            </search>
+        </field>
+    </record>
+    <record id="action_customers" model="ir.actions.act_window">
+        <field name="name">客户</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_company', '=', True), ('customer_rank', '&gt;', 0)]</field>
+        <field name="context">{'default_is_company': True, 'default_company_type': 'company', 'default_customer_rank': 1}</field>
+        <field name="search_view_id" ref="view_partner_search_zenlenet"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_partner_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_partner_form_simple')})]"/>
     </record>
 </odoo>

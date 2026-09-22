@@ -1,2 +1,7 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_zenlenet_maintenance_user,zenlenet.maintenance.user,model_zenlenet_maintenance,base.group_user,1,1,1,1
+access_zenlenet_address_user,zenlenet.address.user,model_zenlenet_address,base.group_user,1,1,1,1
+access_zenlenet_line_user,zenlenet.line.user,model_zenlenet_line,base.group_user,1,1,1,1
+access_zenlenet_return_user,zenlenet.supplier.return.user,model_zenlenet_supplier_return,base.group_user,1,1,1,1
+access_zenlenet_notice_user,zenlenet.notice.template.user,model_zenlenet_notice_template,base.group_user,1,1,1,1
+access_zenlenet_desk_user,zenlenet.desk.user,model_zenlenet_desk,base.group_user,1,0,0,0

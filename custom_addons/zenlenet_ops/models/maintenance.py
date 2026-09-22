@@ -77,8 +77,16 @@ class ZenlenetMaintenance(models.Model):
             'utc_start': fields.Datetime.to_string(start - timedelta(hours=8)) if start else '',
             'utc_end': fields.Datetime.to_string(end - timedelta(hours=8)) if end else '',
         }
-        template = NOTICES.get(self.kind, NOTICES['maintenance'])
-        return template[0].format(**values), template[1].format(**values)
+        stored = self.env['zenlenet.notice.template'].search([('kind', '=', self.kind)], limit=1)
+        if stored:
+            subject, body = stored.subject or '', stored.body or ''
+        else:
+            template = NOTICES.get(self.kind, NOTICES['maintenance'])
+            subject, body = template['subject'], template['body']
+        try:
+            return subject.format(**values), body.format(**values)
+        except (KeyError, IndexError, ValueError):
+            return subject, body
 
     def action_refresh_notice(self):
         for record in self:

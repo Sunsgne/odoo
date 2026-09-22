@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_zenlenet" model="ir.ui.view">
+        <field name="name">sale.order.form.zenlenet</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="replace">
+                <header>
+                    <button name="action_mark_active" type="object" string="在网" class="btn-primary" invisible="zenlenet_stage == 'active'"/>
+                    <button name="action_mark_testing" type="object" string="测试" invisible="zenlenet_stage == 'testing'"/>
+                    <button name="action_mark_terminated" type="object" string="已退租" invisible="zenlenet_stage == 'terminated'"/>
+                    <field name="zenlenet_stage" widget="statusbar" statusbar_visible="testing,active,terminated"/>
+                    <field name="state" invisible="1"/>
+                    <field name="locked" invisible="1"/>
+                </header>
+            </xpath>
+            <xpath expr="//page[@name='other_information']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//page[@name='customer_signature']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+        </field>
+    </record>
+    <record id="view_order_list" model="ir.ui.view">
+        <field name="name">zenlenet.order.list</field>
+        <field name="model">sale.order</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" string="单号"/>
+                <field name="partner_id" string="客户"/>
+                <field name="origin" string="业务"/>
+                <field name="amount_total" string="金额"/>
+                <field name="zenlenet_stage"/>
+                <field name="date_order" string="日期" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_order_search_zenlenet" model="ir.ui.view">
+        <field name="name">zenlenet.order.search</field>
+        <field name="model">sale.order</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="partner_id"/>
+                <field name="origin"/>
+                <field name="name"/>
+                <filter name="stage_active" string="在网" domain="[('zenlenet_stage','=','active')]"/>
+                <filter name="stage_testing" string="测试" domain="[('zenlenet_stage','=','testing')]"/>
+                <filter name="stage_terminated" string="已退租" domain="[('zenlenet_stage','=','terminated')]"/>
+            </search>
+        </field>
+    </record>
+    <record id="action_orders" model="ir.actions.act_window">
+        <field name="name">订单</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_order_search_zenlenet"/>
+        <field name="view_id" ref="view_order_list"/>
+    </record>
+</odoo>
