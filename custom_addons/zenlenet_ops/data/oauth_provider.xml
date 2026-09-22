@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="provider_microsoft" model="auth.oauth.provider">
+        <field name="name">Office 365</field>
+        <field name="client_id">pending</field>
+        <field name="enabled" eval="False"/>
+        <field name="auth_endpoint">https://login.microsoftonline.com/common/oauth2/v2.0/authorize</field>
+        <field name="scope">openid email profile</field>
+        <field name="validation_endpoint">https://graph.microsoft.com/oidc/userinfo</field>
+        <field name="css_class">fa fa-windows</field>
+        <field name="body">使用 Office 365 登录</field>
+    </record>
+</odoo>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_root" name="尊领" sequence="5"/>
+    <menuitem id="menu_maintenance" name="割接 / 维护" parent="menu_root" action="action_maintenance" sequence="10"/>
+</odoo>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_maintenance_kanban" model="ir.ui.view">
+        <field name="name">zenlenet.maintenance.kanban</field>
+        <field name="model">zenlenet.maintenance</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" class="o_kanban_small_column">
+                <field name="state"/>
+                <templates>
+                    <t t-name="card">
+                        <field name="name" class="fw-bold"/>
+                        <field name="place"/>
+                        <field name="partner_id"/>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+    <record id="view_maintenance_list" model="ir.ui.view">
+        <field name="name">zenlenet.maintenance.list</field>
+        <field name="model">zenlenet.maintenance</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="kind"/>
+                <field name="partner_id"/>
+                <field name="place"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_maintenance_form" model="ir.ui.view">
+        <field name="name">zenlenet.maintenance.form</field>
+        <field name="model">zenlenet.maintenance</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_prev" type="object" string="退回" invisible="state in ('draft', 'cancel', 'done')"/>
+                    <button name="action_next" type="object" string="推进" class="btn-primary" invisible="state in ('done', 'cancel')"/>
+                    <button name="action_refresh_notice" type="object" string="生成通知"/>
+                    <button name="action_cancel" type="object" string="取消" invisible="state in ('done', 'cancel')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,review,notify,notified,executing,verify,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="kind"/>
+                            <field name="partner_id"/>
+                            <field name="place"/>
+                            <field name="duration"/>
+                        </group>
+                        <group>
+                            <field name="window_start"/>
+                            <field name="window_end"/>
+                            <field name="reason"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="impact"/>
+                        <field name="subject"/>
+                        <field name="body"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_maintenance" model="ir.actions.act_window">
+        <field name="name">割接 / 维护</field>
+        <field name="res_model">zenlenet.maintenance</field>
+        <field name="view_mode">kanban,list,form</field>
+    </record>
+</odoo>

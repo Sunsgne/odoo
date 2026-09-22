@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_maintenance" model="ir.sequence">
+        <field name="name">ZENLENET 割接维护</field>
+        <field name="code">zenlenet.maintenance</field>
+        <field name="prefix">ZL-</field>
+        <field name="padding">4</field>
+        <field name="number_next">1001</field>
+    </record>
+    <record id="netbox_url" model="ir.config_parameter">
+        <field name="key">zenlenet.netbox_url</field>
+        <field name="value">https://netbox.zenlenet.com</field>
+    </record>
+</odoo>
