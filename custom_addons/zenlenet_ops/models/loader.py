@@ -165,7 +165,7 @@ class ZenlenetLoader(models.AbstractModel):
             batch = confirmed.filtered(lambda order, partner=partner: order.partner_id == partner)
             try:
                 with self.env.cr.savepoint():
-                    batch.with_context(tracking_disable=True)._create_invoices(grouped=True)
+                    batch.with_context(tracking_disable=True)._create_invoices(grouped=False)
             except Exception:
                 _logger.exception('invoice skipped for %s', partner.name)
 
