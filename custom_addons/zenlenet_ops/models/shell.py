@@ -1,6 +1,6 @@
 import logging
 
-from odoo import models
+from odoo import api, models
 
 _logger = logging.getLogger(__name__)
 
@@ -9,6 +9,7 @@ class ZenlenetShell(models.AbstractModel):
     _name = 'zenlenet.shell'
     _description = '尊领菜单'
 
+    @api.model
     def apply(self):
         root = self.env.ref('zenlenet_ops.menu_root', raise_if_not_found=False)
         if root:

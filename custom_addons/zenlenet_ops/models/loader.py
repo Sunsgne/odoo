@@ -205,6 +205,14 @@ class ZenlenetLoader(models.AbstractModel):
         self._lines(connection)
         self._returns(connection)
         connection.close()
+        _logger.info(
+            'zenlenet rows addresses=%s lines=%s returns=%s orders=%s templates=%s',
+            self.env['zenlenet.address'].sudo().search_count([]),
+            self.env['zenlenet.line'].sudo().search_count([]),
+            self.env['zenlenet.supplier.return'].sudo().search_count([]),
+            self.env['sale.order'].sudo().search_count([]),
+            self.env['zenlenet.notice.template'].sudo().search_count([]),
+        )
 
     def _snapshot_path(self):
         for candidate in (
