@@ -61,6 +61,16 @@
             </search>
         </field>
     </record>
+    <record id="hide_partner_sales_button" model="ir.ui.view">
+        <field name="name">zenlenet.partner.hide.sales</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="sale.res_partner_view_buttons"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='sale.act_res_partner_2_sale_order']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+        </field>
+    </record>
     <record id="action_customers" model="ir.actions.act_window">
         <field name="name">客户</field>
         <field name="res_model">res.partner</field>
