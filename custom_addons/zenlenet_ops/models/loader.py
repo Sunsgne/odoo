@@ -133,7 +133,7 @@ class ZenlenetLoader(models.AbstractModel):
             partner = partners.get(row['customer_id'])
             if not partner:
                 continue
-            key = f"{row['customer_id']}:{row['product']}:{row['pop_code']}:{row['bandwidth_text']}:{row['status']}:{row['started_on']}"
+            key = str(row['id'])
             if Order.search_count([('zenlenet_key', '=', key)]):
                 continue
             code, qty, price = _price(row['product'], row['bw_mbps'])
