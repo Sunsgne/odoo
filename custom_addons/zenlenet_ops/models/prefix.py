@@ -132,6 +132,15 @@ class ZenlenetPrefix(models.Model):
                         'default_net_attr': False},
         }
 
+    def action_open_ipam(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'zenlenet_ipam',
+            'name': '地址管理',
+            'context': {'ipam_prefix_id': self.id},
+        }
+
     def action_open_children(self):
         self.ensure_one()
         action = self.env.ref('zenlenet_ops.action_prefixes').read()[0]

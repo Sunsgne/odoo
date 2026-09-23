@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="zenlenet_ops.IpamNode">
+        <li class="zl-tree-node">
+            <div t-attf-class="zl-tree-row #{state.selectedId === node.id ? 'active' : ''}" t-on-click="() => this.select(node.id)">
+                <span class="zl-tree-toggle" t-on-click.stop="() => this.toggle(node)">
+                    <i t-if="children(node).length" t-attf-class="fa #{isExpanded(node) ? 'fa-caret-down' : 'fa-caret-right'}"/>
+                    <i t-else="" class="fa fa-circle-o zl-tree-leaf"/>
+                </span>
+                <span t-attf-class="zl-dot zl-dot-#{node.status}" t-att-title="node.status"/>
+                <span class="zl-tree-prefix font-monospace" t-esc="node.prefix"/>
+                <span class="zl-tree-meta" t-if="node.partner" t-esc="node.partner"/>
+                <span class="zl-tree-util" t-if="node.utilization" t-esc="node.utilization + '%'"/>
+            </div>
+            <ul t-if="isExpanded(node) and children(node).length" class="zl-tree-children">
+                <t t-foreach="children(node)" t-as="child" t-key="child.id">
+                    <t t-call="zenlenet_ops.IpamNode"><t t-set="node" t-value="child"/></t>
+                </t>
+            </ul>
+        </li>
+    </t>
+
+    <t t-name="zenlenet_ops.Ipam">
+        <div class="o_action zl-ipam">
+            <aside class="zl-ipam-tree">
+                <div class="zl-ipam-tree-head">
+                    <input type="search" class="form-control form-control-sm" placeholder="搜网段 / 客户 / 说明" t-att-value="state.search" t-on-input="onSearch"/>
+                    <button class="btn btn-primary btn-sm" t-on-click="() => this.addPrefix(null)" title="录入顶级网段"><i class="fa fa-plus"/></button>
+                    <button class="btn btn-secondary btn-sm" t-on-click="openList" title="列表视图"><i class="fa fa-list"/></button>
+                </div>
+                <ul class="zl-tree">
+                    <t t-foreach="roots" t-as="node" t-key="node.id">
+                        <t t-call="zenlenet_ops.IpamNode"/>
+                    </t>
+                </ul>
+                <div t-if="!roots.length" class="text-muted small p-3">没有网段。点 + 录入第一个。</div>
+            </aside>
+
+            <section class="zl-ipam-main" t-if="state.detail">
+                <header class="zl-ipam-head">
+                    <div class="zl-ipam-title">
+                        <i class="fa fa-sitemap text-primary"/>
+                        <span class="font-monospace" t-esc="state.detail.prefix"/>
+                        <span t-attf-class="badge zl-badge-#{state.detail.status}" t-esc="state.detail.status_label"/>
+                        <span class="text-muted small" t-if="state.detail.datacenter"><i class="fa fa-building-o"/> <t t-esc="state.detail.datacenter"/></span>
+                        <span class="text-muted small" t-if="state.detail.partner"><i class="fa fa-user-o"/> <t t-esc="state.detail.partner"/></span>
+                    </div>
+                    <div class="zl-ipam-actions" t-if="state.detail.can_write">
+                        <button class="btn btn-primary btn-sm" t-on-click="() => this.addPrefix(state.detail)"><i class="fa fa-plus"/> 添加网段</button>
+                        <button class="btn btn-secondary btn-sm" t-on-click="split"><i class="fa fa-scissors"/> 切割</button>
+                        <div class="zl-assign">
+                            <button class="btn btn-secondary btn-sm" t-on-click="openAssign"><i class="fa fa-user-plus"/> <t t-esc="state.detail.partner ? '改分配' : '分配给客户'"/></button>
+                            <div t-if="state.assignOpen" class="zl-assign-pop">
+                                <input type="text" class="form-control form-control-sm" placeholder="搜客户" t-att-value="state.assignQuery" t-on-input="(ev) => this.searchCustomers(ev, 'assign')"/>
+                                <ul>
+                                    <li t-foreach="state.assignChoices" t-as="customer" t-key="customer.id" t-on-click="() => this.assign(customer)" t-esc="customer.name"/>
+                                </ul>
+                                <button t-if="state.detail.partner" class="btn btn-link btn-sm text-danger" t-on-click="() => this.assign(null)">整段回收</button>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" t-on-click="openForm"><i class="fa fa-pencil"/> 修改信息</button>
+                        <button t-if="state.detail.netbox_url" class="btn btn-link btn-sm" t-on-click="openNetbox"><i class="fa fa-external-link"/> NetBox</button>
+                    </div>
+                </header>
+
+                <div class="zl-ipam-body">
+                    <div class="zl-ipam-grid-wrap">
+                        <div class="zl-ipam-section-title">IP 地址分布</div>
+                        <div class="zl-legend">
+                            <t t-foreach="statuses" t-as="status" t-key="status[0]">
+                                <span><i t-attf-class="zl-cell zl-cell-#{status[0]} zl-legend-dot"/> <t t-esc="status[1]"/></span>
+                            </t>
+                            <span><i class="zl-cell zl-cell-none zl-legend-dot"/> 未登记</span>
+                            <span><i class="zl-cell zl-cell-special zl-legend-dot"/> 网络 / 广播</span>
+                            <span class="text-muted ms-auto">按住 Shift 点多个地址可批量改状态</span>
+                        </div>
+                        <div t-if="state.selection.length" class="zl-bulk">
+                            已选 <b t-esc="state.selection.length"/> 个地址：
+                            <t t-foreach="statuses" t-as="status" t-key="status[0]">
+                                <button class="btn btn-sm btn-outline-secondary" t-on-click="() => this.bulkStatus(status[0])" t-esc="status[1]"/>
+                            </t>
+                            <button class="btn btn-sm btn-link" t-on-click="clearSelection">取消</button>
+                        </div>
+                        <t t-if="state.detail.blocks.length">
+                            <div t-foreach="state.detail.blocks" t-as="block" t-key="block.prefix" class="zl-block">
+                                <div class="zl-block-title"><i class="fa fa-angle-down"/> <span class="font-monospace" t-esc="block.label"/> <span class="text-muted small">（<t t-esc="block.cells.length"/> 个 · 已用 <t t-esc="block.used"/>）</span></div>
+                                <div class="zl-grid">
+                                    <t t-foreach="block.cells" t-as="cell" t-key="cell.ip">
+                                        <span t-att-class="cellClass(cell)" t-att-title="cellTitle(cell)" t-on-click="(ev) => this.openCell(cell, ev)" t-esc="'.' + cell.last"/>
+                                    </t>
+                                </div>
+                            </div>
+                            <div t-if="state.detail.truncated" class="text-muted small">网段太大，只展示前 <t t-esc="state.detail.blocks.length"/> 个 /24；请先切割再逐段管理。</div>
+                        </t>
+                        <div t-else="" class="text-muted p-3">这个网段大于 /16 或是 IPv6，不逐个展示地址；请在左侧或下方进入下级网段。</div>
+
+                        <div class="zl-ipam-section-title mt-3">下级网段（<t t-esc="state.detail.children.length"/>）</div>
+                        <table class="table table-sm zl-children" t-if="state.detail.children.length">
+                            <thead><tr><th>网段</th><th>状态</th><th>分配给</th><th class="text-end">容量</th><th class="text-end">已分配</th><th style="width: 160px;">使用率</th><th>说明</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="state.detail.children" t-as="child" t-key="child.id" t-on-click="() => this.select(child.id)" class="zl-child-row">
+                                    <td class="font-monospace" t-esc="child.prefix"/>
+                                    <td><span t-attf-class="badge zl-badge-#{child.status}" t-esc="child.status"/></td>
+                                    <td t-esc="child.partner"/>
+                                    <td class="text-end" t-esc="child.size"/>
+                                    <td class="text-end" t-esc="child.allocated"/>
+                                    <td><div class="progress" style="height: 8px;"><div class="progress-bar" t-attf-style="width: #{child.utilization}%"/></div></td>
+                                    <td class="text-muted small" t-esc="child.description"/>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div t-else="" class="text-muted small">没有下级网段。用「切割」分成更小的段，或「添加网段」手工加一段。</div>
+                    </div>
+
+                    <aside class="zl-ipam-facts">
+                        <div class="zl-ipam-section-title">基本信息</div>
+                        <dl>
+                            <dt>CIDR</dt><dd class="font-monospace" t-esc="state.detail.prefix"/>
+                            <dt>协议</dt><dd t-esc="state.detail.family === '6' ? 'IPv6' : 'IPv4'"/>
+                            <dt>容量</dt><dd t-esc="state.detail.size_display"/>
+                            <dt>掩码</dt><dd class="font-monospace" t-esc="state.detail.netmask"/>
+                            <dt>起始 IP</dt><dd class="font-monospace" t-esc="state.detail.first_ip"/>
+                            <dt>结束 IP</dt><dd class="font-monospace" t-esc="state.detail.last_ip"/>
+                            <dt>IP 占用</dt><dd>已用 <b t-esc="state.detail.used"/> / <t t-esc="state.detail.size_display"/></dd>
+                        </dl>
+                        <div t-if="Object.keys(state.detail.counts).length" class="zl-counts">
+                            <span t-foreach="Object.entries(state.detail.counts)" t-as="entry" t-key="entry[0]"><t t-esc="entry[0]"/> <b t-esc="entry[1]"/></span>
+                        </div>
+                        <div class="zl-ipam-section-title mt-3">管理信息</div>
+                        <dl>
+                            <dt>状态</dt><dd t-esc="state.detail.status_label"/>
+                            <dt>上级网段</dt><dd><a t-if="state.detail.parent_id" href="#" class="font-monospace" t-on-click.prevent="() => this.select(state.detail.parent_id)" t-esc="state.detail.parent"/><span t-else="">—</span></dd>
+                            <dt>分配给</dt><dd t-esc="state.detail.partner || '—'"/>
+                            <dt>数据中心</dt><dd t-esc="state.detail.datacenter || '—'"/>
+                            <dt>用途角色</dt><dd t-esc="state.detail.role || '—'"/>
+                            <dt>VLAN</dt><dd t-esc="state.detail.vlan || '—'"/>
+                            <dt>说明</dt><dd t-esc="state.detail.description || '—'"/>
+                            <dt>NetBox</dt><dd><t t-if="state.detail.netbox_id">#<t t-esc="state.detail.netbox_id"/> · <t t-esc="state.detail.netbox_synced"/></t><t t-else="">未同步</t></dd>
+                            <dt>创建</dt><dd t-esc="state.detail.create_date"/>
+                        </dl>
+                    </aside>
+                </div>
+
+                <div t-if="state.cell" class="zl-cell-pop">
+                    <div class="zl-cell-pop-head">
+                        <span class="font-monospace fw-bold" t-esc="state.cell.ip"/>
+                        <button class="btn btn-sm btn-link" t-on-click="closeCell"><i class="fa fa-times"/></button>
+                    </div>
+                    <label>状态</label>
+                    <select class="form-select form-select-sm" t-model="state.cellForm.status">
+                        <option t-foreach="statuses" t-as="status" t-key="status[0]" t-att-value="status[0]" t-esc="status[1]"/>
+                    </select>
+                    <label>分配给</label>
+                    <input type="text" class="form-control form-control-sm" placeholder="搜客户，留空表示无" t-att-value="state.cellForm.partner_name" t-on-input="(ev) => this.searchCustomers(ev, 'cell')"/>
+                    <ul t-if="state.customers.length" class="zl-choices">
+                        <li t-foreach="state.customers" t-as="customer" t-key="customer.id" t-on-click="() => this.pickCustomer(customer)" t-esc="customer.name"/>
+                    </ul>
+                    <label>用途</label>
+                    <input type="text" class="form-control form-control-sm" t-model="state.cellForm.usage" placeholder="网关 / 客户设备 / 监控…"/>
+                    <div class="d-flex justify-content-end gap-2 mt-2">
+                        <button class="btn btn-sm btn-secondary" t-on-click="closeCell">取消</button>
+                        <button class="btn btn-sm btn-primary" t-on-click="saveCell">保存</button>
+                    </div>
+                </div>
+            </section>
+            <section class="zl-ipam-main d-flex align-items-center justify-content-center text-muted" t-else="">
+                <t t-if="state.loading">加载中…</t>
+                <t t-else="">左侧选择一个网段</t>
+            </section>
+        </div>
+    </t>
+</templates>

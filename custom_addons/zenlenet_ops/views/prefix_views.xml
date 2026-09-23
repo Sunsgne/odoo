@@ -35,6 +35,7 @@
                     <button name="action_release" type="object" string="整段回收" invisible="not partner_id" confirm="回收后这一段的所有地址都会变成未分配，客户清空。继续？" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_manager"/>
                     <button name="action_split" type="object" string="切割" invisible="status == 'deprecated'" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_manager"/>
                     <button name="action_add_child" type="object" string="新增下级网段" invisible="status == 'deprecated'" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_manager"/>
+                    <button name="action_open_ipam" type="object" string="在地址管理中查看" icon="fa-sitemap"/>
                     <button name="action_open_netbox" type="object" string="在 NetBox 中查看" icon="fa-external-link" invisible="not netbox_id"/>
                     <field name="status" widget="statusbar" options="{'clickable': true}"/>
                 </header>
@@ -133,7 +134,7 @@
         </field>
     </record>
     <record id="action_prefixes" model="ir.actions.act_window">
-        <field name="name">地址管理</field>
+        <field name="name">网段列表</field>
         <field name="res_model">zenlenet.prefix</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_prefix_search"/>
@@ -142,6 +143,10 @@
             <p class="o_view_nocontent_smiling_face">还没有网段</p>
             <p>录入网段 → 切割 → 分配给客户。所有网段与 NetBox 的 Prefix 一一对应。</p>
         </field>
+    </record>
+    <record id="action_ipam" model="ir.actions.client">
+        <field name="name">地址管理</field>
+        <field name="tag">zenlenet_ipam</field>
     </record>
     <record id="view_prefix_split_form" model="ir.ui.view">
         <field name="name">zenlenet.prefix.split.form</field>

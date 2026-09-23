@@ -27,11 +27,11 @@
     <menuitem id="menu_flow" name="交付工单" parent="menu_work" action="action_flow" sequence="10"/>
     <menuitem id="menu_tickets" name="服务工单" parent="menu_work" action="action_tickets" sequence="20"/>
     <menuitem id="menu_maintenance" name="维护通告" parent="menu_work" action="action_maintenance" sequence="30"/>
+    <menuitem id="menu_allocation" name="资源分配" parent="menu_work" action="action_allocation_queue" sequence="15" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_allocator,zenlenet_ops.group_manager"/>
 
     <menuitem id="menu_res" name="网络资源" parent="menu_root" sequence="40"/>
     <menuitem id="menu_datacenters" name="数据中心" parent="menu_res" action="action_datacenters" sequence="5"/>
-    <menuitem id="menu_allocation" name="资源分配" parent="menu_res" action="action_allocation_queue" sequence="7" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_allocator,zenlenet_ops.group_manager"/>
-    <menuitem id="menu_prefixes" name="地址管理" parent="menu_res" action="action_prefixes" sequence="8"/>
+    <menuitem id="menu_prefixes" name="地址管理" parent="menu_res" action="action_ipam" sequence="8"/>
     <menuitem id="menu_lines" name="线路" parent="menu_res" action="action_lines" sequence="40"/>
     <menuitem id="menu_returns" name="供应商退回" parent="menu_res" action="action_returns" sequence="50"/>
     <menuitem id="menu_prefix_export" name="导出地址段" parent="menu_res" action="action_prefix_export" sequence="60"/>

@@ -7,6 +7,7 @@ from . import users
 from . import records
 from . import datacenter
 from . import prefix
+from . import ipam
 from . import netbox
 from . import flow
 from . import ticket

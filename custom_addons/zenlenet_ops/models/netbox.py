@@ -374,6 +374,24 @@ class ZenlenetNetbox(models.AbstractModel):
             prefix.with_context(netbox_skip_push=True).write({'netbox_id': created.get('id'), 'netbox_synced': fields.Datetime.now()})
 
     @api.model
+    def create_addresses(self, addresses):
+        cfg = self._params()
+        if not cfg['enabled'] or not self.is_configured():
+            return
+        session, base = self._session()
+        for address in addresses.filtered(lambda record: not record.netbox_id):
+            payload = {
+                'address': address.address,
+                'status': IP_STATUS_OUT.get(address.status, 'active'),
+                'description': (address.usage or '')[:200],
+                'custom_fields': {'dc_type': address.dc_type or None, 'net_attr': address.net_attr or None, 'usage': address.usage or None},
+            }
+            if address.partner_id:
+                payload['tenant'] = self._tenant_for(session, base, address.partner_id)
+            created = self._write(session, base, 'POST', '/ipam/ip-addresses/', payload)
+            address.with_context(netbox_skip_push=True).write({'netbox_id': created.get('id'), 'netbox_synced': fields.Datetime.now()})
+
+    @api.model
     def push_prefixes(self, prefixes):
         cfg = self._params()
         if not cfg['enabled'] or not self.is_configured():
