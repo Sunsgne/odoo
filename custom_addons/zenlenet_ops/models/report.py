@@ -70,7 +70,7 @@ class ReportBase(models.AbstractModel):
                     'kind': SERVICE_LABELS.get(code, product.name or ''),
                     'name': clean_label(line.name) or product.name,
                     'qty': line.product_uom_qty,
-                    'unit': '兆' if code in ('ipt', 'pl') else ('台' if code in ('vm', 'colo') else '项'),
+                    'unit': 'Mbps' if code in ('ipt', 'pl') else ('台' if code in ('vm', 'colo') else '项'),
                     'price': line.price_unit,
                     'subtotal': line.price_subtotal,
                     'stage': _label(order._fields['zenlenet_stage'].selection, order.zenlenet_stage),
