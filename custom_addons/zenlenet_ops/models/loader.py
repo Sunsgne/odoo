@@ -69,7 +69,7 @@ class ZenlenetLoader(models.AbstractModel):
         values['country_id'] = country.id
         if not self.env['account.move'].sudo().search_count([]):
             values['currency_id'] = usd.id
-        if not company.logo:
+        if not company.logo or company.uses_default_logo:
             icon = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'description', 'icon.png')
             if os.path.isfile(icon):
                 with open(icon, 'rb') as handle:
