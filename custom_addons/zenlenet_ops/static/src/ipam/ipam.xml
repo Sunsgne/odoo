@@ -8,7 +8,7 @@
                     <i t-if="children(node).length" t-attf-class="fa #{isExpanded(node) ? 'fa-caret-down' : 'fa-caret-right'}"/>
                     <i t-else="" class="fa fa-circle-o zl-tree-leaf"/>
                 </span>
-                <span t-attf-class="zl-dot zl-dot-#{node.status}" t-att-title="node.status"/>
+                <span t-attf-class="zl-dot zl-dot-#{node.status}" t-att-title="prefixStatus(node.status)"/>
                 <span class="zl-tree-prefix font-monospace" t-esc="node.prefix"/>
                 <span class="zl-tree-meta" t-if="node.partner" t-esc="node.partner"/>
                 <span class="zl-tree-util" t-if="node.utilization" t-esc="node.utilization + '%'"/>
@@ -101,7 +101,7 @@
                             <tbody>
                                 <tr t-foreach="state.detail.children" t-as="child" t-key="child.id" t-on-click="() => this.select(child.id)" class="zl-child-row">
                                     <td class="font-monospace" t-esc="child.prefix"/>
-                                    <td><span t-attf-class="badge zl-badge-#{child.status}" t-esc="child.status"/></td>
+                                    <td><span t-attf-class="badge zl-badge-#{child.status}" t-esc="prefixStatus(child.status)"/></td>
                                     <td t-esc="child.partner"/>
                                     <td class="text-end" t-esc="child.size"/>
                                     <td class="text-end" t-esc="child.allocated"/>

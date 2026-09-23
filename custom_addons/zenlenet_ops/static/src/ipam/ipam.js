@@ -116,6 +116,10 @@ export class ZenlenetIpam extends Component {
         }
     }
 
+    prefixStatus(status) {
+        return { active: "在用", container: "容器", reserved: "预留", deprecated: "已弃用" }[status] || status;
+    }
+
     cellClass(cell) {
         if (cell.special) {
             return "zl-cell zl-cell-special";
