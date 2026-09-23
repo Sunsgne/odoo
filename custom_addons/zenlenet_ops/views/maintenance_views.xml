@@ -38,6 +38,7 @@
                     <button name="action_prev" type="object" string="退回" invisible="state in ('draft', 'cancel', 'done')"/>
                     <button name="action_next" type="object" string="推进" class="btn-primary" invisible="state in ('done', 'cancel')"/>
                     <button name="action_refresh_notice" type="object" string="生成通知"/>
+                    <button name="action_print_notice" type="object" string="打印通知" invisible="not body"/>
                     <button name="action_cancel" type="object" string="取消" invisible="state in ('done', 'cancel')"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,review,notify,notified,executing,verify,done"/>
                 </header>

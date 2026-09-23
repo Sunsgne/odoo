@@ -1,0 +1,283 @@
+// Print stylesheet for the console PDFs. Clean key/value tables, monospace
+// identifiers, and status badges, in the spirit of NetBox object pages.
+
+$zl-primary: #714b67;
+$zl-ink: #1f2933;
+$zl-muted: #6b7280;
+$zl-line: #d9dde3;
+$zl-soft: #f4f5f7;
+$zl-font: "Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+$zl-mono: "Noto Sans Mono CJK SC", "DejaVu Sans Mono", Menlo, Consolas, monospace;
+
+.zl-header, .zl-footer, .zl-doc {
+    font-family: $zl-font;
+    color: $zl-ink;
+    font-size: 10.5pt;
+    line-height: 1.5;
+}
+.zl-header-table, .zl-footer-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.zl-header {
+    border-bottom: 2px solid $zl-primary;
+    padding-bottom: 6px;
+}
+.zl-header-brand {
+    vertical-align: middle;
+    .zl-logo {
+        max-height: 44px;
+        max-width: 140px;
+        margin-right: 12px;
+        vertical-align: middle;
+    }
+    > div {
+        display: inline-block;
+        vertical-align: middle;
+    }
+}
+.zl-company-name {
+    font-size: 13pt;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+.zl-company-line {
+    font-size: 8.5pt;
+    color: $zl-muted;
+}
+.zl-header-doc {
+    text-align: right;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+.zl-doc-title {
+    font-size: 18pt;
+    font-weight: 700;
+    color: $zl-primary;
+    letter-spacing: 0.08em;
+}
+.zl-doc-number {
+    font-family: $zl-mono;
+    font-size: 11pt;
+    color: $zl-muted;
+}
+.zl-footer {
+    border-top: 1px solid $zl-line;
+    padding-top: 4px;
+    font-size: 8pt;
+    color: $zl-muted;
+    .zl-footer-mid { text-align: center; }
+    .zl-footer-page { text-align: right; white-space: nowrap; }
+}
+
+.zl-doc {
+    .zl-contract-title {
+        text-align: center;
+        font-size: 16pt;
+        font-weight: 700;
+        margin: 6px 0 14px;
+    }
+    .zl-meta {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 0;
+        margin: 8px 0 14px;
+        td { vertical-align: top; padding: 0; }
+        .zl-meta-party { width: 50%; padding-right: 16px; }
+        .zl-meta-kv { width: 50%; }
+    }
+    .zl-party {
+        background: $zl-soft;
+        border-radius: 6px;
+        padding: 10px 14px;
+        min-height: 78px;
+    }
+    .zl-party-role {
+        font-size: 8.5pt;
+        color: $zl-muted;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+    .zl-party-name {
+        font-size: 13pt;
+        font-weight: 700;
+        margin: 2px 0 4px;
+    }
+    .zl-party-line {
+        font-size: 9pt;
+        color: $zl-muted;
+    }
+    .zl-kv {
+        width: 100%;
+        border-collapse: collapse;
+        th, td {
+            padding: 4px 8px;
+            border-bottom: 1px solid $zl-line;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            width: 32%;
+            color: $zl-muted;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        td { font-weight: 500; }
+    }
+    .zl-kv-wide {
+        margin: 6px 0 14px;
+        th { width: 15%; }
+        td { width: 35%; }
+    }
+    .zl-h {
+        font-size: 11.5pt;
+        font-weight: 700;
+        margin: 18px 0 8px;
+        padding-left: 8px;
+        border-left: 3px solid $zl-primary;
+    }
+    .zl-sub {
+        font-weight: 600;
+        margin: 12px 0 6px;
+    }
+    .zl-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 8px;
+        thead th {
+            background: $zl-soft;
+            color: $zl-muted;
+            font-weight: 600;
+            font-size: 9pt;
+            text-align: left;
+            padding: 6px 8px;
+            border-bottom: 1px solid $zl-line;
+        }
+        tbody td {
+            padding: 6px 8px;
+            border-bottom: 1px solid lighten($zl-line, 5%);
+            vertical-align: top;
+        }
+        tfoot td {
+            padding: 6px 8px;
+            border-top: 1px solid $zl-line;
+        }
+        .num { text-align: right; white-space: nowrap; }
+        .zl-total td {
+            font-weight: 700;
+            font-size: 11pt;
+            border-top: 2px solid $zl-ink;
+        }
+        &.zl-table-dense {
+            font-size: 9pt;
+            thead th, tbody td { padding: 4px 6px; }
+        }
+    }
+    .zl-unit {
+        color: $zl-muted;
+        font-size: 8.5pt;
+    }
+    .zl-mono {
+        font-family: $zl-mono;
+        font-size: 9.5pt;
+    }
+    .zl-chip {
+        display: inline-block;
+        padding: 1px 8px;
+        border-radius: 10px;
+        background: rgba($zl-primary, 0.1);
+        color: $zl-primary;
+        font-size: 8.5pt;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .zl-badge {
+        display: inline-block;
+        padding: 1px 8px;
+        border-radius: 4px;
+        font-size: 8.5pt;
+        font-weight: 600;
+        white-space: nowrap;
+        &.zl-badge-ok { background: #dcf5e6; color: #146c43; }
+        &.zl-badge-warn { background: #fdecc8; color: #9a5b00; }
+        &.zl-badge-info { background: #dbeafe; color: #1e40af; }
+        &.zl-badge-muted { background: $zl-soft; color: $zl-muted; }
+    }
+    .zl-two-col {
+        display: table;
+        width: 100%;
+        border-spacing: 12px 0;
+        margin: 10px -12px 0;
+        .zl-card { display: table-cell; width: 50%; }
+    }
+    .zl-card {
+        background: $zl-soft;
+        border-radius: 6px;
+        padding: 10px 14px;
+        margin: 10px 0;
+        vertical-align: top;
+    }
+    .zl-card-title {
+        font-weight: 700;
+        font-size: 9.5pt;
+        margin-bottom: 4px;
+    }
+    .zl-list {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 9.5pt;
+        li { margin-bottom: 2px; }
+    }
+    .zl-muted { color: $zl-muted; font-size: 9.5pt; }
+    .zl-pre { white-space: pre-wrap; }
+    .zl-body { font-size: 10.5pt; line-height: 1.7; }
+    .zl-rich p { margin: 0 0 6px; }
+    .zl-amount-strip {
+        display: table;
+        width: 100%;
+        margin: 4px 0 6px;
+        border: 1px solid $zl-line;
+        border-radius: 6px;
+        > div {
+            display: table-cell;
+            padding: 10px 14px;
+            border-right: 1px solid $zl-line;
+            &:last-child { border-right: 0; }
+        }
+    }
+    .zl-amount-label { font-size: 8.5pt; color: $zl-muted; }
+    .zl-amount { font-size: 18pt; font-weight: 700; color: $zl-primary; }
+    .zl-amount-small { font-size: 13pt; font-weight: 600; }
+    .zl-sign {
+        width: 100%;
+        margin-top: 28px;
+        border-collapse: collapse;
+        page-break-inside: avoid;
+        td { width: 50%; vertical-align: top; padding: 0 24px 0 0; }
+    }
+    .zl-sign-role { font-size: 8.5pt; color: $zl-muted; }
+    .zl-sign-name { font-weight: 700; margin-bottom: 26px; }
+    .zl-sign-line {
+        border-bottom: 1px solid $zl-ink;
+        margin-bottom: 20px;
+        padding-bottom: 2px;
+        color: $zl-muted;
+        font-size: 9pt;
+    }
+    .zl-sign-filled { color: $zl-ink; font-weight: 600; }
+    .zl-pagebreak { page-break-after: always; }
+    .zl-stamp {
+        position: absolute;
+        right: 40px;
+        top: 150px;
+        border: 3px solid #146c43;
+        color: #146c43;
+        border-radius: 8px;
+        padding: 4px 18px;
+        font-size: 20pt;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        opacity: 0.75;
+        transform: rotate(-12deg);
+    }
+}

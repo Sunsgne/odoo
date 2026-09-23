@@ -1,80 +1,155 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <record id="paperformat_zenlenet" model="report.paperformat">
+        <field name="name">尊领 A4</field>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">34</field>
+        <field name="margin_bottom">20</field>
+        <field name="margin_left">14</field>
+        <field name="margin_right">14</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">28</field>
+        <field name="dpi">96</field>
+    </record>
+
+    <!-- Shared page frame: company header, document title strip, paged footer. -->
+    <template id="report_layout">
+        <div class="header zl-header">
+            <table class="zl-header-table">
+                <tr>
+                    <td class="zl-header-brand">
+                        <img t-if="company['logo']" t-att-src="image_data_uri(company['logo'])" class="zl-logo" alt="Logo"/>
+                        <div>
+                            <div class="zl-company-name" t-out="company['name']"/>
+                            <div class="zl-company-line">
+                                <span t-out="company['address']"/>
+                                <span t-if="company['country']"> · <span t-out="company['country']"/></span>
+                            </div>
+                            <div class="zl-company-line">
+                                <span t-if="company['vat']">UEN <span t-out="company['vat']"/></span>
+                                <span t-if="company['email']"> · <span t-out="company['email']"/></span>
+                                <span t-if="company['phone']"> · <span t-out="company['phone']"/></span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="zl-header-doc">
+                        <div class="zl-doc-title" t-out="title"/>
+                        <div class="zl-doc-number" t-out="number"/>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div class="article zl-doc" t-att-data-oe-model="o and o._name" t-att-data-oe-id="o and o.id" t-att-data-oe-lang="o and o.env.context.get('lang')">
+            <t t-out="0"/>
+        </div>
+        <div class="footer zl-footer">
+            <table class="zl-footer-table">
+                <tr>
+                    <td><span t-out="company['name']"/><t t-if="company['website']"> · <span t-out="company['website']"/></t></td>
+                    <td class="zl-footer-mid" t-out="footer_note or ''"/>
+                    <td class="zl-footer-page"><span t-out="number"/> · 第 <span class="page"/> 页 / 共 <span class="topage"/> 页</td>
+                </tr>
+            </table>
+        </div>
+    </template>
+
+    <template id="report_party_block">
+        <div class="zl-party">
+            <div class="zl-party-role" t-out="role"/>
+            <div class="zl-party-name" t-out="partner.name"/>
+            <div class="zl-party-line" t-if="partner.street"><t t-out="partner.street"/><t t-if="partner.city"> <t t-out="partner.city"/></t><t t-if="partner.country_id"> <t t-out="partner.country_id.name"/></t></div>
+            <div class="zl-party-line" t-if="partner.vat">税号 / 注册号 <t t-out="partner.vat"/></div>
+            <div class="zl-party-line" t-if="partner.email or partner.phone"><t t-out="partner.email or ''"/><t t-if="partner.email and partner.phone"> · </t><t t-out="partner.phone or ''"/></div>
+        </div>
+    </template>
+
+    <template id="report_signatures">
+        <table class="zl-sign">
+            <tr>
+                <td>
+                    <div class="zl-sign-role" t-out="left_role"/>
+                    <div class="zl-sign-name" t-out="left_name"/>
+                    <div class="zl-sign-line">签署</div>
+                    <div class="zl-sign-line">日期</div>
+                </td>
+                <td>
+                    <div class="zl-sign-role" t-out="right_role"/>
+                    <div class="zl-sign-name" t-out="right_name"/>
+                    <div class="zl-sign-line">签署</div>
+                    <div class="zl-sign-line">日期<t t-if="right_date"> <span class="zl-sign-filled" t-out="right_date" t-options='{"widget": "date", "format": "yyyy年M月d日"}'/></t></div>
+                </td>
+            </tr>
+        </table>
+    </template>
+
+    <!-- 报价单 -->
     <template id="report_quotation_document">
         <t t-call="web.html_container">
-            <t t-foreach="docs" t-as="doc">
-                <t t-call="web.external_layout">
-                    <t t-set="o" t-value="doc"/>
-                    <div class="page" style="font-family: 'Noto Sans CJK SC', 'Noto Sans SC', sans-serif;">
-                        <h2 class="mt-3 mb-4">服务报价单</h2>
-                        <div class="row mb-4">
-                            <div class="col-6">
-                                <div class="text-muted small">致</div>
-                                <div class="fw-bold fs-5"><span t-field="doc.partner_id.name"/></div>
-                                <div t-if="doc.partner_id.street"><span t-field="doc.partner_id.street"/></div>
-                                <div t-if="doc.partner_id.email"><span t-field="doc.partner_id.email"/></div>
-                            </div>
-                            <div class="col-6">
-                                <table class="table table-sm table-borderless mb-0">
-                                    <tr><td class="text-muted">报价编号</td><td class="text-end fw-bold"><span t-field="doc.name"/></td></tr>
-                                    <tr><td class="text-muted">报价日期</td><td class="text-end"><span t-field="doc.date_order" t-options='{"widget": "date"}'/></td></tr>
-                                    <tr><td class="text-muted">有效期至</td><td class="text-end">
-                                        <span t-if="doc.validity_date" t-field="doc.validity_date"/>
-                                        <span t-else="">自报价日起 30 天</span>
-                                    </td></tr>
-                                    <tr><td class="text-muted">销售</td><td class="text-end"><span t-field="doc.user_id.name"/></td></tr>
+            <t t-foreach="docs" t-as="o">
+                <t t-set="number" t-value="o.name"/>
+                <t t-set="footer_note" t-value="'价格为月度服务费，不含税。单价为演示价目。'"/>
+                <t t-call="zenlenet_ops.report_layout">
+                    <table class="zl-meta">
+                        <tr>
+                            <td class="zl-meta-party">
+                                <t t-call="zenlenet_ops.report_party_block"><t t-set="role" t-value="'致'"/><t t-set="partner" t-value="o.partner_id"/></t>
+                            </td>
+                            <td class="zl-meta-kv">
+                                <table class="zl-kv">
+                                    <tr><th>报价编号</th><td t-out="o.name"/></tr>
+                                    <tr><th>报价日期</th><td t-out="o.date_order" t-options='{"widget": "date", "format": "yyyy年M月d日"}'/></tr>
+                                    <tr><th>有效期至</th><td t-out="validity[o.id]" t-options='{"widget": "date", "format": "yyyy年M月d日"}'/></tr>
+                                    <tr><th>销售</th><td><t t-out="o.user_id.name"/><t t-if="o.user_id.email"> · <t t-out="o.user_id.email"/></t></td></tr>
+                                    <tr><th>币种</th><td t-out="o.currency_id.name"/></tr>
                                 </table>
-                            </div>
-                        </div>
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>业务项目</th>
-                                    <th class="text-end">数量</th>
-                                    <th class="text-end">单价（月）</th>
-                                    <th class="text-end">月费</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <t t-foreach="doc.order_line.filtered(lambda l: not l.display_type)" t-as="line">
-                                    <tr>
-                                        <td><span t-field="line.name"/></td>
-                                        <td class="text-end"><span t-field="line.product_uom_qty"/></td>
-                                        <td class="text-end"><span t-field="line.price_unit" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/></td>
-                                        <td class="text-end"><span t-field="line.price_subtotal" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/></td>
-                                    </tr>
-                                </t>
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="3" class="text-end fw-bold">月费合计</td>
-                                    <td class="text-end fw-bold"><span t-field="doc.amount_untaxed" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/></td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                        <div class="mt-4 small">
-                            <div class="fw-bold mb-1">说明</div>
-                            <ol class="mb-0 ps-3">
-                                <li>以上价格为月度服务费，币种见金额栏，不含税；一次性接入费、跨境线路及设备另议。</li>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <h3 class="zl-h">服务与价格</h3>
+                    <table class="zl-table">
+                        <thead>
+                            <tr><th>业务类型</th><th>说明</th><th class="num">数量</th><th class="num">单价 / 月</th><th class="num">月费</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="rows_by_doc[o.id]" t-as="row">
+                                <td><span class="zl-chip" t-out="row['kind']"/></td>
+                                <td t-out="row['name']"/>
+                                <td class="num"><t t-out="'%g' % row['qty']"/> <span class="zl-unit" t-out="row['unit']"/></td>
+                                <td class="num" t-out="row['price']" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                <td class="num" t-out="row['subtotal']" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr class="zl-total"><td colspan="4">月费合计（未税）</td><td class="num" t-out="o.amount_untaxed" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></tr>
+                        </tfoot>
+                    </table>
+
+                    <div class="zl-two-col">
+                        <div class="zl-card">
+                            <div class="zl-card-title">包含</div>
+                            <ul class="zl-list">
+                                <li>7×24 小时故障受理，紧急故障 4 小时内响应处理。</li>
                                 <li>带宽类业务按签约带宽出账，超量部分按实际使用另行结算。</li>
-                                <li>报价在有效期内有效；确认后双方签署服务协议，服务开通日起计费。</li>
-                                <li t-if="doc.note"><span t-field="doc.note"/></li>
-                            </ol>
+                                <li>IP 地址与线路资源在开通交付时确认并随验收单交付。</li>
+                            </ul>
                         </div>
-                        <div class="row mt-5">
-                            <div class="col-6">
-                                <div class="text-muted small">服务方</div>
-                                <div class="fw-bold"><span t-field="doc.company_id.name"/></div>
-                                <div t-if="doc.company_id.vat">UEN <span t-field="doc.company_id.vat"/></div>
-                                <div class="mt-4">签署：______________________</div>
-                            </div>
-                            <div class="col-6">
-                                <div class="text-muted small">客户确认</div>
-                                <div class="fw-bold"><span t-field="doc.partner_id.name"/></div>
-                                <div class="mt-5">签署：______________________</div>
-                            </div>
+                        <div class="zl-card">
+                            <div class="zl-card-title">说明</div>
+                            <ul class="zl-list">
+                                <li>一次性接入费、跨境线路及设备另议。</li>
+                                <li>报价在有效期内有效；确认后双方签署服务协议，服务开通日起计费。</li>
+                                <li t-if="o.note"><span t-out="o.note"/></li>
+                            </ul>
                         </div>
                     </div>
+
+                    <t t-call="zenlenet_ops.report_signatures">
+                        <t t-set="left_role" t-value="'服务方'"/><t t-set="left_name" t-value="company['name']"/>
+                        <t t-set="right_role" t-value="'客户确认'"/><t t-set="right_name" t-value="o.partner_id.name"/>
+                        <t t-set="right_date" t-value="False"/>
+                    </t>
                 </t>
             </t>
         </t>
@@ -86,86 +161,114 @@
         <field name="report_name">zenlenet_ops.report_quotation_document</field>
         <field name="report_file">zenlenet_ops.report_quotation_document</field>
         <field name="print_report_name">'报价单-%s' % (object.name)</field>
+        <field name="paperformat_id" ref="paperformat_zenlenet"/>
         <field name="binding_model_id" ref="sale.model_sale_order"/>
         <field name="binding_type">report</field>
     </record>
 
+    <!-- 合同 -->
     <template id="report_contract_document">
         <t t-call="web.html_container">
-            <t t-foreach="docs" t-as="doc">
-                <t t-call="web.external_layout">
-                    <t t-set="o" t-value="doc"/>
-                    <div class="page" style="font-family: 'Noto Sans CJK SC', 'Noto Sans SC', sans-serif;">
-                        <h2 class="mt-3 mb-1 text-center"><span t-field="doc.title"/></h2>
-                        <div class="text-center text-muted mb-4">合同编号：<span t-field="doc.name"/></div>
-                        <table class="table table-sm table-borderless mb-4">
-                            <tr>
-                                <td class="w-50">
-                                    <div class="text-muted small">甲方（客户）</div>
-                                    <div class="fw-bold"><span t-field="doc.partner_id.name"/></div>
-                                    <div t-if="doc.partner_id.street"><span t-field="doc.partner_id.street"/></div>
-                                </td>
-                                <td class="w-50">
-                                    <div class="text-muted small">乙方（服务方）</div>
-                                    <div class="fw-bold"><span t-field="doc.company_id.name"/></div>
-                                    <div t-if="doc.company_id.vat">UEN <span t-field="doc.company_id.vat"/></div>
-                                    <div t-if="doc.company_id.street"><span t-field="doc.company_id.street"/></div>
-                                </td>
+            <t t-foreach="docs" t-as="o">
+                <t t-set="number" t-value="o.name"/>
+                <t t-set="footer_note" t-value="o.title or ''"/>
+                <t t-call="zenlenet_ops.report_layout">
+                    <div class="zl-contract-title" t-out="o.title or '网络服务协议'"/>
+                    <table class="zl-meta">
+                        <tr>
+                            <td class="zl-meta-party">
+                                <t t-call="zenlenet_ops.report_party_block"><t t-set="role" t-value="'甲方（客户）'"/><t t-set="partner" t-value="o.partner_id"/></t>
+                            </td>
+                            <td class="zl-meta-party">
+                                <t t-call="zenlenet_ops.report_party_block"><t t-set="role" t-value="'乙方（服务方）'"/><t t-set="partner" t-value="o.company_id.partner_id"/></t>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <table class="zl-kv zl-kv-wide">
+                        <tr>
+                            <th>合同编号</th><td t-out="o.name"/>
+                            <th>服务期限</th><td><t t-out="o.start_date" t-options='{"widget": "date", "format": "yyyy年M月d日"}'/> 至 <t t-out="o.end_date" t-options='{"widget": "date", "format": "yyyy年M月d日"}'/>（<t t-out="o.term_months"/> 个月）</td>
+                        </tr>
+                        <tr>
+                            <th>出账周期</th><td t-out="cycle_label(o)"/>
+                            <th>每期金额</th><td t-out="o.cycle_amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                        </tr>
+                        <tr>
+                            <th>到期续签</th><td t-out="'期满自动按原条款续期一期' if o.auto_renew else '期满需另行签署'"/>
+                            <th>签署日期</th><td><t t-if="o.signed_on" t-out="o.signed_on" t-options='{"widget": "date", "format": "yyyy年M月d日"}'/><t t-else="">以签字为准</t></td>
+                        </tr>
+                    </table>
+
+                    <h3 class="zl-h">一、服务内容</h3>
+                    <table class="zl-table">
+                        <thead><tr><th>订单</th><th>业务类型</th><th>说明</th><th class="num">数量</th><th class="num">月费</th></tr></thead>
+                        <tbody>
+                            <tr t-foreach="rows_by_doc[o.id]" t-as="row">
+                                <td class="zl-mono" t-out="row['order']"/>
+                                <td><span class="zl-chip" t-out="row['kind']"/></td>
+                                <td t-out="row['name']"/>
+                                <td class="num"><t t-out="'%g' % row['qty']"/> <span class="zl-unit" t-out="row['unit']"/></td>
+                                <td class="num" t-out="row['subtotal']" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
                             </tr>
-                        </table>
-                        <h5>一、服务内容</h5>
-                        <table class="table table-sm">
-                            <thead>
-                                <tr><th>订单</th><th>业务</th><th class="text-end">数量</th><th class="text-end">月费</th></tr>
-                            </thead>
-                            <tbody>
-                                <t t-foreach="doc.order_ids" t-as="order">
-                                    <t t-foreach="order.order_line.filtered(lambda l: not l.display_type)" t-as="line">
-                                        <tr>
-                                            <td><span t-field="order.name"/></td>
-                                            <td><span t-field="line.name"/></td>
-                                            <td class="text-end"><span t-field="line.product_uom_qty"/></td>
-                                            <td class="text-end"><span t-field="line.price_subtotal" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/></td>
-                                        </tr>
-                                    </t>
-                                </t>
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="3" class="text-end fw-bold">月费合计</td>
-                                    <td class="text-end fw-bold"><span t-field="doc.monthly_amount" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/></td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                        <h5>二、服务期限</h5>
-                        <p>
-                            自 <span t-field="doc.start_date"/> 起至 <span t-field="doc.end_date"/> 止，共 <span t-field="doc.term_months"/> 个月。
-                            <t t-if="doc.auto_renew">期满前任一方未书面提出终止，则自动按原条款续期一期。</t>
-                        </p>
-                        <h5>三、费用与结算</h5>
-                        <p>
-                            乙方<span t-field="doc.billing_cycle"/>出具账单，每期金额 <span t-field="doc.cycle_amount" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/>。
-                            甲方应在收到账单后 30 日内付款。带宽超量部分按实际使用另行结算。
-                        </p>
-                        <h5>四、服务保障</h5>
-                        <p>乙方提供 7×24 小时故障受理；计划性割接与维护至少提前 3 个工作日通知甲方；紧急维护在处置后及时说明。</p>
-                        <div t-if="doc.terms">
-                            <h5>五、补充条款</h5>
-                            <div t-field="doc.terms"/>
-                        </div>
-                        <div class="row mt-5">
-                            <div class="col-6">
-                                <div class="text-muted small">甲方</div>
-                                <div class="mt-4">签署：______________________</div>
-                                <div class="mt-2">日期：______________________</div>
-                            </div>
-                            <div class="col-6">
-                                <div class="text-muted small">乙方</div>
-                                <div class="mt-4">签署：______________________</div>
-                                <div class="mt-2">日期：<span t-if="doc.signed_on" t-field="doc.signed_on"/><t t-else="">______________________</t></div>
-                            </div>
-                        </div>
-                    </div>
+                        </tbody>
+                        <tfoot>
+                            <tr class="zl-total"><td colspan="4">月费合计（未税）</td><td class="num" t-out="o.monthly_amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></tr>
+                        </tfoot>
+                    </table>
+
+                    <h3 class="zl-h">二、费用与结算</h3>
+                    <p>乙方<t t-out="cycle_label(o)"/>出具账单，每期金额 <t t-out="o.cycle_amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>。甲方应在账单载明的付款期限内付款。带宽类业务按签约带宽出账，超量部分按实际使用另行结算。</p>
+                    <h3 class="zl-h">三、服务保障</h3>
+                    <p>乙方提供 7×24 小时故障受理；计划性割接与维护至少提前 3 个工作日通知甲方；紧急维护在处置后及时说明。服务等级：紧急故障 4 小时、高优先级 8 小时、普通 24 小时内解决。</p>
+                    <h3 class="zl-h">四、期限与终止</h3>
+                    <p>服务期自 <t t-out="o.start_date" t-options='{"widget": "date", "format": "yyyy年M月d日"}'/> 起至 <t t-out="o.end_date" t-options='{"widget": "date", "format": "yyyy年M月d日"}'/> 止。<t t-if="o.auto_renew">期满前任一方未书面提出终止，则自动按原条款续期一期。</t><t t-else="">期满后如需继续服务，双方另行签署。</t></p>
+                    <t t-if="o.terms">
+                        <h3 class="zl-h">五、补充条款</h3>
+                        <div class="zl-rich" t-out="o.terms"/>
+                    </t>
+
+                    <t t-call="zenlenet_ops.report_signatures">
+                        <t t-set="left_role" t-value="'甲方'"/><t t-set="left_name" t-value="o.partner_id.name"/>
+                        <t t-set="right_role" t-value="'乙方'"/><t t-set="right_name" t-value="o.company_id.name"/>
+                        <t t-set="right_date" t-value="o.signed_on"/>
+                    </t>
+
+                    <t t-if="addresses_by_doc[o.id] or lines_by_doc[o.id]">
+                        <div class="zl-pagebreak"/>
+                        <h3 class="zl-h">附件：已交付资源</h3>
+                        <p class="zl-muted">以下为签署时登记在甲方名下的资源，后续变更以交付验收单为准。</p>
+                        <t t-if="addresses_by_doc[o.id]">
+                            <div class="zl-sub">IP 地址（<t t-out="len(addresses_by_doc[o.id])"/>）</div>
+                            <table class="zl-table zl-table-dense">
+                                <thead><tr><th>地址</th><th>IP 段</th><th>数据中心</th><th>网络属性</th><th>状态</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="addresses_by_doc[o.id]" t-as="row">
+                                        <td class="zl-mono" t-out="row['address']"/>
+                                        <td class="zl-mono" t-out="row['block']"/>
+                                        <td t-out="row['datacenter']"/>
+                                        <td t-out="row['net_attr']"/>
+                                        <td><span t-attf-class="zl-badge zl-badge-#{row['tone']}" t-out="row['status']"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+                        <t t-if="lines_by_doc[o.id]">
+                            <div class="zl-sub">线路（<t t-out="len(lines_by_doc[o.id])"/>）</div>
+                            <table class="zl-table zl-table-dense">
+                                <thead><tr><th>编号</th><th>类型</th><th>A 端</th><th>Z 端</th><th>带宽</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="lines_by_doc[o.id]" t-as="row">
+                                        <td class="zl-mono" t-out="row['name']"/>
+                                        <td t-out="row['kind']"/>
+                                        <td t-out="row['a_end']"/>
+                                        <td t-out="row['z_end']"/>
+                                        <td t-out="row['bandwidth']"/>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+                    </t>
                 </t>
             </t>
         </t>
@@ -177,7 +280,217 @@
         <field name="report_name">zenlenet_ops.report_contract_document</field>
         <field name="report_file">zenlenet_ops.report_contract_document</field>
         <field name="print_report_name">'合同-%s' % (object.name)</field>
+        <field name="paperformat_id" ref="paperformat_zenlenet"/>
         <field name="binding_model_id" ref="model_zenlenet_contract"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- 账单 -->
+    <template id="report_invoice_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="number" t-value="o.name if o.state != 'draft' else '草稿'"/>
+                <t t-set="payment" t-value="payment_by_doc[o.id]"/>
+                <t t-call="zenlenet_ops.report_layout">
+                    <table class="zl-meta">
+                        <tr>
+                            <td class="zl-meta-party">
+                                <t t-call="zenlenet_ops.report_party_block"><t t-set="role" t-value="'客户'"/><t t-set="partner" t-value="o.partner_id"/></t>
+                            </td>
+                            <td class="zl-meta-kv">
+                                <table class="zl-kv">
+                                    <tr><th>账单编号</th><td t-out="number"/></tr>
+                                    <tr><th>账期</th><td class="zl-mono" t-out="o.ref or ''"/></tr>
+                                    <tr><th>出账日期</th><td t-out="o.invoice_date" t-options='{"widget": "date", "format": "yyyy年M月d日"}'/></tr>
+                                    <tr><th>付款期限</th><td t-out="o.invoice_date_due" t-options='{"widget": "date", "format": "yyyy年M月d日"}'/></tr>
+                                    <tr t-if="o.zenlenet_contract_id"><th>合同</th><td t-out="o.zenlenet_contract_id.name"/></tr>
+                                    <tr><th>状态</th><td><span t-attf-class="zl-badge zl-badge-#{payment[1]}" t-out="payment[0]"/></td></tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <div class="zl-amount-strip">
+                        <div><div class="zl-amount-label">本期应付</div><div class="zl-amount" t-out="o.amount_total" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></div>
+                        <div><div class="zl-amount-label">已收</div><div class="zl-amount-small" t-out="o.amount_total - o.amount_residual" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></div>
+                        <div><div class="zl-amount-label">未收</div><div class="zl-amount-small" t-out="o.amount_residual" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></div>
+                    </div>
+
+                    <h3 class="zl-h">费用明细</h3>
+                    <table class="zl-table">
+                        <thead><tr><th>业务类型</th><th>项目</th><th class="num">数量</th><th class="num">单价</th><th class="num">金额</th></tr></thead>
+                        <tbody>
+                            <tr t-foreach="rows_by_doc[o.id]" t-as="row">
+                                <td><span t-if="row['kind']" class="zl-chip" t-out="row['kind']"/></td>
+                                <td t-out="row['name']"/>
+                                <td class="num" t-out="'%g' % row['qty']"/>
+                                <td class="num" t-out="row['price']" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                <td class="num" t-out="row['subtotal']" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr t-if="o.amount_tax"><td colspan="4">未税金额</td><td class="num" t-out="o.amount_untaxed" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></tr>
+                            <tr t-if="o.amount_tax"><td colspan="4">税额</td><td class="num" t-out="o.amount_tax" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></tr>
+                            <tr class="zl-total"><td colspan="4">合计</td><td class="num" t-out="o.amount_total" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></tr>
+                        </tfoot>
+                    </table>
+
+                    <div class="zl-two-col">
+                        <div class="zl-card" t-if="o.narration">
+                            <div class="zl-card-title">账期说明</div>
+                            <div class="zl-rich" t-out="o.narration"/>
+                        </div>
+                        <div class="zl-card" t-if="footer_note">
+                            <div class="zl-card-title">付款方式</div>
+                            <div class="zl-pre" t-out="footer_note"/>
+                        </div>
+                    </div>
+                    <div t-if="payment[0] == '已收款'" class="zl-stamp">已收款</div>
+                </t>
+            </t>
+        </t>
+    </template>
+    <record id="report_invoice" model="ir.actions.report">
+        <field name="name">账单</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">zenlenet_ops.report_invoice_document</field>
+        <field name="report_file">zenlenet_ops.report_invoice_document</field>
+        <field name="print_report_name">'账单-%s' % (object.name)</field>
+        <field name="paperformat_id" ref="paperformat_zenlenet"/>
+        <field name="binding_model_id" ref="account.model_account_move"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- 交付验收单 -->
+    <template id="report_delivery_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="number" t-value="o.name"/>
+                <t t-set="footer_note" t-value="kind_label(o) + '单 · ' + state_label(o)"/>
+                <t t-call="zenlenet_ops.report_layout">
+                    <table class="zl-meta">
+                        <tr>
+                            <td class="zl-meta-party">
+                                <t t-call="zenlenet_ops.report_party_block"><t t-set="role" t-value="'客户'"/><t t-set="partner" t-value="o.partner_id"/></t>
+                            </td>
+                            <td class="zl-meta-kv">
+                                <table class="zl-kv">
+                                    <tr><th>单号</th><td t-out="o.name"/></tr>
+                                    <tr><th>类型</th><td><span class="zl-chip" t-out="kind_label(o)"/></td></tr>
+                                    <tr><th>当前阶段</th><td t-out="state_label(o)"/></tr>
+                                    <tr><th>销售</th><td t-out="o.sales_user_id.name or ''"/></tr>
+                                    <tr><th>交付</th><td t-out="o.delivery_user_id.name or ''"/></tr>
+                                    <tr><th>售后</th><td t-out="o.service_user_id.name or ''"/></tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <h3 class="zl-h">交付资源</h3>
+                    <table class="zl-table" t-if="resources_by_doc[o.id]">
+                        <thead><tr><th>业务类型</th><th>资源</th><th>说明</th><th>规格</th></tr></thead>
+                        <tbody>
+                            <tr t-foreach="resources_by_doc[o.id]" t-as="row">
+                                <td><span class="zl-chip" t-out="row['kind']"/></td>
+                                <td class="zl-mono" t-out="row['detail']"/>
+                                <td t-out="row['extra']"/>
+                                <td t-out="row['spec']"/>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p t-if="not resources_by_doc[o.id]" class="zl-muted">尚未登记具体资源。</p>
+                    <div class="zl-card" t-if="o.resource_note">
+                        <div class="zl-card-title">资源说明</div>
+                        <div class="zl-pre" t-out="o.resource_note"/>
+                    </div>
+
+                    <h3 class="zl-h">交付任务</h3>
+                    <table class="zl-table zl-table-dense">
+                        <thead><tr><th>阶段</th><th>任务</th><th>负责人</th><th>状态</th><th>完成时间</th></tr></thead>
+                        <tbody>
+                            <tr t-foreach="tasks_by_doc[o.id]" t-as="task">
+                                <td t-out="task['stage']"/>
+                                <td t-out="task['name']"/>
+                                <td t-out="task['user']"/>
+                                <td><span t-attf-class="zl-badge zl-badge-#{'ok' if task['done'] else 'muted'}" t-out="'已完成' if task['done'] else '未完成'"/></td>
+                                <td><t t-if="task['done_at']" t-out="task['done_at']" t-options='{"widget": "datetime", "format": "yyyy年M月d日 HH:mm"}'/></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="zl-card" t-if="o.note">
+                        <div class="zl-card-title">备注</div>
+                        <div class="zl-pre" t-out="o.note"/>
+                    </div>
+
+                    <p class="zl-muted">客户确认以上资源已开通并可正常使用，自签署之日起进入正式服务与计费。</p>
+                    <t t-call="zenlenet_ops.report_signatures">
+                        <t t-set="left_role" t-value="'客户验收'"/><t t-set="left_name" t-value="o.partner_id.name"/>
+                        <t t-set="right_role" t-value="'交付方'"/><t t-set="right_name" t-value="company['name']"/>
+                        <t t-set="right_date" t-value="False"/>
+                    </t>
+                </t>
+            </t>
+        </t>
+    </template>
+    <record id="report_delivery" model="ir.actions.report">
+        <field name="name">交付验收单</field>
+        <field name="model">zenlenet.flow</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">zenlenet_ops.report_delivery_document</field>
+        <field name="report_file">zenlenet_ops.report_delivery_document</field>
+        <field name="print_report_name">'验收单-%s' % (object.name)</field>
+        <field name="paperformat_id" ref="paperformat_zenlenet"/>
+        <field name="binding_model_id" ref="model_zenlenet_flow"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- 维护通知 -->
+    <template id="report_notice_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-set="number" t-value="o.name"/>
+                <t t-set="footer_note" t-value="kind_label(o)"/>
+                <t t-call="zenlenet_ops.report_layout">
+                    <div class="zl-contract-title" t-out="o.subject or kind_label(o)"/>
+                    <table class="zl-kv zl-kv-wide">
+                        <tr>
+                            <th>通知类型</th><td><span class="zl-chip" t-out="kind_label(o)"/></td>
+                            <th>状态</th><td t-out="state_label(o)"/>
+                        </tr>
+                        <tr>
+                            <th>客户</th><td t-out="o.partner_id.name or '全部受影响客户'"/>
+                            <th>地区 / 节点</th><td><t t-out="o.datacenter_id.name or ''"/><t t-if="o.datacenter_id and o.place and o.place != o.datacenter_id.name"> · </t><t t-if="not o.datacenter_id or o.place != o.datacenter_id.name" t-out="o.place or ''"/></td>
+                        </tr>
+                        <tr>
+                            <th>开始（北京时间）</th><td><t t-if="o.window_start" t-out="o.window_start" t-options='{"widget": "datetime", "format": "yyyy年M月d日 HH:mm"}'/><t t-else="">待定</t></td>
+                            <th>结束（北京时间）</th><td><t t-if="o.window_end" t-out="o.window_end" t-options='{"widget": "datetime", "format": "yyyy年M月d日 HH:mm"}'/><t t-else="">待定</t></td>
+                        </tr>
+                        <tr>
+                            <th>预计影响</th><td t-out="o.duration or ''"/>
+                            <th>事由</th><td t-out="o.reason or ''"/>
+                        </tr>
+                    </table>
+                    <div class="zl-card" t-if="o.impact">
+                        <div class="zl-card-title">影响范围</div>
+                        <div class="zl-pre" t-out="o.impact"/>
+                    </div>
+                    <h3 class="zl-h">通知正文</h3>
+                    <div class="zl-pre zl-body" t-out="o.body or ''"/>
+                </t>
+            </t>
+        </t>
+    </template>
+    <record id="report_notice" model="ir.actions.report">
+        <field name="name">维护通知</field>
+        <field name="model">zenlenet.maintenance</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">zenlenet_ops.report_notice_document</field>
+        <field name="report_file">zenlenet_ops.report_notice_document</field>
+        <field name="print_report_name">'通知-%s' % (object.name)</field>
+        <field name="paperformat_id" ref="paperformat_zenlenet"/>
+        <field name="binding_model_id" ref="model_zenlenet_maintenance"/>
         <field name="binding_type">report</field>
     </record>
 </odoo>

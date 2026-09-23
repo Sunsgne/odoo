@@ -88,6 +88,9 @@ class ZenlenetMaintenance(models.Model):
         except (KeyError, IndexError, ValueError):
             return subject, body
 
+    def action_print_notice(self):
+        return self.env.ref('zenlenet_ops.report_notice').report_action(self)
+
     def action_refresh_notice(self):
         for record in self:
             record._fill_notice()

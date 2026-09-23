@@ -7,6 +7,14 @@ NOTICE_DAYS = 30
 CYCLE_MONTHS = {'monthly': 1, 'quarterly': 3, 'yearly': 12}
 
 
+def clean_label(text):
+    """Drop a leading "[code] " prefix and surrounding whitespace from a line description."""
+    text = (text or '').strip()
+    if text.startswith('[') and ']' in text:
+        text = text.split(']', 1)[1].strip()
+    return text
+
+
 def add_months(day, months):
     month_index = day.month - 1 + months
     year = day.year + month_index // 12

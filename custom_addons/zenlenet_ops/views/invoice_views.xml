@@ -28,7 +28,7 @@
             <form create="false">
                 <header>
                     <button name="action_post" type="object" string="确认账单" class="btn-primary" invisible="state != 'draft'"/>
-                    <button name="%(account.account_invoices)d" type="action" string="打印账单" invisible="state != 'posted'"/>
+                    <button name="%(zenlenet_ops.report_invoice)d" type="action" string="打印账单"/>
                     <button name="action_register_payment" type="object" string="登记收款" class="btn-primary" invisible="state != 'posted' or payment_state in ('paid', 'in_payment', 'reversed')"/>
                     <button name="button_draft" type="object" string="改回草稿" invisible="state != 'posted' or payment_state != 'not_paid'"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,posted"/>

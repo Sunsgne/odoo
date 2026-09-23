@@ -5,6 +5,7 @@ from odoo.exceptions import UserError
 
 from odoo.addons.zenlenet_ops.billing import (
     bills_this_period,
+    clean_label,
     contract_end,
     contract_status,
     cycle_amount,
@@ -173,7 +174,7 @@ class ZenlenetContract(models.Model):
             for line in order.order_line.filtered(lambda item: not item.display_type):
                 lines.append((0, 0, {
                     'product_id': line.product_id.id,
-                    'name': f'{line.name or line.product_id.display_name}（{period_label(day)}）',
+                    'name': f'{clean_label(line.name) or line.product_id.name}（{period_label(day)}）',
                     'quantity': line.product_uom_qty,
                     'price_unit': line.price_unit,
                     'tax_ids': [(6, 0, [])],

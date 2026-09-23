@@ -106,6 +106,9 @@ class ZenlenetFlow(models.Model):
         for record in self:
             record.ticket_count = len(record.ticket_ids)
 
+    def action_print_delivery(self):
+        return self.env.ref('zenlenet_ops.report_delivery').report_action(self)
+
     def action_open_tickets(self):
         self.ensure_one()
         return {

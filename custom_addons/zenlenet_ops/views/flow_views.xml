@@ -52,6 +52,7 @@
                     <button name="action_next" type="object" string="推进" class="btn-primary" invisible="state in ('done', 'cancel') or (kind == 'test' and state == 'decide')"/>
                     <button name="action_reclaim" type="object" string="回收" invisible="kind != 'test' or state not in ('accept', 'decide')"/>
                     <button name="action_to_business" type="object" string="转商务" class="btn-primary" invisible="kind != 'test' or state not in ('accept', 'decide', 'reclaim')"/>
+                    <button name="action_print_delivery" type="object" string="打印验收单" invisible="state in ('company', 'cancel')"/>
                     <button name="action_cancel" type="object" string="取消" invisible="state in ('done', 'cancel')"/>
                     <field name="state" widget="statusbar" options="{'clickable': false}" statusbar_visible="company,allocate,deliver,accept,done"/>
                 </header>

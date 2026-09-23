@@ -4,6 +4,7 @@ from datetime import date
 from billing import (
     add_months,
     bills_this_period,
+    clean_label,
     contract_end,
     contract_status,
     cycle_amount,
@@ -14,6 +15,12 @@ from billing import (
 
 
 class BillingTests(unittest.TestCase):
+    def test_labels_lose_their_codes(self):
+        self.assertEqual(clean_label('[colo] 托管'), '托管')
+        self.assertEqual(clean_label('  IPT 带宽 500M '), 'IPT 带宽 500M')
+        self.assertEqual(clean_label(None), '')
+        self.assertEqual(clean_label('[pl]'), '')
+
     def test_month_arithmetic_clamps_the_day(self):
         self.assertEqual(add_months(date(2026, 1, 31), 1), date(2026, 2, 28))
         self.assertEqual(add_months(date(2026, 11, 15), 2), date(2027, 1, 15))

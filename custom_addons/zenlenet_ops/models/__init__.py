@@ -9,5 +9,6 @@ from . import flow
 from . import ticket
 from . import contract
 from . import home
+from . import report
 from . import loader
 from . import shell
