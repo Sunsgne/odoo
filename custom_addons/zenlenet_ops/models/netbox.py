@@ -68,6 +68,8 @@ class ZenlenetNetbox(models.AbstractModel):
             session.headers['Host'] = cfg['host']
         # A private address in the API URL means we talk to nginx on the docker gateway with the public hostname.
         session.verify = not re.match(r'https://(\d+\.\d+\.\d+\.\d+|localhost)', cfg['api'])
+        if not session.verify:
+            requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
         return session, cfg['api']
 
     def _iterate(self, session, base, path, params=None):
