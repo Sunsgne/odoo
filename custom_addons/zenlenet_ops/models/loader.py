@@ -11,7 +11,8 @@ _logger = logging.getLogger(__name__)
 
 PRODUCTS = (
     ('ipt', 'IPT / RMIPT 带宽', 6.0),
-    ('pl', '专线 / SD-WAN 带宽', 5.0),
+    ('pl', '专线带宽', 5.0),
+    ('sdwan', 'SD-WAN 接入', 5.0),
     ('vm', '云主机', 80.0),
     ('colo', '托管', 150.0),
     ('resale', '转售', 0.0),
@@ -111,6 +112,8 @@ class ZenlenetLoader(models.AbstractModel):
         template = self.env['product.template'].sudo()
         for code, name, price in PRODUCTS:
             product = template.search([('default_code', '=', code)], limit=1)
+            if product and code == 'pl' and 'SD-WAN' in (product.name or ''):
+                product.name = name
             if not product:
                 product = template.create({
                     'name': name,
@@ -395,8 +398,10 @@ def _price(product, bandwidth):
     qty = float(bandwidth or 0) or 1.0
     if product in {'IPT', 'RMIPT'}:
         return 'ipt', qty, 6.0
-    if product in {'PL', 'SDWAN'}:
+    if product == 'PL':
         return 'pl', qty, 5.0
+    if product == 'SDWAN':
+        return 'sdwan', qty, 5.0
     if product == 'VM':
         return 'vm', 1.0, 80.0
     if product == '托管':

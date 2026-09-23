@@ -11,7 +11,8 @@ from odoo.addons.zenlenet_ops.billing import clean_label
 
 SERVICE_LABELS = {
     'ipt': 'IPT / RMIPT 带宽',
-    'pl': '专线 / SD-WAN',
+    'pl': '专线',
+    'sdwan': 'SD-WAN',
     'vm': '云主机',
     'colo': '托管',
     'resale': '转售',
@@ -70,7 +71,7 @@ class ReportBase(models.AbstractModel):
                     'kind': SERVICE_LABELS.get(code, product.name or ''),
                     'name': clean_label(line.name) or product.name,
                     'qty': line.product_uom_qty,
-                    'unit': 'Mbps' if code in ('ipt', 'pl') else ('台' if code in ('vm', 'colo') else '项'),
+                    'unit': 'Mbps' if code in ('ipt', 'pl', 'sdwan') else ('台' if code in ('vm', 'colo') else '项'),
                     'price': line.price_unit,
                     'subtotal': line.price_subtotal,
                     'stage': _label(order._fields['zenlenet_stage'].selection, order.zenlenet_stage),

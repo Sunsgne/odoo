@@ -32,7 +32,8 @@ TASK_STAGES = [
 ]
 SERVICE_TYPES = [
     ('ipt', 'IPT / RMIPT'),
-    ('pl', '专线 / SD-WAN'),
+    ('pl', '专线'),
+    ('sdwan', 'SD-WAN'),
     ('vm', '云主机'),
     ('colo', '托管'),
     ('resale', '转售'),
@@ -556,7 +557,7 @@ class ZenlenetFlowResource(models.Model):
     @api.depends('service_type')
     def _compute_needs_resource(self):
         for record in self:
-            record.needs_resource = record.service_type in ('ipt', 'pl', 'ip', 'ip_single', 'line')
+            record.needs_resource = record.service_type in ('ipt', 'pl', 'sdwan', 'ip', 'ip_single', 'line')
 
     def _wanted_prefixlen(self):
         self.ensure_one()
@@ -572,7 +573,7 @@ class ZenlenetFlowResource(models.Model):
         for record in self:
             if record.resource_ref:
                 continue
-            if record.service_type in ('pl', 'line'):
+            if record.service_type in ('pl', 'sdwan', 'line'):
                 domain = [('status', 'in', ('planned', 'provisioning', 'active')), ('partner_id', '=', False)]
                 if record.datacenter_id:
                     domain.append(('datacenter_id', '=', record.datacenter_id.id))

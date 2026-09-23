@@ -147,7 +147,7 @@
                     </block>
 
                     <block title="产品与资源目录" name="zenlenet_catalog" help="报价和订单用到的业务类型、单价，以及机房清单。">
-                        <setting id="zenlenet_products_setting" string="业务与价目" help="IPT / RMIPT、专线 / SD-WAN、云主机、托管、转售。这里的单价是演示价目，报价时可逐单改。">
+                        <setting id="zenlenet_products_setting" string="业务与价目" help="IPT / RMIPT、专线、SD-WAN、云主机、托管、转售。这里的单价是演示价目，报价时可逐单改。">
                             <span class="fa fa-lg fa-tags me-2"/>
                             <field name="zenlenet_product_count" class="w-auto fw-bold"/>
                             <span class="o_form_label">种业务</span>

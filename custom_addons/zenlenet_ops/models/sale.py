@@ -1,8 +1,8 @@
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
-BANDWIDTH_CODES = ('ipt', 'pl')
-SERVICE_BY_CODE = {'ipt': 'ipt', 'pl': 'pl', 'vm': 'vm', 'colo': 'colo', 'resale': 'resale'}
+BANDWIDTH_CODES = ('ipt', 'pl', 'sdwan')
+SERVICE_BY_CODE = {'ipt': 'ipt', 'pl': 'pl', 'sdwan': 'sdwan', 'vm': 'vm', 'colo': 'colo', 'resale': 'resale'}
 
 
 class SaleOrder(models.Model):
@@ -189,7 +189,7 @@ class SaleOrderLine(models.Model):
 
     @api.depends('product_id')
     def _compute_zenlenet_unit(self):
-        units = {'ipt': 'Mbps', 'pl': 'Mbps', 'vm': '台', 'colo': '台 / U', 'resale': '项'}
+        units = {'ipt': 'Mbps', 'pl': 'Mbps', 'sdwan': 'Mbps', 'vm': '台', 'colo': '台 / U', 'resale': '项'}
         for line in self:
             line.zenlenet_unit = units.get(line.product_id.default_code or '', '项')
 
