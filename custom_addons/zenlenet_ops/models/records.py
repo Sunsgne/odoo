@@ -41,7 +41,7 @@ class ZenlenetAddress(models.Model):
     address = fields.Char(string='地址', required=True, index=True)
     block = fields.Char(string='IP段', index=True)
     pop = fields.Char(string='机房', index=True)
-    supplier = fields.Char(string='供应商')
+    supplier = fields.Char(string='供应商（旧）')
     partner_id = fields.Many2one('res.partner', string='客户', index=True)
     role = fields.Char(string='资源属性')
     net_attr = fields.Selection(NET_ATTRS, string='网络属性', default='公网', index=True)

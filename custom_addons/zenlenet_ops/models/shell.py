@@ -27,7 +27,9 @@ class ZenlenetShell(models.AbstractModel):
         brand = self.env['ir.config_parameter'].sudo().get_param('zenlenet.brand')
         if brand and root and root.name != brand:
             root.name = brand
-        self.env['zenlenet.contract'].sudo().search([])._compute_amounts()
+        contracts = self.env['zenlenet.contract'].sudo().search([])
+        contracts._compute_currency()
+        contracts._compute_amounts()
         self.env['res.partner']._zenlenet_refresh_status()
         action = self.env.ref('zenlenet_ops.action_home_page', raise_if_not_found=False)
         users = self.env['res.users'].sudo().search([('share', '=', False)])
