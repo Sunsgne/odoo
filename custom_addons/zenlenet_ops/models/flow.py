@@ -46,7 +46,7 @@ SERVICE_TYPES = [
 class ZenlenetFlow(models.Model):
     _name = 'zenlenet.flow'
     _description = '业务流转'
-    _inherit = ['mail.thread', 'mail.activity.mixin']
+    _inherit = ['mail.thread', 'mail.activity.mixin', 'zenlenet.deletable']
     _order = 'id desc'
 
     name = fields.Char(string='编号', required=True, copy=False, default='/', tracking=True)
@@ -99,6 +99,9 @@ class ZenlenetFlow(models.Model):
     line_ids = fields.Many2many('zenlenet.line', string='线路')
     resource_note = fields.Text(string='资源说明')
     note = fields.Text(string='备注')
+
+    def _delete_snapshot(self):
+        return {'state': self.state, 'allocated': bool(self.resource_ids.filtered('resource_ref'))}
 
     @api.model
     def default_get(self, fields_list):
@@ -434,7 +437,7 @@ class ZenlenetFlowTask(models.Model):
     _name = 'zenlenet.flow.task'
     _description = '交付任务'
     _order = 'flow_id, sequence, id'
-    _inherit = ['mail.thread']
+    _inherit = ['mail.thread', 'zenlenet.deletable']
 
     flow_id = fields.Many2one('zenlenet.flow', string='交付工单', required=True, ondelete='cascade', index=True)
     partner_id = fields.Many2one(related='flow_id.partner_id', string='客户', store=True)
@@ -456,6 +459,9 @@ class ZenlenetFlowTask(models.Model):
     done = fields.Boolean(string='完成', compute='_compute_done', inverse='_inverse_done', store=True)
     overdue = fields.Boolean(string='逾期', compute='_compute_overdue', search='_search_overdue')
     color = fields.Integer(compute='_compute_color')
+
+    def _delete_snapshot(self):
+        return {'state': self.state, 'flow_state': self.flow_id.state}
 
     @api.model
     def _group_expand_states(self, states, domain):
@@ -535,6 +541,7 @@ class ZenlenetFlowResource(models.Model):
     _name = 'zenlenet.flow.resource'
     _description = '流转资源'
     _order = 'id'
+    _inherit = ['zenlenet.deletable']
 
     flow_id = fields.Many2one('zenlenet.flow', required=True, ondelete='cascade')
     service_type = fields.Selection(SERVICE_TYPES, string='业务类型', required=True)
@@ -553,6 +560,9 @@ class ZenlenetFlowResource(models.Model):
     address_id = fields.Many2one('zenlenet.address', string='单个 IP', compute='_compute_targets', store=True, readonly=False)
     line_id = fields.Many2one('zenlenet.line', string='线路', compute='_compute_targets', store=True, readonly=False)
     spec = fields.Char(string='规格 / 说明')
+
+    def _delete_snapshot(self):
+        return {'assigned': bool(self.resource_ref), 'flow_state': self.flow_id.state}
 
     @api.depends('service_type')
     def _compute_needs_resource(self):

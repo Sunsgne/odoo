@@ -145,8 +145,8 @@
                         </setting>
                     </block>
 
-                    <block title="账号与权限" name="zenlenet_users" help="谁能登录、属于哪个分组、谁能删除。">
-                        <setting id="zenlenet_users_setting" string="账号" help="账号分成 销售 / 交付 / 售后。业务流转按分组指派负责人。">
+                    <block title="账号与权限" name="zenlenet_users" help="谁能登录、属于哪个岗位、谁能删除。">
+                        <setting id="zenlenet_users_setting" string="账号" help="账号按岗位分组：销售 / 交付 / 资源分配 / 项目经理 / 售后 / 财务 / 采购 / 运营主管。业务流转按岗位指派负责人。">
                             <span class="fa fa-lg fa-users me-2"/>
                             <field name="zenlenet_user_count" class="w-auto fw-bold"/>
                             <span class="o_form_label">个内部账号</span>
@@ -154,10 +154,22 @@
                                 <button name="action_open_users" type="object" string="管理账号" icon="oi-arrow-right" class="btn-link"/>
                             </div>
                         </setting>
-                        <setting id="zenlenet_manager_setting" string="岗位与权限" help="岗位：销售、交付、售后、财务、采购、管理员。每个岗位只能改自己那部分数据，其余只读；财务、采购与资产、设置菜单只对相应岗位显示。">
+                        <setting id="zenlenet_manager_setting" string="岗位与权限" help="每个岗位只能新建 / 修改自己那部分数据，其余只读；财务、采购与资产、设置菜单只对相应岗位显示。">
                             <div class="mt8">
-                                <button name="action_open_groups" type="object" string="查看管理员" icon="oi-arrow-right" class="btn-link"/>
+                                <button name="action_open_groups" type="object" string="查看运营主管" icon="oi-arrow-right" class="btn-link"/>
                             </div>
+                        </setting>
+                        <setting id="zenlenet_delete_setting" string="删除权限" help="删除会抹掉历史，所以只有「运营主管」能删除业务记录，其他岗位用取消 / 终止 / 释放代替。即使是主管，也只能删除还没产生下游数据的记录：">
+                            <ul class="mb-0 mt8 small text-muted ps-3">
+                                <li>合同：草稿且未出账；已生效的只能「终止」</li>
+                                <li>交付工单：录入阶段或已取消，且未挂资源；服务工单：新建或已取消</li>
+                                <li>网段：无子网段、无已分配地址、未分配客户；地址：未分配；线路：已终止</li>
+                                <li>数据中心：下面没有网段 / 地址 / 线路 / 设备</li>
+                                <li>采购：待采购且未生成供应商账单；设备：闲置或报废</li>
+                                <li>故障减免：待审批或已驳回；维护通告：草稿或已取消</li>
+                                <li>合同费用项、交付任务、工单资源行：所属岗位可删，但合同生效 / 任务完成 / 资源已交付后不可删</li>
+                                <li>已同步 NetBox 的网段和地址，删除时会同步从 NetBox 移除；NetBox 拒绝则删除撤销</li>
+                            </ul>
                         </setting>
                     </block>
 

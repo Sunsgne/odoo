@@ -429,6 +429,21 @@ class ZenlenetNetbox(models.AbstractModel):
             prefix.with_context(netbox_skip_push=True).write({'netbox_synced': fields.Datetime.now()})
 
     @api.model
+    def delete_remote(self, path, netbox_ids):
+        """Remove mirrored objects from NetBox so the hourly sync does not resurrect them.
+
+        Runs inside the caller's transaction: a failure raises and rolls the console delete back.
+        """
+        cfg = self._params()
+        if not netbox_ids or self.env.context.get('netbox_skip_push') or not cfg['enabled'] or not self.is_configured():
+            return
+        session, base = self._session()
+        for netbox_id in netbox_ids:
+            response = session.delete(f'{base}/api{path}{netbox_id}/', timeout=60)
+            if response.status_code >= 300 and response.status_code != 404:
+                raise UserError(f'NetBox 删除失败 {response.status_code}：{response.text[:300]}。控制台的删除已撤销。')
+
+    @api.model
     def push_site(self, datacenter):
         cfg = self._params()
         if not cfg['enabled'] or not self.is_configured():

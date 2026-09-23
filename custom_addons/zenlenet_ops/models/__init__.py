@@ -1,4 +1,5 @@
 from . import settings
+from . import deletion
 from . import maintenance
 from . import partner
 from . import supplier

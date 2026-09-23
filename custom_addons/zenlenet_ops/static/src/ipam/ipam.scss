@@ -274,3 +274,41 @@ $zl-primary: #714b67;
         li { padding: 5px 8px; cursor: pointer; &:hover { background: #f1f2f5; } }
     }
 }
+
+// Phones: stack tree / grid / facts vertically instead of three columns.
+@media (max-width: 767.98px) {
+    .zl-ipam {
+        flex-direction: column !important;
+        overflow: auto;
+        height: auto;
+        min-height: 100%;
+        .zl-ipam-tree {
+            width: auto;
+            flex: 0 0 auto;
+            max-height: 36vh;
+            border-right: 0;
+            border-bottom: 1px solid #e3e6ea;
+        }
+        .zl-ipam-main { flex: 1 0 auto; overflow: visible; }
+        .zl-ipam-head { padding: 10px 12px; }
+        .zl-ipam-title { font-size: 16px; }
+        .zl-ipam-body { flex-direction: column; overflow: visible; }
+        .zl-ipam-grid-wrap { padding: 10px 12px; }
+        .zl-grid { grid-template-columns: repeat(auto-fill, minmax(30px, 1fr)); }
+        .zl-ipam-facts {
+            width: auto;
+            flex: 0 0 auto;
+            border-left: 0;
+            border-top: 1px solid #e3e6ea;
+        }
+        .zl-assign-pop { right: auto; left: 0; width: min(280px, 90vw); }
+        .zl-cell-pop {
+            position: fixed;
+            right: 12px;
+            left: 12px;
+            top: auto;
+            bottom: 12px;
+            width: auto;
+        }
+    }
+}

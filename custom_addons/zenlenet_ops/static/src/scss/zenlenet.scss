@@ -216,6 +216,13 @@
     .o_form_label {
         display: none;
     }
+    // The dashboard is a single read-only record: no actions cog, no 1/1 pager, no status bar.
+    .o_cp_action_menus,
+    .o_pager,
+    .o_form_status_indicator,
+    .o_control_panel_breadcrumbs_actions {
+        display: none !important;
+    }
 }
 
 // Only one application exists, so the app switcher grid is noise.
@@ -224,6 +231,60 @@
 }
 .o_main_navbar .o_menu_brand {
     margin-left: 12px;
+}
+// Mobile side menu: drop the "All Apps" button, keep the menu tree of the console.
+.o_app_menu_sidebar .o_sidebar_topbar > small {
+    display: none !important;
+}
+.o_app_menu_sidebar .o_sidebar_topbar {
+    justify-content: flex-end !important;
+}
+
+// Phones
+@media (max-width: 767.98px) {
+    .o_zl_home {
+        .o_form_sheet_bg > .o_form_sheet {
+            padding: 0 6px 24px;
+        }
+        .o_zl_section_title {
+            margin: 18px 0 8px 2px;
+        }
+        .o_zl_kpis {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+        .o_zl_kpi {
+            padding: 12px;
+            min-height: 96px;
+            .o_zl_kpi_value { font-size: 1.5rem; }
+            .o_zl_kpi_sub { font-size: 0.72rem; }
+        }
+        .o_zl_stats {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+        .o_zl_stat {
+            padding: 10px 12px;
+            .o_zl_stat_value { font-size: 1.25rem; }
+        }
+        .o_zl_grid {
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-top: 18px;
+        }
+        .o_zl_tile {
+            padding: 8px 10px;
+            small { white-space: normal; }
+        }
+    }
+    // Long Chinese list headers should wrap instead of forcing horizontal scroll in forms.
+    .o_form_view .o_form_sheet_bg > .o_form_sheet {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+    .o-form-buttonbox {
+        flex-wrap: wrap;
+    }
 }
 
 // Odoo's chat bubble is not part of this console.

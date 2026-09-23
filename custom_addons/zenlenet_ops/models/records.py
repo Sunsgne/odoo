@@ -33,6 +33,7 @@ STATUSES = [
 class ZenlenetAddress(models.Model):
     _name = 'zenlenet.address'
     _description = 'IP资源'
+    _inherit = ['zenlenet.deletable']
     _order = 'pop, address'
     _rec_name = 'address'
     _rec_names_search = ['address', 'block', 'pop']
@@ -113,6 +114,7 @@ class ZenlenetAddress(models.Model):
 class ZenlenetLine(models.Model):
     _name = 'zenlenet.line'
     _description = '线路'
+    _inherit = ['zenlenet.deletable']
     _order = 'kind, name'
 
     snapshot_key = fields.Char(index=True, copy=False)
@@ -256,6 +258,7 @@ class ZenlenetPrefixAdd(models.TransientModel):
 class ZenlenetPurchase(models.Model):
     _name = 'zenlenet.purchase'
     _description = '采购'
+    _inherit = ['zenlenet.deletable']
     _order = 'id desc'
     _rec_name = 'name'
 
@@ -296,6 +299,9 @@ class ZenlenetPurchase(models.Model):
         ('returned', '已退回'),
     ], string='状态', default='draft', required=True, index=True)
     note = fields.Text(string='备注')
+
+    def _delete_snapshot(self):
+        return {'state': self.state, 'bill_count': 1 if self.bill_id else 0}
 
     @api.depends('quantity', 'unit_cost')
     def _compute_cost(self):
@@ -361,6 +367,7 @@ class ZenlenetPurchase(models.Model):
 class ZenlenetAsset(models.Model):
     _name = 'zenlenet.asset'
     _description = '固定资产'
+    _inherit = ['zenlenet.deletable']
     _order = 'id desc'
 
     snapshot_key = fields.Char(index=True, copy=False)

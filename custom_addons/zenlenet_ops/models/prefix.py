@@ -18,6 +18,7 @@ class ZenlenetPrefix(models.Model):
 
     _name = 'zenlenet.prefix'
     _description = '地址段'
+    _inherit = ['zenlenet.deletable']
     _order = 'prefix'
     _rec_name = 'prefix'
     _rec_names_search = ['prefix', 'description', 'role']
@@ -54,6 +55,21 @@ class ZenlenetPrefix(models.Model):
     utilization = fields.Float(string='使用率', compute='_compute_usage')
 
     _prefix_unique = models.Constraint('unique(prefix)', '这个地址段已经存在。')
+
+    def _delete_snapshot(self):
+        used = self.env['zenlenet.address'].search_count([('prefix_id', '=', self.id), ('status', '!=', 'free')])
+        return {
+            'status': self.status,
+            'child_count': len(self.child_ids),
+            'used_addresses': used,
+            'partner': bool(self.partner_id),
+        }
+
+    def unlink(self):
+        remote = self.filtered('netbox_id').mapped('netbox_id')
+        result = super().unlink()
+        self.env['zenlenet.netbox'].delete_remote('/ipam/prefixes/', remote)
+        return result
 
     @api.depends('prefix', 'is_pool')
     def _compute_size(self):

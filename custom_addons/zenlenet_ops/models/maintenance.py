@@ -27,7 +27,7 @@ KINDS = [
 class ZenlenetMaintenance(models.Model):
     _name = 'zenlenet.maintenance'
     _description = '割接与维护'
-    _inherit = ['mail.thread', 'mail.activity.mixin']
+    _inherit = ['mail.thread', 'mail.activity.mixin', 'zenlenet.deletable']
     _order = 'id desc'
 
     name = fields.Char(required=True, copy=False, default='/', tracking=True)

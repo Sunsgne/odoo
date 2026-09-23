@@ -11,7 +11,7 @@ from .settings import param_int
 class ZenlenetCredit(models.Model):
     _name = 'zenlenet.credit'
     _description = '故障减免'
-    _inherit = ['mail.thread', 'mail.activity.mixin']
+    _inherit = ['mail.thread', 'mail.activity.mixin', 'zenlenet.deletable']
     _order = 'id desc'
 
     name = fields.Char(string='编号', default='/', copy=False, readonly=True)

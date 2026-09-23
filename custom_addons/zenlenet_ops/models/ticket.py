@@ -21,7 +21,7 @@ SLA_PARAMS = {'3': 'zenlenet.sla_urgent', '2': 'zenlenet.sla_high', '1': 'zenlen
 class ZenlenetTicket(models.Model):
     _name = 'zenlenet.ticket'
     _description = '工单'
-    _inherit = ['mail.thread', 'mail.activity.mixin']
+    _inherit = ['mail.thread', 'mail.activity.mixin', 'zenlenet.deletable']
     _order = 'priority desc, id desc'
 
     name = fields.Char(string='工单号', required=True, copy=False, default='/', tracking=True)

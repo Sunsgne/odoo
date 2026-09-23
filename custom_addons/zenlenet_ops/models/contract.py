@@ -37,7 +37,7 @@ STATES = [
 class ZenlenetContract(models.Model):
     _name = 'zenlenet.contract'
     _description = '合同'
-    _inherit = ['mail.thread', 'mail.activity.mixin']
+    _inherit = ['mail.thread', 'mail.activity.mixin', 'zenlenet.deletable']
     _order = 'id desc'
 
     name = fields.Char(string='合同编号', required=True, copy=False, default='/', tracking=True)
@@ -77,6 +77,9 @@ class ZenlenetContract(models.Model):
     invoice_ids = fields.One2many('account.move', 'zenlenet_contract_id', string='账单')
     invoice_count = fields.Integer(compute='_compute_invoice_count')
     days_left = fields.Integer(string='剩余天数', compute='_compute_days_left')
+
+    def _delete_snapshot(self):
+        return {'state': self.state, 'invoice_count': len(self.invoice_ids)}
 
     @api.depends('partner_id', 'company_id')
     def _compute_currency(self):
@@ -357,6 +360,7 @@ class ZenlenetContractItem(models.Model):
 
     _name = 'zenlenet.contract.item'
     _description = '合同费用条款'
+    _inherit = ['zenlenet.deletable']
     _order = 'contract_id, kind desc, sequence, id'
 
     contract_id = fields.Many2one('zenlenet.contract', required=True, ondelete='cascade')
@@ -375,6 +379,9 @@ class ZenlenetContractItem(models.Model):
     end_date = fields.Date(string='停止计费')
     billed = fields.Boolean(string='已出账', help='一次性费用出过账后打勾，不再重复。')
     invoice_id = fields.Many2one('account.move', string='所在账单', readonly=True)
+
+    def _delete_snapshot(self):
+        return {'contract_state': self.contract_id.state}
 
     @api.depends('quantity', 'price_unit')
     def _compute_amount(self):

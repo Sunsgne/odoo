@@ -19,6 +19,7 @@ LINE_STATUSES = [
 class ZenlenetDatacenter(models.Model):
     _name = 'zenlenet.datacenter'
     _description = '数据中心'
+    _inherit = ['zenlenet.deletable']
     _order = 'sequence, name'
 
     name = fields.Char(string='名称', required=True, index=True)
@@ -56,6 +57,13 @@ class ZenlenetDatacenter(models.Model):
     usage_percent = fields.Float(string='使用率', compute='_compute_counts')
 
     _name_unique = models.Constraint('unique(name)', '这个数据中心已经存在。')
+
+    def _delete_snapshot(self):
+        counts = {}
+        for key, model in (('prefix_count', 'zenlenet.prefix'), ('address_count', 'zenlenet.address'),
+                           ('line_count', 'zenlenet.line'), ('asset_count', 'zenlenet.asset')):
+            counts[key] = self.env[model].search_count([('datacenter_id', '=', self.id)])
+        return counts
 
     def _grouped(self, model, domain):
         return {
@@ -224,6 +232,12 @@ class ZenlenetAddress(models.Model):
             vals_list = [dict(vals, netbox_pending=True) for vals in vals_list]
         return super().create(vals_list)
 
+    def unlink(self):
+        remote = self.filtered('netbox_id').mapped('netbox_id')
+        result = super().unlink()
+        self.env['zenlenet.netbox'].delete_remote('/ipam/ip-addresses/', remote)
+        return result
+
     def action_open_netbox(self):
         self.ensure_one()
         link = self.env['zenlenet.netbox'].public_link(f'/ipam/ip-addresses/{self.netbox_id}/')
@@ -255,6 +269,9 @@ class ZenlenetLine(models.Model):
     currency_id = fields.Many2one('res.currency', default=lambda self: self.env.company.currency_id)
     start_date = fields.Date(string='开通日期')
     end_date = fields.Date(string='到期日期')
+
+    def _delete_snapshot(self):
+        return {'status': self.status, 'partner': bool(self.partner_id)}
 
     @api.onchange('partner_id')
     def _onchange_partner(self):
