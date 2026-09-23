@@ -171,37 +171,8 @@ class ZenlenetDatacenter(models.Model):
                 'prefixlen': row['prefixlen'] or 0,
                 'sellable': sellable,
             })
-        kind_label = dict(self.env['zenlenet.line']._fields['kind'].selection)
-        status_label = dict(LINE_STATUSES)
         domain = site_line_domain(self.id, self.region)
-        lines = []
-        for line in self.env['zenlenet.line'].search(domain, order='kind, name'):
-            partner = line.partner_id.name or ''
-            rate = mbps_of(line.bandwidth, line.commit_rate)
-            lines.append({
-                'id': line.id,
-                'name': line.name,
-                'kind': line.kind,
-                'kind_label': kind_label.get(line.kind, line.kind or ''),
-                'status': line.status,
-                'status_label': status_label.get(line.status, ''),
-                'partner': partner,
-                'bandwidth': f'{rate}M' if rate else (line.bandwidth or ''),
-                'region': line.region or '',
-                'a_end': binding_text(line.a_site_id.name, line.a_device_id.name, line.a_port, line.a_vlan) or line.a_end or '',
-                'z_end': binding_text(line.z_site_id.name, line.z_device_id.name, line.z_port, line.z_vlan) or line.z_end or '',
-                'a_site': line.a_site_id.name or '',
-                'z_site': line.z_site_id.name or '',
-                'a_device': line.a_device_id.name or '',
-                'z_device': line.z_device_id.name or '',
-                'a_port': line.a_port or '',
-                'z_port': line.z_port or '',
-                'a_vlan': line.a_vlan or '',
-                'z_vlan': line.z_vlan or '',
-                'supplier': line.supplier_id.name or '',
-                'purpose': line.purpose or '',
-                'sellable': not partner and line.status in ('planned', 'provisioning', 'active'),
-            })
+        lines = self._line_rows(self.env['zenlenet.line'].search(domain, order='kind, name'))
         device_status = dict(self.env['zenlenet.device']._fields['status'].selection)
         devices = [{
             'id': device.id,
@@ -253,6 +224,83 @@ class ZenlenetDatacenter(models.Model):
             'sellable_prefixes': sum(1 for row in prefixes if row['sellable']),
             'sellable_lines': sum(1 for row in lines if row['sellable']),
             'sellable_vms': sum(1 for row in vms if row['sellable']),
+            'loose': False,
+        }
+
+    def _line_rows(self, lines):
+        kind_label = dict(self.env['zenlenet.line']._fields['kind'].selection)
+        status_label = dict(LINE_STATUSES)
+        rows = []
+        for line in lines:
+            partner = line.partner_id.name or ''
+            rate = mbps_of(line.bandwidth, line.commit_rate)
+            rows.append({
+                'id': line.id,
+                'name': line.name,
+                'kind': line.kind,
+                'kind_label': kind_label.get(line.kind, line.kind or ''),
+                'status': line.status,
+                'status_label': status_label.get(line.status, ''),
+                'partner': partner,
+                'bandwidth': f'{rate}M' if rate else (line.bandwidth or ''),
+                'region': line.region or '',
+                'a_end': binding_text(line.a_site_id.name, line.a_device_id.name, line.a_port, line.a_vlan) or line.a_end or '',
+                'z_end': binding_text(line.z_site_id.name, line.z_device_id.name, line.z_port, line.z_vlan) or line.z_end or '',
+                'a_site': line.a_site_id.name or '',
+                'z_site': line.z_site_id.name or '',
+                'a_device': line.a_device_id.name or '',
+                'z_device': line.z_device_id.name or '',
+                'a_port': line.a_port or '',
+                'z_port': line.z_port or '',
+                'a_vlan': line.a_vlan or '',
+                'z_vlan': line.z_vlan or '',
+                'supplier': line.supplier_id.name or '',
+                'purpose': line.purpose or '',
+                'sellable': not partner and line.status in ('planned', 'provisioning', 'active'),
+            })
+        return rows
+
+    @api.model
+    def _loose_domain(self):
+        return [
+            ('datacenter_id', '=', False),
+            ('a_site_id', '=', False),
+            ('z_site_id', '=', False),
+        ]
+
+    @api.model
+    def dc_loose_count(self):
+        return self.env['zenlenet.line'].search_count(self._loose_domain())
+
+    @api.model
+    def dc_loose(self):
+        """Lines whose imported place name did not match a site. Still editable here."""
+        lines = self._line_rows(self.env['zenlenet.line'].search(self._loose_domain(), order='kind, name'))
+        return {
+            'id': 0,
+            'name': '未挂机房',
+            'state': 'planning',
+            'state_label': '待归位',
+            'region': '',
+            'region_name': '',
+            'facility': '',
+            'asn': 0,
+            'city': '',
+            'address': '',
+            'supplier': '',
+            'contact': '',
+            'phone': '',
+            'note': '这些线路的机房名对不上现有机房。点开后补上 A/Z 端机房，设备和端口可以后补。',
+            'netbox_url': '',
+            'can_write': self.env['zenlenet.line'].has_access('write'),
+            'prefixes': [],
+            'lines': lines,
+            'devices': [],
+            'vms': [],
+            'sellable_prefixes': 0,
+            'sellable_lines': sum(1 for row in lines if row['sellable']),
+            'sellable_vms': 0,
+            'loose': True,
         }
 
     def dc_open_ticket(self, move='in'):

@@ -28,6 +28,16 @@ $zl-primary: #714b67;
         input { flex: 1; }
     }
     .zl-dc-hint { padding: 8px 12px 0; color: #667085; font-size: 12px; }
+    .zl-dc-loose {
+        margin: 8px 12px;
+        text-align: left;
+        background: #fff;
+        border: 1px dashed #d0d5dd;
+        border-radius: 6px;
+        padding: 6px 8px;
+        color: #344054;
+        &.active { border-color: $zl-primary; color: $zl-primary; font-weight: 600; }
+    }
     .zl-dc-regions {
         list-style: none;
         margin: 0;

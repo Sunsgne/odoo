@@ -13,7 +13,7 @@
                     <li t-foreach="regions" t-as="region" t-key="region.name">
                         <div class="zl-dc-region"><i class="fa fa-globe"/> <t t-out="region.name"/> <span t-out="region.sites.length"/></div>
                         <ul>
-                            <li t-foreach="region.sites" t-as="site" t-key="site.id" t-att-class="state.selectedId === site.id ? 'active' : ''" t-on-click="() => this.select(site.id)">
+                            <li t-foreach="region.sites" t-as="site" t-key="site.id" t-att-data-site-id="site.id" t-att-class="state.selectedId === site.id ? 'active' : ''" t-on-click="() => this.select(site.id)">
                                 <span t-attf-class="zl-dc-dot zl-dc-dot-#{site.state}"/>
                                 <span class="zl-dc-name" t-out="site.name"/>
                                 <span class="zl-dc-free" t-if="site.sellable_prefixes or site.sellable_lines or site.sellable_vms">可售 <t t-out="site.sellable_prefixes"/> 段 · <t t-out="site.sellable_lines"/> 线 · <t t-out="site.sellable_vms"/> 机</span>
@@ -21,6 +21,7 @@
                         </ul>
                     </li>
                 </ul>
+                <button t-if="state.loose" type="button" t-attf-class="zl-dc-loose {{ state.selectedId === 0 ? 'active' : '' }}" t-on-click="() => this.select(0)">未挂机房 <t t-out="state.loose"/></button>
                 <div t-if="!state.sites.length" class="text-muted small p-3">没有机房。点 + 加一个。</div>
             </aside>
 
@@ -38,7 +39,7 @@
                         </div>
                         <div class="zl-dc-summary">可售地址段 <b t-out="state.detail.sellable_prefixes"/> · 可售线路 <b t-out="state.detail.sellable_lines"/> · 可售云主机 <b t-out="state.detail.sellable_vms"/></div>
                     </div>
-                    <div class="zl-dc-actions" t-if="state.detail.can_write">
+                    <div class="zl-dc-actions" t-if="state.detail.can_write &amp;&amp; !state.detail.loose">
                         <button class="btn btn-primary btn-sm" t-on-click="() => this.openTicket('in')">资源进库</button>
                         <button class="btn btn-secondary btn-sm" t-on-click="() => this.openTicket('back')">退回</button>
                         <button class="btn btn-secondary btn-sm" t-on-click="() => this.openTicket('cutover')">割接</button>
@@ -137,7 +138,7 @@
 
                         <div class="zl-dc-section-row">
                             <div class="zl-dc-section">物理机</div>
-                            <button t-if="state.detail.can_write" class="btn btn-link btn-sm" t-on-click="() => this.openRecord('zenlenet.device', false, '物理机', {default_datacenter_id: this.state.selectedId})">加一台物理机</button>
+                            <button t-if="state.detail.can_write &amp;&amp; state.detail.id" class="btn btn-link btn-sm" t-on-click="() => this.openRecord('zenlenet.device', false, '物理机', {default_datacenter_id: this.state.selectedId})">加一台物理机</button>
                         </div>
                         <div class="zl-dc-note">物理机属于这个机房。云主机要选其中一台来跑。</div>
                         <table class="table table-sm zl-dc-table" t-if="devices.length">
@@ -155,7 +156,7 @@
 
                         <div class="zl-dc-section-row">
                             <div class="zl-dc-section">云主机</div>
-                            <button t-if="state.detail.can_write" class="btn btn-link btn-sm" t-on-click="() => this.openRecord('zenlenet.vm', false, '云主机', {default_datacenter_id: this.state.selectedId})">加一台云主机</button>
+                            <button t-if="state.detail.can_write &amp;&amp; state.detail.id" class="btn btn-link btn-sm" t-on-click="() => this.openRecord('zenlenet.vm', false, '云主机', {default_datacenter_id: this.state.selectedId})">加一台云主机</button>
                         </div>
                         <div class="zl-dc-note">云主机绑这个机房、一台物理机、一个 IP 和带宽。</div>
                         <table class="table table-sm zl-dc-table" t-if="vms.length">

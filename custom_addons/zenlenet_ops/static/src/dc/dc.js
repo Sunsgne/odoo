@@ -14,6 +14,7 @@ export class ZenlenetDatacenter extends Component {
         this.action = useService("action");
         this.state = useState({
             sites: [],
+            loose: 0,
             search: "",
             selectedId: null,
             detail: null,
@@ -27,9 +28,10 @@ export class ZenlenetDatacenter extends Component {
     async refresh() {
         const sites = await this.orm.call("zenlenet.datacenter", "dc_tree", [this.state.search]);
         this.state.sites = sites;
-        const still = sites.some((site) => site.id === this.state.selectedId);
+        this.state.loose = await this.orm.call("zenlenet.datacenter", "dc_loose_count", []);
+        const still = this.state.selectedId === 0 || sites.some((site) => site.id === this.state.selectedId);
         const next = still ? this.state.selectedId : sites[0]?.id;
-        if (next) {
+        if (next || next === 0) {
             await this.select(next);
         } else {
             this.state.selectedId = null;
@@ -58,7 +60,9 @@ export class ZenlenetDatacenter extends Component {
         this.state.selectedId = id;
         this.state.pick = null;
         try {
-            this.state.detail = await this.orm.call("zenlenet.datacenter", "dc_site", [[id]]);
+            const method = id ? "dc_site" : "dc_loose";
+            const args = id ? [[id]] : [];
+            this.state.detail = await this.orm.call("zenlenet.datacenter", method, args);
         } finally {
             this.state.loading = false;
         }
@@ -171,13 +175,15 @@ export class ZenlenetDatacenter extends Component {
     async addLine(kind) {
         const context = {
             default_kind: kind,
-            default_datacenter_id: this.state.selectedId,
             default_status: "planned",
         };
-        if (kind === "sdwan") {
-            context.default_region = this.state.detail?.region_name || false;
-        } else {
-            context.default_a_site_id = this.state.selectedId;
+        if (this.state.selectedId) {
+            context.default_datacenter_id = this.state.selectedId;
+            if (kind === "sdwan") {
+                context.default_region = this.state.detail?.region_name || false;
+            } else {
+                context.default_a_site_id = this.state.selectedId;
+            }
         }
         await this.action.doAction(
             {
