@@ -1,3 +1,5 @@
+import re
+
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
@@ -73,6 +75,8 @@ class ZenlenetFlow(models.Model):
     )
     team = fields.Selection(TEAMS, string='分组', compute='_compute_team', store=True, group_expand='_group_expand_teams')
     partner_id = fields.Many2one('res.partner', string='公司', tracking=True, domain=[('is_company', '=', True)])
+    datacenter_id = fields.Many2one('zenlenet.datacenter', string='期望数据中心', tracking=True, help='销售录入时填，分资源的人按这个找网段和线路。')
+    pending_count = fields.Integer(string='待分配', compute='_compute_pending')
     order_id = fields.Many2one(
         'sale.order', string='服务订单', tracking=True, domain="[('partner_id', '=', partner_id)]",
         help='从哪张订单来的交付。选好后点「从订单带入」生成业务行。',
@@ -98,6 +102,11 @@ class ZenlenetFlow(models.Model):
     def _compute_team(self):
         for record in self:
             record.team = team_for(record.state) or False
+
+    @api.depends('resource_ids.resource_ref', 'resource_ids.spec', 'resource_ids.service_type')
+    def _compute_pending(self):
+        for record in self:
+            record.pending_count = len(record.resource_ids.filtered(lambda item: item.needs_resource and not item.resource_ref))
 
     @api.depends('task_ids.done')
     def _compute_task_progress(self):
@@ -260,6 +269,8 @@ class ZenlenetFlow(models.Model):
         user = self.env.user
         if user.has_group('zenlenet_ops.group_manager') or user.has_group(role[0]):
             return
+        if state == 'allocate' and user.has_group('zenlenet_ops.group_allocator'):
+            return
         raise UserError(f'这一步（{state_label(state)}）由{role[1]}岗位操作，你的岗位没有权限。')
 
     def _check_exit(self):
@@ -391,10 +402,73 @@ class ZenlenetFlowResource(models.Model):
         selection=[('zenlenet.prefix', 'IP 地址段'), ('zenlenet.address', '单个 IP'), ('zenlenet.line', '线路')],
         string='交付资源', help='这项业务实际交付的资源：IP 地址段、单个 IP 或线路。',
     )
+    partner_id = fields.Many2one(related='flow_id.partner_id', string='客户', store=True)
+    flow_state = fields.Selection(related='flow_id.state', string='工单阶段', store=True)
+    datacenter_id = fields.Many2one(related='flow_id.datacenter_id', string='期望数据中心', store=True)
+    flow_user_id = fields.Many2one(related='flow_id.delivery_user_id', string='交付负责人')
+    needs_resource = fields.Boolean(string='需要资源', compute='_compute_needs_resource', store=True)
     prefix_id = fields.Many2one('zenlenet.prefix', string='IP 地址段', compute='_compute_targets', store=True, readonly=False)
     address_id = fields.Many2one('zenlenet.address', string='单个 IP', compute='_compute_targets', store=True, readonly=False)
     line_id = fields.Many2one('zenlenet.line', string='线路', compute='_compute_targets', store=True, readonly=False)
     spec = fields.Char(string='规格 / 说明')
+
+    @api.depends('service_type')
+    def _compute_needs_resource(self):
+        for record in self:
+            record.needs_resource = record.service_type in ('ipt', 'pl', 'ip', 'ip_single', 'line')
+
+    def _wanted_prefixlen(self):
+        self.ensure_one()
+        found = re.search(r'/(\d{1,3})', self.spec or '')
+        if found:
+            return int(found.group(1))
+        return 24 if self.service_type in ('ipt', 'ip') else 0
+
+    def action_suggest(self):
+        """Pick the first free block (or circuit) that fits the request, preferring the wanted data center."""
+        Prefix = self.env['zenlenet.prefix']
+        Line = self.env['zenlenet.line']
+        for record in self:
+            if record.resource_ref:
+                continue
+            if record.service_type in ('pl', 'line'):
+                domain = [('status', 'in', ('planned', 'provisioning', 'active')), ('partner_id', '=', False)]
+                if record.datacenter_id:
+                    domain.append(('datacenter_id', '=', record.datacenter_id.id))
+                line = Line.search(domain, limit=1, order='datacenter_id, name')
+                if not line:
+                    raise UserError(f'{record.datacenter_id.name or "库里"}没有空闲线路，请先采购或录入。')
+                record.resource_ref = line
+                continue
+            wanted = record._wanted_prefixlen()
+            base = [('status', 'in', ('active', 'reserved')), ('partner_id', '=', False), ('child_ids', '=', False)]
+            if wanted:
+                base.append(('prefixlen', '=', wanted))
+            candidates = Prefix.search(base + ([('datacenter_id', '=', record.datacenter_id.id)] if record.datacenter_id else []), limit=1, order='prefix')
+            if not candidates:
+                candidates = Prefix.search(base, limit=1, order='prefix')
+            if not candidates:
+                raise UserError(f'没有空闲的 /{wanted or "任意"} 网段，请先切割或录入。')
+            record.resource_ref = candidates
+        return True
+
+    def action_open_flow(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'zenlenet.flow',
+            'res_id': self.flow_id.id,
+            'view_mode': 'form',
+            'target': 'current',
+        }
+
+    def action_finish_allocation(self):
+        """Header button on the queue: advance every fully allocated ticket from 分配资源 to 交付."""
+        flows = self.mapped('flow_id').filtered(lambda flow: flow.state == 'allocate' and not flow.pending_count)
+        if not flows:
+            raise UserError('勾选的工单还有没挂资源的行，或者不在「分配资源」阶段。')
+        flows.action_next()
+        return True
 
     @api.depends('resource_ref')
     def _compute_targets(self):

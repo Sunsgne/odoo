@@ -20,6 +20,7 @@ class ZenlenetHome(models.Model):
     unpaid_amount = fields.Monetary(compute='_compute_kpis', currency_field='currency_id')
     flows_open = fields.Integer(compute='_compute_kpis')
     flows_mine = fields.Integer(compute='_compute_kpis')
+    allocations_pending = fields.Integer(compute='_compute_kpis')
     tickets_open = fields.Integer(compute='_compute_kpis')
     tickets_overdue = fields.Integer(compute='_compute_kpis')
     tickets_new = fields.Integer(compute='_compute_kpis')
@@ -68,6 +69,9 @@ class ZenlenetHome(models.Model):
             record.flows_mine = env['zenlenet.flow'].sudo().search_count([
                 ('state', 'not in', ('done', 'cancel')), ('user_id', '=', env.user.id),
             ])
+            record.allocations_pending = env['zenlenet.flow.resource'].sudo().search_count([
+                ('flow_state', '=', 'allocate'), ('needs_resource', '=', True), ('resource_ref', '=', False),
+            ])
             record.tickets_open = env['zenlenet.ticket'].sudo().search_count([
                 ('state', 'not in', ('closed', 'cancel')),
             ])
@@ -97,6 +101,9 @@ class ZenlenetHome(models.Model):
             'view_id': self.env.ref('zenlenet_ops.view_home_form').id,
             'target': 'current',
         }
+
+    def action_open_allocation(self):
+        return self.env.ref('zenlenet_ops.action_allocation_queue').read()[0]
 
     def action_open_unpaid(self):
         action = self.env.ref('zenlenet_ops.action_invoices').read()[0]

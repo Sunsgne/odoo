@@ -63,3 +63,14 @@ access_zenlenet_asset_procurement,zenlenet.asset.procurement,model_zenlenet_asse
 access_zenlenet_asset_delivery,zenlenet.asset.delivery,model_zenlenet_asset,zenlenet_ops.group_delivery,1,1,1,0
 access_zenlenet_asset_manager,zenlenet.asset.manager,model_zenlenet_asset,zenlenet_ops.group_manager,1,1,1,1
 access_zenlenet_user_add_manager,zenlenet.user.add.manager,model_zenlenet_user_add,zenlenet_ops.group_manager,1,1,1,1
+access_zenlenet_datacenter_allocator,zenlenet.datacenter.allocator,model_zenlenet_datacenter,zenlenet_ops.group_allocator,1,1,1,0
+access_zenlenet_prefix_allocator,zenlenet.prefix.allocator,model_zenlenet_prefix,zenlenet_ops.group_allocator,1,1,1,0
+access_zenlenet_prefix_split_allocator,zenlenet.prefix.split.allocator,model_zenlenet_prefix_split,zenlenet_ops.group_allocator,1,1,1,1
+access_zenlenet_prefix_add_allocator,zenlenet.prefix.add.allocator,model_zenlenet_prefix_add,zenlenet_ops.group_allocator,1,1,1,1
+access_zenlenet_address_allocator,zenlenet.address.allocator,model_zenlenet_address,zenlenet_ops.group_allocator,1,1,1,0
+access_zenlenet_ipset_allocator,zenlenet.ipset.allocator,model_zenlenet_ipset,zenlenet_ops.group_allocator,1,1,1,1
+access_zenlenet_line_allocator,zenlenet.line.allocator,model_zenlenet_line,zenlenet_ops.group_allocator,1,1,1,0
+access_zenlenet_return_allocator,zenlenet.supplier.return.allocator,model_zenlenet_supplier_return,zenlenet_ops.group_allocator,1,1,1,0
+access_zenlenet_flow_allocator,zenlenet.flow.allocator,model_zenlenet_flow,zenlenet_ops.group_allocator,1,1,1,0
+access_zenlenet_flow_resource_allocator,zenlenet.flow.resource.allocator,model_zenlenet_flow_resource,zenlenet_ops.group_allocator,1,1,1,1
+access_zenlenet_flow_task_allocator,zenlenet.flow.task.allocator,model_zenlenet_flow_task,zenlenet_ops.group_allocator,1,1,1,1

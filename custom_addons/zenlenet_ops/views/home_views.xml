@@ -14,7 +14,7 @@
                         <button type="object" name="action_open_my_flows" class="o_zl_kpi o_zl_kpi_primary">
                             <span class="o_zl_kpi_value"><field name="flows_mine" readonly="1"/></span>
                             <span class="o_zl_kpi_label">我的在办交付</span>
-                            <span class="o_zl_kpi_sub">全部在办 <field name="flows_open" readonly="1"/></span>
+                            <span class="o_zl_kpi_sub">全部在办 <field name="flows_open" readonly="1"/> · 待分配资源 <field name="allocations_pending" readonly="1"/></span>
                         </button>
                         <button type="object" name="action_open_overdue_tickets" class="o_zl_kpi o_zl_kpi_danger">
                             <span class="o_zl_kpi_value"><field name="tickets_overdue" readonly="1"/></span>
@@ -61,6 +61,7 @@
                         <div class="o_zl_group">
                             <div class="o_zl_group_title"><i class="fa fa-sitemap" title="网络资源"/> 网络资源</div>
                             <button type="action" name="%(zenlenet_ops.action_datacenters)d" class="o_zl_tile"><i class="fa fa-building" title="数据中心"/><span><b>数据中心</b><small>机房、POP 点、公有云的使用率</small></span></button>
+                            <button type="action" name="%(zenlenet_ops.action_allocation_queue)d" class="o_zl_tile" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_allocator,zenlenet_ops.group_manager"><i class="fa fa-magic" title="资源分配"/><span><b>资源分配</b><small>待分配队列：给交付工单挂网段、IP、线路</small></span></button>
                             <button type="action" name="%(zenlenet_ops.action_prefixes)d" class="o_zl_tile"><i class="fa fa-sitemap" title="地址管理"/><span><b>地址管理</b><small>录入网段、切割、分配给客户，与 NetBox 同步</small></span></button>
                             <button type="action" name="%(zenlenet_ops.action_lines)d" class="o_zl_tile"><i class="fa fa-exchange" title="线路"/><span><b>线路</b><small>供应商专线、VXLAN、成本与到期</small></span></button>
                             <button type="action" name="%(zenlenet_ops.action_assets)d" class="o_zl_tile"><i class="fa fa-server" title="固定资产"/><span><b>采购与设备</b><small>按类别登记采购，设备在用 / 闲置</small></span></button>

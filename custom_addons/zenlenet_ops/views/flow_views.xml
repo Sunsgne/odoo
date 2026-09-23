@@ -78,6 +78,7 @@
                                 <field name="order_id" options="{'no_create': True}" context="{'list_view_ref': 'zenlenet_ops.view_order_list'}" class="flex-grow-1"/>
                                 <button name="action_load_order" type="object" string="从订单带入" class="btn btn-secondary btn-sm" invisible="not order_id or state not in ('company', 'allocate')"/>
                             </div>
+                            <field name="datacenter_id" options="{'no_create': True}"/>
                             <field name="team" readonly="1"/>
                             <field name="user_id" readonly="1"/>
                         </group>
@@ -145,6 +146,62 @@
                 <filter name="business" string="商务" domain="[('kind', '=', 'business')]"/>
                 <filter name="open" string="未完成" domain="[('state', 'not in', ('done', 'cancel'))]"/>
             </search>
+        </field>
+    </record>
+    <record id="view_allocation_queue_list" model="ir.ui.view">
+        <field name="name">zenlenet.allocation.queue</field>
+        <field name="model">zenlenet.flow.resource</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" create="0" decoration-success="resource_ref" decoration-warning="not resource_ref">
+                <header>
+                    <button name="action_suggest" type="object" string="自动推荐" class="btn-secondary"/>
+                    <button name="action_finish_allocation" type="object" string="分配完成，转交付" class="btn-primary"/>
+                </header>
+                <field name="flow_id" readonly="1" string="交付工单"/>
+                <field name="partner_id" readonly="1"/>
+                <field name="datacenter_id" readonly="1"/>
+                <field name="service_type" readonly="1" string="业务"/>
+                <field name="spec" readonly="1" string="需求"/>
+                <field name="resource_ref" string="分配资源" options="{'no_create': True}"/>
+                <field name="flow_user_id" readonly="1" widget="many2one_avatar_user"/>
+                <field name="flow_state" column_invisible="1"/>
+                <field name="needs_resource" column_invisible="1"/>
+                <button name="action_suggest" type="object" icon="fa-magic" title="推荐一个空闲资源" invisible="resource_ref"/>
+                <button name="action_open_flow" type="object" icon="fa-external-link" title="打开交付工单"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_allocation_queue_search" model="ir.ui.view">
+        <field name="name">zenlenet.allocation.queue.search</field>
+        <field name="model">zenlenet.flow.resource</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="partner_id"/>
+                <field name="flow_id"/>
+                <filter name="pending" string="待分配" domain="[('resource_ref', '=', False)]"/>
+                <filter name="done" string="已分配" domain="[('resource_ref', '!=', False)]"/>
+                <group>
+                    <filter name="group_flow" string="交付工单" context="{'group_by': 'flow_id'}"/>
+                    <filter name="group_dc" string="期望数据中心" context="{'group_by': 'datacenter_id'}"/>
+                </group>
+                <searchpanel>
+                    <field name="datacenter_id" string="期望数据中心" enable_counters="1" icon="fa-building" limit="60"/>
+                    <field name="service_type" string="业务" enable_counters="1" expand="1" icon="fa-tag"/>
+                </searchpanel>
+            </search>
+        </field>
+    </record>
+    <record id="action_allocation_queue" model="ir.actions.act_window">
+        <field name="name">资源分配</field>
+        <field name="res_model">zenlenet.flow.resource</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_allocation_queue_list"/>
+        <field name="search_view_id" ref="view_allocation_queue_search"/>
+        <field name="domain">[('flow_state', '=', 'allocate'), ('needs_resource', '=', True)]</field>
+        <field name="context">{'search_default_pending': 1, 'search_default_group_flow': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">没有待分配的资源</p>
+            <p>交付工单进入「分配资源」阶段后，需要网段、IP 或线路的业务行会排在这里。给每行挂上资源，再点「分配完成，转交付」。</p>
         </field>
     </record>
     <record id="action_flow" model="ir.actions.act_window">
