@@ -92,6 +92,111 @@ class ZenlenetDatacenter(models.Model):
             record.prefix_count = prefixes.get(record.id, 0)
             record.usage_percent = round(used * 100.0 / total, 1) if total else 0.0
 
+    def dc_tree(self, search=''):
+        """Sites grouped the way NetBox groups them: region, then site."""
+        domain = []
+        if search:
+            domain = ['|', '|', '|', ('name', 'ilike', search), ('region', 'ilike', search),
+                      ('city', 'ilike', search), ('facility', 'ilike', search)]
+        sites = self.search(domain, order='region, sequence, name')
+        Prefix = self.env['zenlenet.prefix']
+        Line = self.env['zenlenet.line']
+        sellable_prefix = {
+            record.id: count
+            for record, count in Prefix._read_group(
+                [('datacenter_id', 'in', sites.ids), ('status', 'in', ('active', 'reserved')),
+                 ('partner_id', '=', False), ('child_ids', '=', False)],
+                ['datacenter_id'], ['__count'],
+            )
+        }
+        sellable_line = {
+            record.id: count
+            for record, count in Line._read_group(
+                [('datacenter_id', 'in', sites.ids), ('partner_id', '=', False),
+                 ('status', 'in', ('planned', 'provisioning', 'active'))],
+                ['datacenter_id'], ['__count'],
+            )
+        }
+        return [{
+            'id': site.id,
+            'name': site.name,
+            'region': site.region or site.city or '未分地区',
+            'state': site.state,
+            'facility': site.facility or '',
+            'sellable_prefixes': sellable_prefix.get(site.id, 0),
+            'sellable_lines': sellable_line.get(site.id, 0),
+        } for site in sites]
+
+    def dc_site(self):
+        """One site, the way a salesperson reads a NetBox site: what can still be sold here."""
+        self.ensure_one()
+        prefix_rows = self.prefix_ids.read([
+            'prefix', 'status', 'partner_id', 'size_display', 'allocated_count', 'free_count',
+            'utilization', 'description', 'parent_id', 'prefixlen',
+        ])
+        parents = {row['parent_id'][0] for row in prefix_rows if row['parent_id']}
+        prefixes = []
+        for row in prefix_rows:
+            partner = row['partner_id'][1] if row['partner_id'] else ''
+            sellable = not partner and row['status'] in ('active', 'reserved') and row['id'] not in parents
+            prefixes.append({
+                'id': row['id'],
+                'prefix': row['prefix'],
+                'status': row['status'],
+                'partner': partner,
+                'size': row['size_display'] or '',
+                'used': row['allocated_count'] or 0,
+                'free': row['free_count'] or 0,
+                'utilization': row['utilization'] or 0,
+                'description': row['description'] or '',
+                'parent_id': row['parent_id'][0] if row['parent_id'] else False,
+                'parent': row['parent_id'][1] if row['parent_id'] else '',
+                'prefixlen': row['prefixlen'] or 0,
+                'sellable': sellable,
+            })
+        kind_label = dict(self.env['zenlenet.line']._fields['kind'].selection)
+        status_label = dict(LINE_STATUSES)
+        lines = []
+        for line in self.line_ids.sorted('name'):
+            partner = line.partner_id.name or ''
+            lines.append({
+                'id': line.id,
+                'name': line.name,
+                'kind': kind_label.get(line.kind, line.kind or ''),
+                'status': line.status,
+                'status_label': status_label.get(line.status, ''),
+                'partner': partner,
+                'bandwidth': line.bandwidth or '',
+                'a_end': line.a_end or '',
+                'z_end': line.z_end or '',
+                'supplier': line.supplier_id.name or '',
+                'purpose': line.purpose or '',
+                'sellable': not partner and line.status in ('planned', 'provisioning', 'active'),
+            })
+        return {
+            'id': self.id,
+            'name': self.name,
+            'state': self.state,
+            'state_label': dict(self._fields['state'].selection).get(self.state, ''),
+            'region': self.region or self.city or '',
+            'facility': self.facility or '',
+            'asn': self.asn or 0,
+            'city': self.city or '',
+            'address': self.address or '',
+            'supplier': self.supplier_id.name or self.supplier or '',
+            'contact': self.contact or '',
+            'phone': self.phone or '',
+            'note': self.note or '',
+            'netbox_url': (
+                self.env['zenlenet.netbox'].public_link(f'/dcim/sites/{self.netbox_id}/') if self.netbox_id else ''
+            ),
+            'can_write': self.has_access('write'),
+            'prefixes': prefixes,
+            'lines': lines,
+            'sellable_prefixes': sum(1 for row in prefixes if row['sellable']),
+            'sellable_lines': sum(1 for row in lines if row['sellable']),
+        }
+
     def write(self, vals):
         result = super().write(vals)
         if not self.env.context.get('netbox_skip_push') and {'name', 'state', 'address', 'facility', 'note'} & set(vals):

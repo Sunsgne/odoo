@@ -59,91 +59,26 @@
         <field name="model">zenlenet.datacenter</field>
         <field name="arch" type="xml">
             <form>
-                <header>
-                    <button name="action_open_netbox" type="object" string="在 NetBox 中查看" icon="fa-external-link" invisible="not netbox_id"/>
-                    <field name="state" widget="statusbar" options="{'clickable': true}"/>
-                </header>
                 <sheet>
-                    <div class="o_zl_chain">
-                        <div class="o_zl_chain_step"><b><field name="prefix_count"/></b><span>地址段</span></div>
-                        <div class="o_zl_chain_step"><b><field name="address_count"/></b><span>IP · 空闲 <field name="free_count"/></span></div>
-                        <div class="o_zl_chain_step"><b><field name="line_count"/></b><span>线路</span></div>
-                        <div class="o_zl_chain_step"><b><field name="asset_count"/></b><span>设备</span></div>
-                    </div>
                     <div class="oe_title">
-                        <h1><field name="name" placeholder="数据中心名称"/></h1>
+                        <h1><field name="name" placeholder="机房名称，例如 TYO7"/></h1>
                     </div>
                     <group>
-                        <group string="基本">
-                            <field name="code"/>
-                            <field name="facility"/>
-                            <field name="kind"/>
-                            <field name="region"/>
+                        <group string="这个机房">
+                            <field name="state"/>
+                            <field name="region" placeholder="东京 / 新加坡 / 香港"/>
+                            <field name="facility" placeholder="机房楼栋或运营商站点名"/>
                             <field name="asn"/>
                             <field name="supplier_id" options="{'no_create': True}"/>
-                            <field name="usage_percent" widget="progressbar"/>
                         </group>
-                        <group string="地点与联系">
+                        <group string="怎么找到它">
                             <field name="city"/>
-                            <field name="country_id"/>
                             <field name="address"/>
                             <field name="contact"/>
                             <field name="phone"/>
                         </group>
                     </group>
-                    <notebook>
-                        <page string="地址段">
-                            <field name="prefix_ids" readonly="1">
-                                <list limit="80">
-                                    <field name="prefix" class="font-monospace"/>
-                                    <field name="status" widget="badge"/>
-                                    <field name="partner_id" string="分配给"/>
-                                    <field name="size_display" string="容量"/>
-                                    <field name="utilization" widget="progressbar"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="IP 地址">
-                            <field name="address_ids" readonly="1">
-                                <list>
-                                    <field name="address"/>
-                                    <field name="block"/>
-                                    <field name="partner_id"/>
-                                    <field name="status"/>
-                                    <field name="net_attr"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="设备">
-                            <field name="asset_ids" readonly="1">
-                                <list>
-                                    <field name="name"/>
-                                    <field name="state"/>
-                                    <field name="partner_id"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="线路">
-                            <field name="line_ids" readonly="1">
-                                <list>
-                                    <field name="name"/>
-                                    <field name="kind"/>
-                                    <field name="a_end"/>
-                                    <field name="z_end"/>
-                                    <field name="bandwidth"/>
-                                    <field name="partner_id"/>
-                                    <field name="stopped"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="备注">
-                            <field name="note" placeholder="出入机房流程、电力、机柜编号等"/>
-                            <group string="NetBox" invisible="not netbox_id">
-                                <field name="netbox_id"/>
-                                <field name="netbox_synced"/>
-                            </group>
-                        </page>
-                    </notebook>
+                    <field name="note" placeholder="销售需要知道的话：电力、机柜、进出流程"/>
                 </sheet>
             </form>
         </field>
@@ -164,6 +99,10 @@
                 </group>
             </search>
         </field>
+    </record>
+    <record id="action_datacenter_board" model="ir.actions.client">
+        <field name="name">数据中心</field>
+        <field name="tag">zenlenet_datacenter</field>
     </record>
     <record id="action_datacenters" model="ir.actions.act_window">
         <field name="name">数据中心</field>

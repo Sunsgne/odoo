@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="zenlenet_ops.Datacenter">
+        <div class="o_action zl-dc">
+            <aside class="zl-dc-tree">
+                <div class="zl-dc-tree-head">
+                    <input type="search" class="form-control form-control-sm" placeholder="搜地区 / 机房" t-att-value="state.search" t-on-input="onSearch"/>
+                    <button class="btn btn-primary btn-sm" t-on-click="() => this.editSite(false)" title="新机房"><i class="fa fa-plus"/></button>
+                </div>
+                <div class="zl-dc-hint">按地区选机房。右边就是这个机房还能卖的东西。</div>
+                <ul class="zl-dc-regions">
+                    <li t-foreach="regions" t-as="region" t-key="region.name">
+                        <div class="zl-dc-region"><i class="fa fa-globe"/> <t t-out="region.name"/> <span t-out="region.sites.length"/></div>
+                        <ul>
+                            <li t-foreach="region.sites" t-as="site" t-key="site.id" t-att-class="state.selectedId === site.id ? 'active' : ''" t-on-click="() => this.select(site.id)">
+                                <span t-attf-class="zl-dc-dot zl-dc-dot-#{site.state}"/>
+                                <span class="zl-dc-name" t-out="site.name"/>
+                                <span class="zl-dc-free" t-if="site.sellable_prefixes or site.sellable_lines">可售 <t t-out="site.sellable_prefixes"/> 段 · <t t-out="site.sellable_lines"/> 线</span>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+                <div t-if="!state.sites.length" class="text-muted small p-3">没有机房。点 + 加一个。</div>
+            </aside>
+
+            <section class="zl-dc-main" t-if="state.detail">
+                <header class="zl-dc-head">
+                    <div>
+                        <div class="zl-dc-title">
+                            <span t-out="state.detail.name"/>
+                            <span t-attf-class="badge zl-dc-badge-#{state.detail.state}" t-out="state.detail.state_label"/>
+                        </div>
+                        <div class="text-muted small">
+                            <t t-if="state.detail.region"><t t-out="state.detail.region"/></t>
+                            <t t-if="state.detail.facility"> · <t t-out="state.detail.facility"/></t>
+                            <t t-if="state.detail.asn"> · AS<t t-out="state.detail.asn"/></t>
+                        </div>
+                        <div class="zl-dc-summary">可售地址段 <b t-out="state.detail.sellable_prefixes"/> · 可售线路 <b t-out="state.detail.sellable_lines"/></div>
+                    </div>
+                    <div class="zl-dc-actions" t-if="state.detail.can_write">
+                        <button class="btn btn-secondary btn-sm" t-on-click="() => this.editSite(state.detail.id)"><i class="fa fa-pencil"/> 改机房资料</button>
+                        <button t-if="state.detail.netbox_url" class="btn btn-link btn-sm" t-on-click="openNetbox">NetBox</button>
+                    </div>
+                </header>
+
+                <div class="zl-dc-body">
+                    <div class="zl-dc-work">
+                        <div class="zl-dc-filters">
+                            <span class="text-muted">看</span>
+                            <button t-att-class="state.filter === 'free' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline-secondary'" t-on-click="() => this.setFilter('free')">可售</button>
+                            <button t-att-class="state.filter === 'sold' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline-secondary'" t-on-click="() => this.setFilter('sold')">已卖出</button>
+                            <button t-att-class="state.filter === 'all' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline-secondary'" t-on-click="() => this.setFilter('all')">全部</button>
+                            <span class="text-muted small">点一行，右边看留给谁、还剩多少。</span>
+                        </div>
+
+                        <div class="zl-dc-section">地址段</div>
+                        <table class="table table-sm zl-dc-table" t-if="prefixes.length">
+                            <thead><tr><th>网段</th><th>状态</th><th>客户</th><th class="text-end">容量</th><th class="text-end">空闲</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="prefixes" t-as="row" t-key="row.id" t-att-class="isPicked('prefix', row.id) ? 'active' : ''" t-on-click="() => this.pick('prefix', row)">
+                                    <td class="font-monospace" t-out="row.prefix"/>
+                                    <td t-out="prefixStatus(row.status)"/>
+                                    <td><t t-if="row.partner" t-out="row.partner"/><span t-else="" class="text-success">可售</span></td>
+                                    <td class="text-end" t-out="row.size"/>
+                                    <td class="text-end" t-out="row.free"/>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div t-else="" class="text-muted small mb-3">这个筛选下没有地址段。</div>
+
+                        <div class="zl-dc-section">线路</div>
+                        <table class="table table-sm zl-dc-table" t-if="lines.length">
+                            <thead><tr><th>线路</th><th>类型</th><th>带宽</th><th>客户</th><th>状态</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="lines" t-as="row" t-key="row.id" t-att-class="isPicked('line', row.id) ? 'active' : ''" t-on-click="() => this.pick('line', row)">
+                                    <td t-out="row.name"/>
+                                    <td t-out="row.kind"/>
+                                    <td t-out="row.bandwidth"/>
+                                    <td><t t-if="row.partner" t-out="row.partner"/><span t-else="" class="text-success">可售</span></td>
+                                    <td t-out="row.status_label"/>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div t-else="" class="text-muted small">这个筛选下没有线路。</div>
+                    </div>
+
+                    <aside class="zl-dc-facts">
+                        <t t-if="pickedPrefix">
+                            <div class="zl-dc-section">这段地址</div>
+                            <div class="font-monospace fw-bold mb-2" t-out="pickedPrefix.prefix"/>
+                            <dl>
+                                <dt>状态</dt><dd t-out="prefixStatus(pickedPrefix.status)"/>
+                                <dt>客户</dt><dd><t t-if="pickedPrefix.partner" t-out="pickedPrefix.partner"/><span t-else="">可售</span></dd>
+                                <dt>容量</dt><dd t-out="pickedPrefix.size"/>
+                                <dt>已用</dt><dd t-out="pickedPrefix.used"/>
+                                <dt>空闲</dt><dd t-out="pickedPrefix.free"/>
+                                <dt>上级</dt><dd class="font-monospace" t-out="pickedPrefix.parent || '—'"/>
+                                <dt>说明</dt><dd t-out="pickedPrefix.description || '—'"/>
+                            </dl>
+                            <div class="zl-dc-section mt-3" t-if="childrenOf(pickedPrefix.id).length">切出来的小段</div>
+                            <ul class="zl-dc-children" t-if="childrenOf(pickedPrefix.id).length">
+                                <li t-foreach="childrenOf(pickedPrefix.id)" t-as="child" t-key="child.id">
+                                    <span class="font-monospace" t-out="child.prefix"/>
+                                    <span t-if="child.partner" t-out="child.partner"/>
+                                    <span t-else="" class="text-success">可售</span>
+                                </li>
+                            </ul>
+                        </t>
+                        <t t-elif="pickedLine">
+                            <div class="zl-dc-section">这条线路</div>
+                            <div class="fw-bold mb-2" t-out="pickedLine.name"/>
+                            <dl>
+                                <dt>类型</dt><dd t-out="pickedLine.kind"/>
+                                <dt>状态</dt><dd t-out="pickedLine.status_label"/>
+                                <dt>客户</dt><dd><t t-if="pickedLine.partner" t-out="pickedLine.partner"/><span t-else="">可售</span></dd>
+                                <dt>带宽</dt><dd t-out="pickedLine.bandwidth || '—'"/>
+                                <dt>A 端</dt><dd t-out="pickedLine.a_end || '—'"/>
+                                <dt>Z 端</dt><dd t-out="pickedLine.z_end || '—'"/>
+                                <dt>供应商</dt><dd t-out="pickedLine.supplier || '—'"/>
+                                <dt>用途</dt><dd t-out="pickedLine.purpose || '—'"/>
+                            </dl>
+                        </t>
+                        <t t-else="">
+                            <div class="zl-dc-section">机房</div>
+                            <dl>
+                                <dt>状态</dt><dd t-out="state.detail.state_label"/>
+                                <dt>地区</dt><dd t-out="state.detail.region || '—'"/>
+                                <dt>设施</dt><dd t-out="state.detail.facility || '—'"/>
+                                <dt>AS</dt><dd t-out="state.detail.asn ? 'AS' + state.detail.asn : '—'"/>
+                                <dt>城市</dt><dd t-out="state.detail.city || '—'"/>
+                                <dt>地址</dt><dd t-out="state.detail.address || '—'"/>
+                                <dt>供应商</dt><dd t-out="state.detail.supplier || '—'"/>
+                                <dt>联系人</dt><dd t-out="state.detail.contact || '—'"/>
+                                <dt>电话</dt><dd t-out="state.detail.phone || '—'"/>
+                                <dt>备注</dt><dd t-out="state.detail.note || '—'"/>
+                            </dl>
+                        </t>
+                    </aside>
+                </div>
+            </section>
+            <section class="zl-dc-main d-flex align-items-center justify-content-center text-muted" t-else="">
+                <t t-if="state.loading">加载中…</t>
+                <t t-else="">左边选一个机房</t>
+            </section>
+        </div>
+    </t>
+</templates>

@@ -163,7 +163,7 @@ class ResConfigSettings(models.TransientModel):
         return self.env.ref('zenlenet_ops.action_templates').read()[0]
 
     def action_open_datacenters(self):
-        return self.env.ref('zenlenet_ops.action_datacenters').read()[0]
+        return self.env.ref('zenlenet_ops.action_datacenter_board').read()[0]
 
     def action_open_crons(self):
         return {
