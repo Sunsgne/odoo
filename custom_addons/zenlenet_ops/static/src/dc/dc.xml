@@ -123,6 +123,7 @@
                                 <dt>供应商</dt><dd t-out="pickedLine.supplier || '—'"/>
                                 <dt>用途</dt><dd t-out="pickedLine.purpose || '—'"/>
                             </dl>
+                            <button class="btn btn-secondary btn-sm mt-2" t-on-click="() => this.editLine(pickedLine.id)">改这条线路</button>
                         </t>
                         <t t-else="">
                             <div class="zl-dc-section">机房</div>

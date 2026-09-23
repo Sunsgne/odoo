@@ -130,6 +130,20 @@ export class ZenlenetDatacenter extends Component {
         await this.action.doAction(action, { onClose: () => this.select(this.state.selectedId) });
     }
 
+    async editLine(id) {
+        await this.action.doAction(
+            {
+                type: "ir.actions.act_window",
+                res_model: "zenlenet.line",
+                res_id: id,
+                views: [[false, "form"]],
+                target: "new",
+                name: "这条线路",
+            },
+            { onClose: () => this.select(this.state.selectedId) },
+        );
+    }
+
     async editSite(id) {
         const action = {
             type: "ir.actions.act_window",
