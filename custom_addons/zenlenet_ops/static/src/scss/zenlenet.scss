@@ -217,8 +217,8 @@
 }
 
 // Settings: only the console tab is relevant to operators.
-.settings_tab .tab:not([data-key="zenlenet_ops"]) {
-    display: none;
+.o_setting_container .settings_tab .tab:not([data-key="zenlenet_ops"]) {
+    display: none !important;
 }
 
 // Kanban cards read better with a little air and a hover lift.
