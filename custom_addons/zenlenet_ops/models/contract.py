@@ -338,9 +338,11 @@ class ZenlenetContract(models.Model):
         _logger.info('zenlenet monthly billing created %s invoices for %s', count, period_label(today))
         return count
 
-    @api.model
     def action_bill_period(self):
-        """Header button: bill every running contract for this month."""
+        """List header button: bill every running contract for this month.
+
+        Header buttons receive the selected ids as ``self``; the selection is irrelevant here.
+        """
         count = self._cron_monthly_billing()
         return {
             'type': 'ir.actions.client',
@@ -402,7 +404,6 @@ class AccountMove(models.Model):
 
     zenlenet_contract_id = fields.Many2one('zenlenet.contract', string='合同', index=True, ondelete='set null')
 
-    @api.model
     def action_zenlenet_bill_period(self):
         return self.env['zenlenet.contract'].action_bill_period()
 
