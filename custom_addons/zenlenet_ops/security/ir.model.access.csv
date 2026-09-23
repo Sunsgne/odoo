@@ -24,3 +24,4 @@ access_zenlenet_prefix_manager,zenlenet.prefix.manager,model_zenlenet_prefix,zen
 access_zenlenet_usage_user,zenlenet.usage.user,model_zenlenet_usage,base.group_user,1,1,1,1
 access_zenlenet_usage_import_user,zenlenet.usage.import.user,model_zenlenet_usage_import,base.group_user,1,1,1,1
 access_zenlenet_contract_item_user,zenlenet.contract.item.user,model_zenlenet_contract_item,base.group_user,1,1,1,1
+access_zenlenet_prefix_split_user,zenlenet.prefix.split.user,model_zenlenet_prefix_split,base.group_user,1,1,1,1

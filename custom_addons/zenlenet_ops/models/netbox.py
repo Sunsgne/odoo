@@ -355,6 +355,25 @@ class ZenlenetNetbox(models.AbstractModel):
             address.with_context(netbox_skip_push=True).write({'netbox_synced': fields.Datetime.now()})
 
     @api.model
+    def create_prefixes(self, prefixes):
+        cfg = self._params()
+        if not cfg['enabled'] or not self.is_configured():
+            return
+        session, base = self._session()
+        for prefix in prefixes.filtered(lambda record: not record.netbox_id):
+            payload = {
+                'prefix': prefix.prefix,
+                'status': prefix.status if prefix.status in ('container', 'active', 'reserved', 'deprecated') else 'active',
+                'description': (prefix.description or '')[:200],
+            }
+            if prefix.datacenter_id.netbox_id:
+                payload.update({'scope_type': 'dcim.site', 'scope_id': prefix.datacenter_id.netbox_id})
+            if prefix.partner_id:
+                payload['tenant'] = self._tenant_for(session, base, prefix.partner_id)
+            created = self._write(session, base, 'POST', '/ipam/prefixes/', payload)
+            prefix.with_context(netbox_skip_push=True).write({'netbox_id': created.get('id'), 'netbox_synced': fields.Datetime.now()})
+
+    @api.model
     def push_prefixes(self, prefixes):
         cfg = self._params()
         if not cfg['enabled'] or not self.is_configured():

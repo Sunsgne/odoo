@@ -4,15 +4,19 @@
         <field name="name">zenlenet.prefix.list</field>
         <field name="model">zenlenet.prefix</field>
         <field name="arch" type="xml">
-            <list decoration-muted="status == 'deprecated'">
-                <field name="prefix" class="fw-bold"/>
-                <field name="family" optional="hide"/>
+            <list decoration-muted="status == 'deprecated'" decoration-bf="status == 'container'">
+                <header>
+                    <button name="%(zenlenet_ops.action_prefix_add)d" type="action" string="录入网段" class="btn-primary" display="always"/>
+                </header>
+                <field name="prefix" class="font-monospace"/>
+                <field name="parent_id" optional="show"/>
                 <field name="status" widget="badge" decoration-success="status == 'active'" decoration-info="status == 'container'" decoration-warning="status == 'reserved'"/>
                 <field name="datacenter_id"/>
-                <field name="partner_id"/>
+                <field name="partner_id" string="分配给"/>
                 <field name="role" optional="show"/>
                 <field name="vlan" optional="hide"/>
                 <field name="size_display" string="容量"/>
+                <field name="child_count" string="下级网段" optional="show"/>
                 <field name="allocated_count"/>
                 <field name="free_count"/>
                 <field name="utilization" widget="progressbar"/>
@@ -27,50 +31,73 @@
         <field name="arch" type="xml">
             <form>
                 <header>
-                    <button name="action_allocate" type="object" string="整段分配给客户" class="btn-primary" invisible="not partner_id or allocated_count == address_count"/>
+                    <button name="action_allocate" type="object" string="分配给客户" class="btn-primary" invisible="not partner_id or allocated_count == address_count"/>
                     <button name="action_release" type="object" string="整段回收" invisible="not partner_id" confirm="回收后这一段的所有地址都会变成未分配，客户清空。继续？"/>
+                    <button name="action_split" type="object" string="切割" invisible="status == 'deprecated'"/>
+                    <button name="action_add_child" type="object" string="新增下级网段" invisible="status == 'deprecated'"/>
                     <button name="action_open_netbox" type="object" string="在 NetBox 中查看" icon="fa-external-link" invisible="not netbox_id"/>
                     <field name="status" widget="statusbar" options="{'clickable': true}"/>
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
+                        <button name="action_open_children" type="object" class="oe_stat_button" icon="fa-th-large" invisible="not child_count">
+                            <field name="child_count" widget="statinfo" string="下级网段"/>
+                        </button>
                         <button name="action_open_addresses" type="object" class="oe_stat_button" icon="fa-sitemap">
-                            <field name="address_count" widget="statinfo" string="地址"/>
+                            <field name="address_count" widget="statinfo" string="IP 地址"/>
                         </button>
                     </div>
                     <div class="oe_title">
+                        <div class="text-muted small" invisible="not parent_id">上级 <field name="parent_id" readonly="1" class="d-inline w-auto"/></div>
                         <h1><field name="prefix" placeholder="例如 203.0.113.0/24" class="font-monospace"/></h1>
+                        <div class="d-flex gap-2 align-items-center">
+                            <field name="utilization" widget="progressbar" class="flex-grow-1" style="max-width: 320px;"/>
+                            <span class="text-muted small">已分配 <field name="allocated_count" readonly="1" class="d-inline w-auto"/> · 未分配 <field name="free_count" readonly="1" class="d-inline w-auto"/> · 容量 <field name="size_display" readonly="1" class="d-inline w-auto"/></span>
+                        </div>
                     </div>
                     <group>
-                        <group string="归属">
+                        <group string="分配">
+                            <field name="partner_id" string="分配给客户" options="{'no_create': True}" domain="[('is_company', '=', True), ('customer_rank', '>', 0)]"/>
                             <field name="datacenter_id"/>
-                            <field name="partner_id"/>
-                            <field name="role"/>
+                            <field name="role" placeholder="例如 客户接入 / 互联 / 管理"/>
                             <field name="vlan"/>
+                            <field name="description" placeholder="说明"/>
                         </group>
-                        <group string="容量">
+                        <group string="网络">
                             <field name="family"/>
-                            <field name="size_display"/>
-                            <field name="allocated_count"/>
-                            <field name="free_count"/>
-                            <field name="utilization" widget="progressbar"/>
+                            <field name="netmask"/>
+                            <field name="first_ip" class="font-monospace"/>
+                            <field name="last_ip" class="font-monospace"/>
                             <field name="is_pool"/>
+                            <field name="netbox_id" invisible="not netbox_id"/>
+                            <field name="netbox_synced" invisible="not netbox_id"/>
                         </group>
-                    </group>
-                    <field name="description" placeholder="说明"/>
-                    <group string="NetBox" invisible="not netbox_id">
-                        <field name="netbox_id"/>
-                        <field name="netbox_synced"/>
                     </group>
                     <notebook>
-                        <page string="地址">
-                            <field name="address_ids" readonly="1">
-                                <list>
+                        <page string="下级网段">
+                            <field name="child_ids" readonly="1">
+                                <list decoration-muted="status == 'deprecated'">
+                                    <field name="prefix" class="font-monospace"/>
+                                    <field name="status" widget="badge" decoration-success="status == 'active'" decoration-info="status == 'container'" decoration-warning="status == 'reserved'"/>
+                                    <field name="partner_id" string="分配给"/>
+                                    <field name="size_display" string="容量"/>
+                                    <field name="allocated_count"/>
+                                    <field name="free_count"/>
+                                    <field name="utilization" widget="progressbar"/>
+                                    <field name="description"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="IP 地址">
+                            <field name="address_ids" context="{'default_block': prefix, 'default_datacenter_id': datacenter_id}">
+                                <list editable="bottom" limit="256" decoration-success="status == 'allocated'" decoration-muted="status == 'free'" decoration-warning="status in ('reserved', 'transferring', 'returning')">
                                     <field name="address" class="font-monospace"/>
-                                    <field name="partner_id"/>
-                                    <field name="status" widget="badge" decoration-success="status == 'allocated'" decoration-info="status == 'free'"/>
+                                    <field name="status" widget="badge" decoration-success="status == 'allocated'" decoration-info="status == 'free'" decoration-warning="status in ('reserved', 'transferring', 'returning')"/>
+                                    <field name="partner_id" string="分配给"/>
                                     <field name="net_attr"/>
                                     <field name="usage"/>
+                                    <field name="expires_on" optional="hide"/>
+                                    <field name="netbox_id" column_invisible="1"/>
                                 </list>
                             </field>
                         </page>
@@ -84,16 +111,17 @@
         <field name="model">zenlenet.prefix</field>
         <field name="arch" type="xml">
             <search>
-                <field name="prefix"/>
+                <field name="prefix" filter_domain="['|', '|', ('prefix', 'ilike', self), ('description', 'ilike', self), ('address_ids.address', 'ilike', self)]" string="网段 / IP / 说明"/>
                 <field name="partner_id"/>
-                <field name="description"/>
+                <filter name="top" string="顶级网段" domain="[('parent_id', '=', False)]"/>
                 <filter name="active" string="在用" domain="[('status', '=', 'active')]"/>
-                <filter name="has_free" string="有空余" domain="[('status', '=', 'active')]" context="{'group_by': 'datacenter_id'}"/>
+                <filter name="unassigned" string="未分配给客户" domain="[('partner_id', '=', False), ('status', 'in', ('active', 'reserved'))]"/>
                 <filter name="v4" string="IPv4" domain="[('family', '=', '4')]"/>
                 <filter name="v6" string="IPv6" domain="[('family', '=', '6')]"/>
                 <group>
+                    <filter name="group_parent" string="上级网段" context="{'group_by': 'parent_id'}"/>
                     <filter name="group_dc" string="数据中心" context="{'group_by': 'datacenter_id'}"/>
-                    <filter name="group_partner" string="客户" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_partner" string="分配给" context="{'group_by': 'partner_id'}"/>
                     <filter name="group_status" string="状态" context="{'group_by': 'status'}"/>
                 </group>
                 <searchpanel>
@@ -105,14 +133,34 @@
         </field>
     </record>
     <record id="action_prefixes" model="ir.actions.act_window">
-        <field name="name">地址段</field>
+        <field name="name">地址管理</field>
         <field name="res_model">zenlenet.prefix</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_prefix_search"/>
-        <field name="context">{'search_default_active': 1}</field>
+        <field name="context">{'search_default_group_parent': 1}</field>
         <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">还没有地址段</p>
-            <p>地址段与 NetBox 的 Prefix 一一对应。同步 NetBox 后会自动出现，也可以手工新增。</p>
+            <p class="o_view_nocontent_smiling_face">还没有网段</p>
+            <p>录入网段 → 切割 → 分配给客户。所有网段与 NetBox 的 Prefix 一一对应。</p>
+        </field>
+    </record>
+    <record id="view_prefix_split_form" model="ir.ui.view">
+        <field name="name">zenlenet.prefix.split.form</field>
+        <field name="model">zenlenet.prefix.split</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="prefix_id" invisible="1"/>
+                    <field name="current"/>
+                    <field name="new_prefixlen"/>
+                    <field name="count" invisible="keep_remaining"/>
+                    <field name="keep_remaining"/>
+                    <field name="limit" invisible="not keep_remaining"/>
+                </group>
+                <footer>
+                    <button name="action_split" type="object" string="切割" class="btn-primary"/>
+                    <button special="cancel" string="取消"/>
+                </footer>
+            </form>
         </field>
     </record>
     <record id="view_price_item_list" model="ir.ui.view">

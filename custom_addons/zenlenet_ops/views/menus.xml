@@ -30,10 +30,7 @@
 
     <menuitem id="menu_res" name="网络资源" parent="menu_root" sequence="40"/>
     <menuitem id="menu_datacenters" name="数据中心" parent="menu_res" action="action_datacenters" sequence="5"/>
-    <menuitem id="menu_prefixes" name="地址段" parent="menu_res" action="action_prefixes" sequence="8"/>
-    <menuitem id="menu_addresses" name="IP 地址" parent="menu_res" action="action_addresses" sequence="10"/>
-    <menuitem id="menu_stock" name="可用地址" parent="menu_res" action="action_stock" sequence="20"/>
-    <menuitem id="menu_ipsets" name="地址集" parent="menu_res" action="action_ipsets" sequence="30"/>
+    <menuitem id="menu_prefixes" name="地址管理" parent="menu_res" action="action_prefixes" sequence="8"/>
     <menuitem id="menu_lines" name="线路" parent="menu_res" action="action_lines" sequence="40"/>
     <menuitem id="menu_returns" name="供应商退回" parent="menu_res" action="action_returns" sequence="50"/>
     <menuitem id="menu_prefix_export" name="导出地址段" parent="menu_res" action="action_prefix_export" sequence="60"/>

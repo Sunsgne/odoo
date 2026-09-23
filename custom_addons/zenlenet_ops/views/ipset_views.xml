@@ -50,22 +50,28 @@
         <field name="arch" type="xml">
             <form>
                 <group>
-                    <field name="cidr" placeholder="192.0.2.0/24"/>
-                    <field name="pop"/>
-                    <field name="supplier"/>
-                    <field name="net_attr"/>
-                    <field name="dc_type"/>
-                    <field name="status"/>
+                    <group>
+                        <field name="cidr" placeholder="192.0.2.0/24"/>
+                        <field name="parent_id" options="{'no_create': True}"/>
+                        <field name="datacenter_id" options="{'no_create': True}"/>
+                        <field name="status"/>
+                    </group>
+                    <group>
+                        <field name="partner_id" options="{'no_create': True}"/>
+                        <field name="supplier_id" options="{'no_create': True}"/>
+                        <field name="role"/>
+                        <field name="description"/>
+                    </group>
                 </group>
                 <footer>
-                    <button name="action_create" type="object" string="添加" class="btn-primary"/>
+                    <button name="action_create" type="object" string="录入" class="btn-primary"/>
                     <button special="cancel" string="取消"/>
                 </footer>
             </form>
         </field>
     </record>
     <record id="action_prefix_add" model="ir.actions.act_window">
-        <field name="name">添加IP段</field>
+        <field name="name">录入网段</field>
         <field name="res_model">zenlenet.prefix.add</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>

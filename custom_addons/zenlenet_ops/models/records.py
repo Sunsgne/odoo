@@ -202,35 +202,48 @@ class ZenlenetIpset(models.Model):
 
 class ZenlenetPrefixAdd(models.TransientModel):
     _name = 'zenlenet.prefix.add'
-    _description = '添加IP段'
+    _description = '新增网段'
 
-    cidr = fields.Char(string='IP段', required=True)
-    pop = fields.Char(string='机房')
-    supplier = fields.Char(string='供应商')
-    net_attr = fields.Selection(NET_ATTRS, string='网络属性', default='公网')
+    cidr = fields.Char(string='网段 (CIDR)', required=True)
+    parent_id = fields.Many2one('zenlenet.prefix', string='上级网段')
+    datacenter_id = fields.Many2one('zenlenet.datacenter', string='数据中心')
+    partner_id = fields.Many2one('res.partner', string='分配给客户', domain=[('is_company', '=', True), ('customer_rank', '>', 0)])
+    supplier_id = fields.Many2one('res.partner', string='供应商', domain=[('supplier_rank', '>', 0)])
+    status = fields.Selection([('container', '容器'), ('active', '在用'), ('reserved', '预留')], string='状态', default='active', required=True)
+    role = fields.Char(string='用途角色')
+    description = fields.Char(string='说明')
+    pop = fields.Char(string='机房（旧）')
+    supplier = fields.Char(string='供应商（旧）')
+    net_attr = fields.Selection(NET_ATTRS, string='网络属性')
     dc_type = fields.Selection(DC_TYPES, string='数据中心类型')
-    status = fields.Selection(STATUSES, string='分配状态', default='free')
 
     def action_create(self):
         self.ensure_one()
         try:
             cidr = parse_prefix(self.cidr)
         except ValueError as error:
-            raise UserError('IP段格式不对，请写成 192.0.2.0/24 这样。') from error
-        address = self.env['zenlenet.address'].create({
-            'address': cidr,
-            'block': cidr,
-            'pop': self.pop,
-            'supplier': self.supplier,
-            'net_attr': self.net_attr,
-            'dc_type': self.dc_type,
-            'status': self.status or 'free',
+            raise UserError('网段格式不对，请写成 192.0.2.0/24 这样。') from error
+        Prefix = self.env['zenlenet.prefix']
+        if Prefix.search_count([('prefix', '=', cidr)]):
+            raise UserError('这个网段已经存在。')
+        prefix = Prefix.create({
+            'prefix': cidr,
+            'datacenter_id': self.datacenter_id.id or self.parent_id.datacenter_id.id,
+            'partner_id': self.partner_id.id,
+            'status': self.status,
+            'role': self.role or self.parent_id.role,
+            'description': self.description or '',
         })
+        try:
+            self.env['zenlenet.netbox'].create_prefixes(prefix)
+        except Exception as error:  # noqa: BLE001
+            import logging
+            logging.getLogger(__name__).warning('NetBox prefix create skipped: %s', type(error).__name__)
         return {
             'type': 'ir.actions.act_window',
-            'name': 'IP资源',
-            'res_model': 'zenlenet.address',
-            'res_id': address.id,
+            'name': '网段',
+            'res_model': 'zenlenet.prefix',
+            'res_id': prefix.id,
             'view_mode': 'form',
             'target': 'current',
         }

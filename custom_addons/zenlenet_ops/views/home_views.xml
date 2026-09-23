@@ -61,8 +61,7 @@
                         <div class="o_zl_group">
                             <div class="o_zl_group_title"><i class="fa fa-sitemap" title="网络资源"/> 网络资源</div>
                             <button type="action" name="%(zenlenet_ops.action_datacenters)d" class="o_zl_tile"><i class="fa fa-building" title="数据中心"/><span><b>数据中心</b><small>机房、POP 点、公有云的使用率</small></span></button>
-                            <button type="action" name="%(zenlenet_ops.action_prefixes)d" class="o_zl_tile"><i class="fa fa-th-large" title="地址段"/><span><b>地址段</b><small>与 NetBox Prefix 一致，看每段的使用率</small></span></button>
-                            <button type="action" name="%(zenlenet_ops.action_addresses)d" class="o_zl_tile"><i class="fa fa-sitemap" title="IP 地址"/><span><b>IP 地址</b><small>分配状态、网络属性、地址集</small></span></button>
+                            <button type="action" name="%(zenlenet_ops.action_prefixes)d" class="o_zl_tile"><i class="fa fa-sitemap" title="地址管理"/><span><b>地址管理</b><small>录入网段、切割、分配给客户，与 NetBox 同步</small></span></button>
                             <button type="action" name="%(zenlenet_ops.action_lines)d" class="o_zl_tile"><i class="fa fa-exchange" title="线路"/><span><b>线路</b><small>供应商专线、VXLAN、成本与到期</small></span></button>
                             <button type="action" name="%(zenlenet_ops.action_assets)d" class="o_zl_tile"><i class="fa fa-server" title="固定资产"/><span><b>采购与设备</b><small>按类别登记采购，设备在用 / 闲置</small></span></button>
                         </div>
