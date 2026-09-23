@@ -101,10 +101,15 @@
             </form>
         </field>
     </record>
-    <record id="action_home" model="ir.actions.server">
+    <record id="home_record" model="zenlenet.home">
         <field name="name">首页</field>
-        <field name="model_id" ref="model_zenlenet_home"/>
-        <field name="state">code</field>
-        <field name="code">action = model.action_open()</field>
+    </record>
+    <record id="action_home_page" model="ir.actions.act_window">
+        <field name="name">首页</field>
+        <field name="res_model">zenlenet.home</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_home_form"/>
+        <field name="res_id" ref="home_record"/>
+        <field name="target">current</field>
     </record>
 </odoo>

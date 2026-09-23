@@ -5,7 +5,8 @@
         background: var(--body-bg, #f8f9fa);
     }
     .o_zl_sheet.o_form_sheet {
-        max-width: 1400px;
+        max-width: none;
+        width: 100%;
         border: 0;
         background: transparent;
         box-shadow: none;
@@ -216,7 +217,7 @@
 }
 
 // Settings: only the console tab is relevant to operators.
-.o_setting_container .settings_tab .tab:not([data-key="zenlenet_ops"]) {
+.settings_tab .tab:not([data-key="zenlenet_ops"]) {
     display: none;
 }
 

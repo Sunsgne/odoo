@@ -23,7 +23,7 @@ class ZenlenetShell(models.AbstractModel):
         self.env['zenlenet.datacenter'].sudo().migrate_places()
         self.env['zenlenet.contract'].sudo().search([])._compute_amounts()
         self.env['res.partner']._zenlenet_refresh_status()
-        action = self.env.ref('zenlenet_ops.action_home', raise_if_not_found=False)
+        action = self.env.ref('zenlenet_ops.action_home_page', raise_if_not_found=False)
         users = self.env['res.users'].sudo().search([('share', '=', False)])
         if action and 'action_id' in users._fields:
             users.write({'action_id': action.id})
