@@ -35,35 +35,16 @@
                     <field name="zenlenet_status" widget="statusbar" options="{'clickable': true}"/>
                 </header>
                 <sheet>
-                    <div class="oe_button_box" name="button_box">
-                        <button name="action_open_orders" type="object" class="oe_stat_button" icon="fa-plug">
-                            <field name="zenlenet_order_count" widget="statinfo" string="服务订单"/>
-                        </button>
-                        <button name="action_open_contracts" type="object" class="oe_stat_button" icon="fa-handshake-o">
-                            <field name="zenlenet_contract_count" widget="statinfo" string="合同"/>
-                        </button>
-                        <button name="action_open_invoices" type="object" class="oe_stat_button" icon="fa-money">
-                            <div class="o_stat_info">
-                                <span class="o_stat_value"><field name="zenlenet_unpaid_amount" widget="monetary" options="{'currency_field': 'zenlenet_currency_id'}"/></span>
-                                <span class="o_stat_text">未收款 · <field name="zenlenet_invoice_count"/> 张账单</span>
-                            </div>
-                        </button>
-                        <button name="action_open_flows" type="object" class="oe_stat_button" icon="fa-random">
-                            <field name="zenlenet_flow_count" widget="statinfo" string="交付工单"/>
-                        </button>
-                        <button name="action_open_tickets" type="object" class="oe_stat_button" icon="fa-life-ring">
-                            <field name="zenlenet_ticket_count" widget="statinfo" string="服务工单"/>
-                        </button>
-                        <button name="action_open_resources" type="object" class="oe_stat_button" icon="fa-sitemap">
-                            <field name="zenlenet_address_count" widget="statinfo" string="IP 地址"/>
-                        </button>
-                        <button name="action_open_lines" type="object" class="oe_stat_button" icon="fa-exchange">
-                            <field name="zenlenet_line_count" widget="statinfo" string="线路"/>
-                        </button>
-                        <button name="action_open_prices" type="object" class="oe_stat_button" icon="fa-tag">
-                            <field name="zenlenet_price_count" widget="statinfo" string="专属价格"/>
-                        </button>
+                    <div class="o_zl_chain">
+                        <div class="o_zl_chain_step"><b><field name="zenlenet_order_count"/></b><span>服务订单</span></div>
+                        <div class="o_zl_chain_step"><b><field name="zenlenet_contract_count"/></b><span>合同</span></div>
+                        <div class="o_zl_chain_step"><b><field name="zenlenet_unpaid_amount" widget="monetary" options="{'currency_field': 'zenlenet_currency_id'}"/></b><span>未收款 · <field name="zenlenet_invoice_count"/> 张</span></div>
+                        <div class="o_zl_chain_step"><b><field name="zenlenet_flow_count"/></b><span>交付工单</span></div>
+                        <div class="o_zl_chain_step"><b><field name="zenlenet_ticket_count"/></b><span>服务工单</span></div>
+                        <div class="o_zl_chain_step"><b><field name="zenlenet_address_count"/></b><span>IP</span></div>
+                        <div class="o_zl_chain_step"><b><field name="zenlenet_line_count"/></b><span>线路</span></div>
                     </div>
+                    <div class="text-muted small mb-2">明细都在下面。点一行在当前页打开，不用另开菜单。</div>
                     <div class="oe_title">
                         <div class="text-muted font-monospace"><field name="zenlenet_code" readonly="1"/></div>
                         <h1><field name="name" placeholder="客户名称"/></h1>
@@ -119,8 +100,10 @@
                                     <field name="origin" string="业务"/>
                                     <field name="amount_untaxed" string="月费"/>
                                     <field name="currency_id" string="币种"/>
-                                    <field name="zenlenet_bill_mode"/>
-                                    <field name="zenlenet_stage"/>
+                                    <field name="zenlenet_contract_id" string="合同"/>
+                                    <field name="zenlenet_contract_state" string="合同状态" widget="badge"/>
+                                    <field name="zenlenet_flow_count" string="交付"/>
+                                    <field name="zenlenet_stage" widget="badge"/>
                                 </list>
                             </field>
                         </page>

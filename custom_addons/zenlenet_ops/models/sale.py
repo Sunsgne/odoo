@@ -32,6 +32,9 @@ class SaleOrder(models.Model):
     zenlenet_flow_ids = fields.One2many('zenlenet.flow', 'order_id', string='交付工单')
     zenlenet_flow_count = fields.Integer(compute='_compute_zenlenet_links')
     zenlenet_contract_id = fields.Many2one('zenlenet.contract', string='合同', compute='_compute_zenlenet_links')
+    zenlenet_contract_state = fields.Selection(related='zenlenet_contract_id.state', string='合同状态')
+    zenlenet_contract_monthly = fields.Monetary(related='zenlenet_contract_id.monthly_amount', string='合同月费')
+    zenlenet_contract_end = fields.Date(related='zenlenet_contract_id.end_date', string='合同到期')
 
     @api.depends('order_line.zenlenet_setup_fee', 'amount_untaxed', 'zenlenet_term_months')
     def _compute_zenlenet_totals(self):

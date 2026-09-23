@@ -69,17 +69,14 @@
                     <field name="state" widget="statusbar" options="{'clickable': false}" statusbar_visible="company,allocate,deliver,accept,reclaim,done" invisible="kind != 'test'"/>
                 </header>
                 <sheet>
-                    <div class="oe_button_box" name="button_box">
-                        <button name="action_open_order" type="object" class="oe_stat_button" icon="fa-plug" invisible="not order_id">
-                            <div class="o_stat_info"><span class="o_stat_text">服务订单</span></div>
-                        </button>
-                        <button name="action_open_contract" type="object" class="oe_stat_button" icon="fa-handshake-o" invisible="not contract_id">
-                            <div class="o_stat_info"><span class="o_stat_text">合同</span></div>
-                        </button>
-                        <button name="action_open_tickets" type="object" class="oe_stat_button" icon="fa-life-ring">
-                            <field name="ticket_count" widget="statinfo" string="工单"/>
-                        </button>
+                    <div class="o_zl_chain">
+                        <div class="o_zl_chain_step"><b><field name="partner_id" readonly="1" options="{'no_open': True}"/></b><span>客户</span></div>
+                        <div class="o_zl_chain_step"><b><field name="order_id" readonly="1" options="{'no_open': True}"/></b><span>服务订单</span></div>
+                        <div class="o_zl_chain_step"><b><field name="contract_id" readonly="1" options="{'no_open': True}"/></b><span>合同 · <field name="contract_state"/> · <field name="contract_monthly" widget="monetary"/></span></div>
+                        <div class="o_zl_chain_step"><b><field name="pending_count"/></b><span>待分配</span></div>
+                        <div class="o_zl_chain_step"><b><field name="ticket_count"/></b><span>服务工单</span></div>
                     </div>
+                    <field name="currency_id" invisible="1"/>
                     <div class="oe_title">
                         <h1><field name="name" readonly="1"/></h1>
                     </div>
@@ -116,6 +113,20 @@
                         </group>
                     </group>
                     <notebook>
+                        <page string="这笔订单" invisible="not order_id">
+                            <div class="text-muted mb-2">销售报的内容。按这些行分配下面的资源，不用另开订单。</div>
+                            <field name="order_line_ids" readonly="1">
+                                <list>
+                                    <field name="product_id" string="业务"/>
+                                    <field name="name" string="规格"/>
+                                    <field name="product_uom_qty" string="数量"/>
+                                    <field name="price_unit" string="单价 / 月"/>
+                                    <field name="price_subtotal" string="月费"/>
+                                    <field name="zenlenet_setup_fee" string="一次性"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
                         <page string="资源">
                             <div class="text-muted mb-2">先选服务订单，点「从订单带入」。IPT / IP 段填「网段」，单个 IP 填「IP」，专线 / SD-WAN 填「线路」。另外两列留空。</div>
                             <field name="resource_ids">

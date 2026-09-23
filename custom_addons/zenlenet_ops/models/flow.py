@@ -86,6 +86,10 @@ class ZenlenetFlow(models.Model):
         help='从哪张订单来的交付。选好后点「从订单带入」生成业务行。',
     )
     contract_id = fields.Many2one('zenlenet.contract', string='合同', compute='_compute_contract')
+    contract_state = fields.Selection(related='contract_id.state', string='合同状态')
+    contract_monthly = fields.Monetary(related='contract_id.monthly_amount', string='合同月费', currency_field='currency_id')
+    currency_id = fields.Many2one(related='contract_id.currency_id')
+    order_line_ids = fields.One2many(related='order_id.order_line', string='订单明细')
     resource_ids = fields.One2many('zenlenet.flow.resource', 'flow_id', string='资源')
     task_ids = fields.One2many('zenlenet.flow.task', 'flow_id', string='交付任务')
     task_progress = fields.Float(string='任务进度', compute='_compute_task_progress')

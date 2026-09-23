@@ -75,8 +75,15 @@ class ZenlenetContract(models.Model):
     terms = fields.Html(string='补充条款', sanitize=True)
     note = fields.Text(string='备注')
     invoice_ids = fields.One2many('account.move', 'zenlenet_contract_id', string='账单')
+    flow_ids = fields.Many2many('zenlenet.flow', string='交付工单', compute='_compute_flow_ids')
     invoice_count = fields.Integer(compute='_compute_invoice_count')
     days_left = fields.Integer(string='剩余天数', compute='_compute_days_left')
+
+    @api.depends('order_ids')
+    def _compute_flow_ids(self):
+        Flow = self.env['zenlenet.flow']
+        for record in self:
+            record.flow_ids = Flow.search([('order_id', 'in', record.order_ids.ids)]) if record.order_ids else Flow
 
     def _delete_snapshot(self):
         return {'state': self.state, 'invoice_count': len(self.invoice_ids)}

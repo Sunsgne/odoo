@@ -70,13 +70,11 @@
                     <field name="state" widget="statusbar" options="{'clickable': false}" statusbar_visible="new,assigned,processing,resolved,closed"/>
                 </header>
                 <sheet>
-                    <div class="oe_button_box" name="button_box">
-                        <button name="action_open_credits" type="object" class="oe_stat_button" icon="fa-percent" invisible="not credit_count">
-                            <field name="credit_count" widget="statinfo" string="故障减免"/>
-                        </button>
-                        <button name="action_open_flow" type="object" class="oe_stat_button" icon="fa-random" invisible="not flow_id">
-                            <div class="o_stat_info"><span class="o_stat_text">业务流转</span></div>
-                        </button>
+                    <div class="o_zl_chain" invisible="not partner_id and not flow_id">
+                        <div class="o_zl_chain_step" invisible="not partner_id"><b><field name="partner_id" readonly="1" options="{'no_open': True}"/></b><span>客户</span></div>
+                        <div class="o_zl_chain_step" invisible="not flow_id"><b><field name="flow_id" readonly="1" options="{'no_open': True}"/></b><span>交付 · <field name="flow_state"/></span></div>
+                        <div class="o_zl_chain_step" invisible="not flow_order_id"><b><field name="flow_order_id" readonly="1" options="{'no_open': True}"/></b><span>服务订单</span></div>
+                        <div class="o_zl_chain_step"><b><field name="credit_count"/></b><span>故障减免</span></div>
                     </div>
                     <div class="oe_title">
                         <h1 class="d-flex align-items-center gap-2">
@@ -111,6 +109,28 @@
                         </page>
                         <page string="处理结果">
                             <field name="resolution" placeholder="根因、处理动作、是否需要后续跟进"/>
+                        </page>
+                        <page string="故障减免" invisible="kind != 'fault'">
+                            <field name="credit_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="method"/>
+                                    <field name="amount"/>
+                                    <field name="state" widget="badge"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="交付资源" invisible="not flow_id">
+                            <field name="flow_resource_ids" readonly="1">
+                                <list>
+                                    <field name="service_type"/>
+                                    <field name="spec"/>
+                                    <field name="prefix_id"/>
+                                    <field name="address_id"/>
+                                    <field name="line_id"/>
+                                </list>
+                            </field>
                         </page>
                         <page string="涉及资源">
                             <group>

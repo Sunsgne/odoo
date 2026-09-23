@@ -40,10 +40,11 @@
                     <field name="state" widget="statusbar" statusbar_visible="draft,active,expiring,expired"/>
                 </header>
                 <sheet>
-                    <div class="oe_button_box" name="button_box">
-                        <button name="action_open_invoices" type="object" class="oe_stat_button" icon="fa-file-text-o">
-                            <field name="invoice_count" widget="statinfo" string="账单"/>
-                        </button>
+                    <div class="o_zl_chain">
+                        <div class="o_zl_chain_step"><b><field name="monthly_amount" widget="monetary"/></b><span>月费</span></div>
+                        <div class="o_zl_chain_step"><b><field name="one_time_total" widget="monetary"/></b><span>一次性</span></div>
+                        <div class="o_zl_chain_step"><b><field name="invoice_count"/></b><span>账单</span></div>
+                        <div class="o_zl_chain_step"><b><field name="days_left"/></b><span>剩余天数</span></div>
                     </div>
                     <div class="oe_title">
                         <h1><field name="name" readonly="1"/></h1>
@@ -90,6 +91,32 @@
                                     <field name="invoice_id" optional="hide" readonly="1"/>
                                     <field name="order_line_id" column_invisible="1"/>
                                     <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="交付">
+                            <field name="flow_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="order_id"/>
+                                    <field name="state" widget="badge"/>
+                                    <field name="datacenter_id"/>
+                                    <field name="pending_count" string="待分配"/>
+                                    <field name="planned_date"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="账单">
+                            <field name="invoice_ids" readonly="1">
+                                <list>
+                                    <field name="name" string="账单"/>
+                                    <field name="ref" string="账期"/>
+                                    <field name="invoice_date" string="日期"/>
+                                    <field name="amount_total" string="金额" sum="合计"/>
+                                    <field name="amount_residual" string="未收" sum="合计"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                    <field name="state" widget="badge"/>
+                                    <field name="payment_state" string="收款" widget="badge"/>
                                 </list>
                             </field>
                         </page>

@@ -225,6 +225,31 @@
     }
 }
 
+// One-line chain on a form: the related records stay on this page.
+.o_form_view .o_zl_chain {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 12px;
+}
+.o_form_view .o_zl_chain_step {
+    display: flex;
+    flex-direction: column;
+    min-width: 120px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: #fff;
+    border: 1px solid var(--border-color, #dee2e6);
+    b, .o_field_widget {
+        font-weight: 700;
+        font-size: 1rem;
+    }
+    span {
+        color: var(--text-muted, #6c757d);
+        font-size: 0.75rem;
+    }
+}
+
 // Only one application exists, so the app switcher grid is noise.
 .o_main_navbar .o_navbar_apps_menu {
     display: none !important;

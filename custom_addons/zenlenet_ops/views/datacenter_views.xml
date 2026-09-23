@@ -64,22 +64,11 @@
                     <field name="state" widget="statusbar" options="{'clickable': true}"/>
                 </header>
                 <sheet>
-                    <div class="oe_button_box" name="button_box">
-                        <button name="action_open_prefixes" type="object" class="oe_stat_button" icon="fa-th-large">
-                            <field name="prefix_count" widget="statinfo" string="地址段"/>
-                        </button>
-                        <button name="action_open_addresses" type="object" class="oe_stat_button" icon="fa-sitemap">
-                            <field name="address_count" widget="statinfo" string="IP 地址"/>
-                        </button>
-                        <button name="action_open_lines" type="object" class="oe_stat_button" icon="fa-exchange">
-                            <field name="line_count" widget="statinfo" string="线路"/>
-                        </button>
-                        <button name="action_open_assets" type="object" class="oe_stat_button" icon="fa-server">
-                            <field name="asset_count" widget="statinfo" string="设备"/>
-                        </button>
-                        <button name="action_open_maintenance" type="object" class="oe_stat_button" icon="fa-wrench">
-                            <div class="o_stat_info"><span class="o_stat_text">割接维护</span></div>
-                        </button>
+                    <div class="o_zl_chain">
+                        <div class="o_zl_chain_step"><b><field name="prefix_count"/></b><span>地址段</span></div>
+                        <div class="o_zl_chain_step"><b><field name="address_count"/></b><span>IP · 空闲 <field name="free_count"/></span></div>
+                        <div class="o_zl_chain_step"><b><field name="line_count"/></b><span>线路</span></div>
+                        <div class="o_zl_chain_step"><b><field name="asset_count"/></b><span>设备</span></div>
                     </div>
                     <div class="oe_title">
                         <h1><field name="name" placeholder="数据中心名称"/></h1>
@@ -103,6 +92,17 @@
                         </group>
                     </group>
                     <notebook>
+                        <page string="地址段">
+                            <field name="prefix_ids" readonly="1">
+                                <list limit="80">
+                                    <field name="prefix" class="font-monospace"/>
+                                    <field name="status" widget="badge"/>
+                                    <field name="partner_id" string="分配给"/>
+                                    <field name="size_display" string="容量"/>
+                                    <field name="utilization" widget="progressbar"/>
+                                </list>
+                            </field>
+                        </page>
                         <page string="IP 地址">
                             <field name="address_ids" readonly="1">
                                 <list>
@@ -111,6 +111,15 @@
                                     <field name="partner_id"/>
                                     <field name="status"/>
                                     <field name="net_attr"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="设备">
+                            <field name="asset_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="state"/>
+                                    <field name="partner_id"/>
                                 </list>
                             </field>
                         </page>
