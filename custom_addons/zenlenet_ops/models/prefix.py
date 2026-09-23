@@ -258,6 +258,7 @@ class ZenlenetPrefix(models.Model):
             'res_model': 'zenlenet.flow',
             'res_id': flow.id,
             'view_mode': 'form',
+            'views': [(False, 'form')],
             'target': 'new',
         }
 
