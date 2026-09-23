@@ -73,21 +73,58 @@
                             </t>
                             <span><i class="zl-cell zl-cell-none zl-legend-dot"/> 未登记</span>
                             <span><i class="zl-cell zl-cell-special zl-legend-dot"/> 网络 / 广播</span>
-                            <span class="text-muted ms-auto">按住 Shift 点多个地址可批量改状态</span>
+                            <span class="text-muted ms-auto">在格子上按住鼠标拖动可框选；Shift 点选可追加</span>
                         </div>
                         <div t-if="state.selection.length" class="zl-bulk">
-                            已选 <b t-esc="state.selection.length"/> 个地址：
-                            <t t-foreach="statuses" t-as="status" t-key="status[0]">
-                                <button class="btn btn-sm btn-outline-secondary" t-on-click="() => this.bulkStatus(status[0])" t-esc="status[1]"/>
-                            </t>
-                            <button class="btn btn-sm btn-link" t-on-click="clearSelection">取消</button>
+                            <span>已选 <b t-esc="state.selection.length"/> 个地址：</span>
+                            <button class="btn btn-sm btn-primary" t-on-click="openBulkAssign"><i class="fa fa-user-plus"/> 分配给客户 / 交付工单</button>
+                            <span class="text-muted small">｜ 不走交付的：</span>
+                            <button class="btn btn-sm btn-outline-secondary" t-on-click="() => this.bulkStatus('reserved')">预分配</button>
+                            <button class="btn btn-sm btn-outline-secondary" t-on-click="() => this.bulkStatus('internal')">自用</button>
+                            <button class="btn btn-sm btn-outline-secondary" t-on-click="() => this.bulkStatus('testing')">测试</button>
+                            <button class="btn btn-sm btn-outline-secondary" t-on-click="() => this.bulkStatus('returning')">出库中</button>
+                            <button class="btn btn-sm btn-outline-secondary" t-on-click="() => this.bulkStatus('free')">释放为未分配</button>
+                            <button class="btn btn-sm btn-link" t-on-click="clearSelection">取消选择</button>
+                        </div>
+                        <div t-if="state.bulkAssign" class="zl-bulk-assign">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <b>把 <t t-esc="state.selection.length"/> 个地址分配出去</b>
+                                <button class="btn btn-sm btn-link" t-on-click="closeBulkAssign"><i class="fa fa-times"/></button>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <div class="small text-muted mb-1">正常流程：报价客户同意 → 选待分配的交付工单，地址会挂到工单上</div>
+                                    <ul class="zl-flow-list">
+                                        <li t-foreach="state.pendingFlows" t-as="flow" t-key="flow.id" t-attf-class="#{state.bulkAssign.flow_id === flow.id ? 'active' : ''}" t-on-click="() => this.pickFlow(flow)">
+                                            <span class="font-monospace fw-bold" t-esc="flow.name"/> <span t-esc="flow.partner"/>
+                                            <span class="text-muted small"> · <t t-esc="flow.order"/> <t t-if="flow.datacenter">· <t t-esc="flow.datacenter"/></t> · 待分配 <t t-esc="flow.pending"/></span>
+                                        </li>
+                                        <li t-if="!state.pendingFlows.length" class="text-muted">没有处于「分配资源」阶段的交付工单</li>
+                                    </ul>
+                                </div>
+                                <div class="col-6">
+                                    <div class="small text-muted mb-1">或直接选客户（补录、历史迁移）</div>
+                                    <input type="text" class="form-control form-control-sm" placeholder="搜客户" t-att-value="state.bulkAssign.partner_name" t-on-input="searchBulkCustomers"/>
+                                    <ul t-if="state.bulkCustomers.length" class="zl-choices">
+                                        <li t-foreach="state.bulkCustomers" t-as="customer" t-key="customer.id" t-on-click="() => this.pickBulkCustomer(customer)" t-esc="customer.name"/>
+                                    </ul>
+                                    <input type="text" class="form-control form-control-sm mt-2" placeholder="用途（可选）" t-model="state.bulkAssign.usage"/>
+                                    <div class="d-flex justify-content-end gap-2 mt-2">
+                                        <button class="btn btn-sm btn-secondary" t-on-click="closeBulkAssign">取消</button>
+                                        <button class="btn btn-sm btn-primary" t-on-click="confirmBulkAssign"><i class="fa fa-check"/> 确认分配</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <t t-if="state.detail.blocks.length">
                             <div t-foreach="state.detail.blocks" t-as="block" t-key="block.prefix" class="zl-block">
-                                <div class="zl-block-title"><i class="fa fa-angle-down"/> <span class="font-monospace" t-esc="block.label"/> <span class="text-muted small">（<t t-esc="block.cells.length"/> 个 · 已用 <t t-esc="block.used"/>）</span></div>
-                                <div class="zl-grid">
+                                <div class="zl-block-title d-flex justify-content-between">
+                                    <span><i class="fa fa-angle-down"/> <span class="font-monospace" t-esc="block.label"/> <span class="text-muted small">（<t t-esc="block.cells.length"/> 个 · 已用 <t t-esc="block.used"/>）</span></span>
+                                    <button class="btn btn-sm btn-link p-0" t-on-click="() => this.selectAllFree(block)">选中全部空闲</button>
+                                </div>
+                                <div class="zl-grid" t-on-mouseup="(ev) => this.onGridUp(block, ev)" t-on-mouseleave="() => this.onGridUp(block, {})">
                                     <t t-foreach="block.cells" t-as="cell" t-key="cell.ip">
-                                        <span t-att-class="cellClass(cell)" t-att-title="cellTitle(cell)" t-on-click="(ev) => this.openCell(cell, ev)" t-esc="'.' + cell.last"/>
+                                        <span t-att-class="cellClass(cell, block, cell_index)" t-att-title="cellTitle(cell)" t-on-mousedown="(ev) => this.onCellDown(block, cell_index, cell, ev)" t-on-mouseenter="() => this.onCellEnter(block, cell_index)" t-esc="'.' + cell.last"/>
                                     </t>
                                 </div>
                             </div>

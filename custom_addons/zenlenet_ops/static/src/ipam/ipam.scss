@@ -145,6 +145,23 @@ $zl-primary: #714b67;
         align-items: center;
         flex-wrap: wrap;
     }
+    .zl-bulk-assign {
+        background: #fff;
+        border: 1px solid $zl-primary;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 12px;
+    }
+    .zl-flow-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        max-height: 220px;
+        overflow: auto;
+        border: 1px solid #e3e6ea;
+        border-radius: 6px;
+        li { padding: 6px 8px; cursor: pointer; border-bottom: 1px solid #f1f2f5; &:hover { background: #f1f2f5; } &.active { background: rgba($zl-primary, 0.12); } }
+    }
     .zl-block {
         background: #fff;
         border: 1px solid #e3e6ea;
@@ -170,8 +187,10 @@ $zl-primary: #714b67;
         color: #475467;
         border: 1px solid transparent;
         user-select: none;
+        -webkit-user-drag: none;
         &:hover { border-color: $zl-primary; }
     }
+    .zl-grid { user-select: none; }
     .zl-cell-none { background: #f4f5f7; color: #98a2b3; }
     .zl-cell-free { background: #e8f5ee; color: #1b7a48; }
     .zl-cell-allocated { background: #2e90fa; color: #fff; }

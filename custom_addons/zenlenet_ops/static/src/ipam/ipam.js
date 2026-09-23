@@ -37,6 +37,11 @@ export class ZenlenetIpam extends Component {
             assignQuery: "",
             assignChoices: [],
             selection: [],
+            drag: null,
+            bulkAssign: null,
+            pendingFlows: [],
+            bulkCustomerQuery: "",
+            bulkCustomers: [],
         });
         onWillStart(async () => {
             await this.loadTree();
@@ -120,11 +125,11 @@ export class ZenlenetIpam extends Component {
         return { active: "在用", container: "容器", reserved: "预留", deprecated: "已弃用" }[status] || status;
     }
 
-    cellClass(cell) {
+    cellClass(cell, block, index) {
         if (cell.special) {
             return "zl-cell zl-cell-special";
         }
-        const selected = this.state.selection.includes(cell.ip) ? " zl-cell-selected" : "";
+        const selected = this.state.selection.includes(cell.ip) || (block && this.isInDrag(block, index)) ? " zl-cell-selected" : "";
         return `zl-cell zl-cell-${cell.status}${selected}`;
     }
 
@@ -134,6 +139,116 @@ export class ZenlenetIpam extends Component {
         }
         const label = Object.fromEntries(STATUSES)[cell.status] || "未登记";
         return [cell.ip, label, cell.partner, cell.usage].filter(Boolean).join(" · ");
+    }
+
+    // ------------------------------------------------------------ drag select
+    onCellDown(block, index, cell, ev) {
+        if (cell.special || ev.button !== 0) {
+            return;
+        }
+        ev.preventDefault();
+        this.state.drag = { block: block.prefix, start: index, end: index, additive: ev.shiftKey || ev.ctrlKey || ev.metaKey, moved: false };
+    }
+
+    onCellEnter(block, index) {
+        const drag = this.state.drag;
+        if (!drag || drag.block !== block.prefix) {
+            return;
+        }
+        if (index !== drag.end) {
+            drag.moved = true;
+        }
+        drag.end = index;
+    }
+
+    onGridUp(block, ev) {
+        const drag = this.state.drag;
+        this.state.drag = null;
+        if (!drag || drag.block !== block.prefix) {
+            return;
+        }
+        const [from, to] = drag.start <= drag.end ? [drag.start, drag.end] : [drag.end, drag.start];
+        const range = block.cells.slice(from, to + 1).filter((cell) => !cell.special).map((cell) => cell.ip);
+        if (!drag.moved && !drag.additive) {
+            // a plain click opens the single-address editor
+            this.openCell(block.cells[drag.start], { shiftKey: false });
+            return;
+        }
+        if (!drag.additive) {
+            this.state.selection = range;
+            return;
+        }
+        for (const ip of range) {
+            const at = this.state.selection.indexOf(ip);
+            if (at >= 0 && !drag.moved) {
+                this.state.selection.splice(at, 1);
+            } else if (at < 0) {
+                this.state.selection.push(ip);
+            }
+        }
+    }
+
+    isInDrag(block, index) {
+        const drag = this.state.drag;
+        if (!drag || drag.block !== block.prefix) {
+            return false;
+        }
+        const [from, to] = drag.start <= drag.end ? [drag.start, drag.end] : [drag.end, drag.start];
+        return index >= from && index <= to;
+    }
+
+    selectAllFree(block) {
+        this.state.selection = block.cells.filter((cell) => !cell.special && (cell.status === "free" || cell.status === "none")).map((cell) => cell.ip);
+    }
+
+    // --------------------------------------------------------- bulk assign
+    async openBulkAssign() {
+        this.state.bulkAssign = { flow_id: false, partner_id: false, partner_name: "", usage: "" };
+        this.state.pendingFlows = await this.orm.call("zenlenet.prefix", "ipam_pending_flows", []);
+        this.state.bulkCustomers = [];
+        this.state.bulkCustomerQuery = "";
+    }
+
+    closeBulkAssign() {
+        this.state.bulkAssign = null;
+    }
+
+    pickFlow(flow) {
+        this.state.bulkAssign.flow_id = flow.id;
+        this.state.bulkAssign.partner_id = flow.partner_id;
+        this.state.bulkAssign.partner_name = flow.partner;
+    }
+
+    async searchBulkCustomers(ev) {
+        this.state.bulkCustomerQuery = ev.target.value;
+        this.state.bulkAssign.flow_id = false;
+        this.state.bulkAssign.partner_id = false;
+        this.state.bulkAssign.partner_name = ev.target.value;
+        this.state.bulkCustomers = await this.orm.call("zenlenet.prefix", "ipam_customers", [ev.target.value]);
+    }
+
+    pickBulkCustomer(customer) {
+        this.state.bulkAssign.partner_id = customer.id;
+        this.state.bulkAssign.partner_name = customer.name;
+        this.state.bulkCustomerQuery = customer.name;
+        this.state.bulkCustomers = [];
+    }
+
+    async confirmBulkAssign() {
+        const form = this.state.bulkAssign;
+        if (!form.partner_id && !form.flow_id) {
+            this.notification.add("请选一张待分配的交付工单，或直接选客户。", { type: "warning" });
+            return;
+        }
+        try {
+            const result = await this.orm.call("zenlenet.prefix", "ipam_bulk_assign", [[this.state.selectedId], this.state.selection, form.partner_id || false, form.flow_id || false, form.usage || ""]);
+            this.notification.add(`${result.count} 个地址已分配${result.flow ? "，并挂到交付工单 " + result.flow : ""}`, { type: "success" });
+            this.state.bulkAssign = null;
+            this.state.selection = [];
+            await this.select(this.state.selectedId);
+        } catch (error) {
+            this.notification.add(error.data?.message || String(error), { type: "danger" });
+        }
     }
 
     // ----------------------------------------------------------------- cell

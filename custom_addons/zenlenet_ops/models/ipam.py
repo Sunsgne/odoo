@@ -188,6 +188,42 @@ class ZenlenetPrefixIpam(models.Model):
                 _logger.warning('NetBox address create skipped: %s', type(error).__name__)
         return {'id': record.id, 'status': record.status, 'partner': record.partner_id.name or '', 'usage': record.usage or ''}
 
+    @api.model
+    def ipam_pending_flows(self):
+        """Delivery tickets waiting for resources, for the grid's assign panel."""
+        flows = self.env['zenlenet.flow'].search([('state', '=', 'allocate')], order='id desc', limit=50)
+        return [{
+            'id': flow.id, 'name': flow.name, 'partner_id': flow.partner_id.id, 'partner': flow.partner_id.name or '',
+            'datacenter': flow.datacenter_id.name or '', 'pending': flow.pending_count,
+            'order': flow.order_id.name or '',
+        } for flow in flows]
+
+    def ipam_bulk_assign(self, ips, partner_id=None, flow_id=None, usage=''):
+        """Allocate the selected hosts to a customer, optionally through a delivery ticket."""
+        self.ensure_one()
+        flow = self.env['zenlenet.flow'].browse(flow_id) if flow_id else self.env['zenlenet.flow']
+        if flow and not partner_id:
+            partner_id = flow.partner_id.id
+        if not partner_id:
+            raise UserError('请选择客户或交付工单。')
+        Resource = self.env['zenlenet.flow.resource']
+        records = self.env['zenlenet.address']
+        for ip in ips:
+            info = self.ipam_set_address(ip, {'status': 'allocated', 'partner_id': partner_id, 'usage': usage or (f'交付工单 {flow.name}' if flow else '')})
+            records |= records.browse(info['id'])
+        if flow:
+            have = set(flow.resource_ids.mapped('address_id').ids)
+            for address in records:
+                if address.id in have:
+                    continue
+                Resource.create({
+                    'flow_id': flow.id,
+                    'service_type': 'ip_single',
+                    'resource_ref': f'zenlenet.address,{address.id}',
+                    'spec': f'{address.address} 由地址管理分配',
+                })
+        return {'count': len(records), 'flow': flow.name if flow else ''}
+
     def ipam_bulk_status(self, ips, status):
         self.ensure_one()
         if status not in STATUS_LABELS:
