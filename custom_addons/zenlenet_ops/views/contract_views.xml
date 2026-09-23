@@ -6,7 +6,7 @@
         <field name="arch" type="xml">
             <list decoration-warning="state == 'expiring'" decoration-danger="state == 'expired'" decoration-muted="state == 'terminated'">
                 <header>
-                    <button name="action_bill_period" type="object" string="生成本月账单" class="btn-primary" display="always"/>
+                    <button name="action_bill_period" type="object" string="生成本月账单" class="btn-primary" display="always" groups="zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
                 </header>
                 <field name="name"/>
                 <field name="partner_id"/>
@@ -31,7 +31,7 @@
             <form>
                 <header>
                     <button name="action_activate" type="object" string="开始执行" class="btn-primary" invisible="state != 'draft'"/>
-                    <button name="action_bill_now" type="object" string="出本期账单" class="btn-primary" invisible="state not in ('active', 'expiring')"/>
+                    <button name="action_bill_now" type="object" string="出本期账单" class="btn-primary" invisible="state not in ('active', 'expiring')" groups="zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
                     <button name="action_load_items" type="object" string="从订单带入费用" invisible="not order_ids or state not in ('draft', 'active', 'expiring')"/>
                     <button name="%(zenlenet_ops.report_contract)d" type="action" string="打印合同"/>
                     <button name="action_renew" type="object" string="续签一期" invisible="state not in ('expiring', 'expired')"/>

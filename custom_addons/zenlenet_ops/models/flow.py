@@ -246,8 +246,25 @@ class ZenlenetFlow(models.Model):
                         'line_id': line.id,
                     })
 
+    ROLE_BY_TEAM = {
+        'sales': ('zenlenet_ops.group_sales', '销售'),
+        'delivery': ('zenlenet_ops.group_delivery', '交付'),
+        'service': ('zenlenet_ops.group_service', '售后'),
+    }
+
+    def _ensure_role(self, state):
+        team = team_for(state)
+        role = self.ROLE_BY_TEAM.get(team)
+        if not role:
+            return
+        user = self.env.user
+        if user.has_group('zenlenet_ops.group_manager') or user.has_group(role[0]):
+            return
+        raise UserError(f'这一步（{state_label(state)}）由{role[1]}岗位操作，你的岗位没有权限。')
+
     def _check_exit(self):
         self.ensure_one()
+        self._ensure_role(self.state)
         if self.state == 'company':
             if not self.partner_id:
                 raise UserError('请先录入公司，再进入下一步。')
@@ -318,6 +335,7 @@ class ZenlenetFlow(models.Model):
 
     def action_reclaim(self):
         for record in self:
+            record._ensure_role('accept')
             if not can_reclaim(record.kind, record.state):
                 raise UserError('只有测试单可以回收。')
             record.state = 'reclaim'
@@ -325,6 +343,7 @@ class ZenlenetFlow(models.Model):
 
     def action_to_business(self):
         for record in self:
+            record._ensure_role('accept')
             if not can_convert(record.kind, record.state):
                 raise UserError('只有测试单在验收、测试结论或回收时可以转商务。')
             record.write({'kind': 'business', 'state': 'deliver'})

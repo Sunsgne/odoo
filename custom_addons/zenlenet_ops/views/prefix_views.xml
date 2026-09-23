@@ -6,7 +6,7 @@
         <field name="arch" type="xml">
             <list decoration-muted="status == 'deprecated'" decoration-bf="status == 'container'">
                 <header>
-                    <button name="%(zenlenet_ops.action_prefix_add)d" type="action" string="录入网段" class="btn-primary" display="always"/>
+                    <button name="%(zenlenet_ops.action_prefix_add)d" type="action" string="录入网段" class="btn-primary" display="always" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_manager"/>
                 </header>
                 <field name="prefix" class="font-monospace"/>
                 <field name="parent_id" optional="show"/>
@@ -31,10 +31,10 @@
         <field name="arch" type="xml">
             <form>
                 <header>
-                    <button name="action_allocate" type="object" string="分配给客户" class="btn-primary" invisible="not partner_id or allocated_count == address_count"/>
-                    <button name="action_release" type="object" string="整段回收" invisible="not partner_id" confirm="回收后这一段的所有地址都会变成未分配，客户清空。继续？"/>
-                    <button name="action_split" type="object" string="切割" invisible="status == 'deprecated'"/>
-                    <button name="action_add_child" type="object" string="新增下级网段" invisible="status == 'deprecated'"/>
+                    <button name="action_allocate" type="object" string="分配给客户" class="btn-primary" invisible="not partner_id or allocated_count == address_count" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_manager"/>
+                    <button name="action_release" type="object" string="整段回收" invisible="not partner_id" confirm="回收后这一段的所有地址都会变成未分配，客户清空。继续？" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_manager"/>
+                    <button name="action_split" type="object" string="切割" invisible="status == 'deprecated'" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_manager"/>
+                    <button name="action_add_child" type="object" string="新增下级网段" invisible="status == 'deprecated'" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_manager"/>
                     <button name="action_open_netbox" type="object" string="在 NetBox 中查看" icon="fa-external-link" invisible="not netbox_id"/>
                     <field name="status" widget="statusbar" options="{'clickable': true}"/>
                 </header>

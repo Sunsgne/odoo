@@ -58,7 +58,7 @@
         <field name="arch" type="xml">
             <form>
                 <header>
-                    <button name="action_take" type="object" string="我来处理" class="btn-primary" invisible="state != 'new'"/>
+                    <button name="action_take" type="object" string="我来处理" class="btn-primary" invisible="state != 'new'" groups="zenlenet_ops.group_service,zenlenet_ops.group_delivery,zenlenet_ops.group_manager"/>
                     <button name="action_next" type="object" string="开始处理" class="btn-primary" invisible="state != 'assigned'"/>
                     <button name="action_next" type="object" string="已解决" class="btn-primary" invisible="state != 'processing'"/>
                     <button name="action_next" type="object" string="继续处理" class="btn-primary" invisible="state != 'waiting'"/>

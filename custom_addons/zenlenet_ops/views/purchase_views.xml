@@ -27,9 +27,9 @@
         <field name="arch" type="xml">
             <form>
                 <header>
-                    <button name="action_order" type="object" string="已下单" class="btn-primary" invisible="state != 'draft'"/>
-                    <button name="action_receive" type="object" string="已到货" class="btn-primary" invisible="state != 'ordered'"/>
-                    <button name="action_make_bill" type="object" string="生成供应商账单" invisible="bill_id or state not in ('ordered', 'received')"/>
+                    <button name="action_order" type="object" string="已下单" class="btn-primary" invisible="state != 'draft'" groups="zenlenet_ops.group_procurement,zenlenet_ops.group_manager"/>
+                    <button name="action_receive" type="object" string="已到货" class="btn-primary" invisible="state != 'ordered'" groups="zenlenet_ops.group_procurement,zenlenet_ops.group_manager"/>
+                    <button name="action_make_bill" type="object" string="生成供应商账单" invisible="bill_id or state not in ('ordered', 'received')" groups="zenlenet_ops.group_procurement,zenlenet_ops.group_manager"/>
                     <button name="action_return" type="object" string="退回供应商" invisible="state != 'received'"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,ordered,received"/>
                 </header>

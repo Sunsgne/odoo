@@ -6,7 +6,7 @@
         <field name="arch" type="xml">
             <list create="false" decoration-muted="state == 'draft'" decoration-success="payment_state == 'paid'">
                 <header>
-                    <button name="action_zenlenet_bill_period" type="object" string="生成本月账单" class="btn-primary" display="always"/>
+                    <button name="action_zenlenet_bill_period" type="object" string="生成本月账单" class="btn-primary" display="always" groups="zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
                 </header>
                 <field name="name" string="账单"/>
                 <field name="partner_id" string="客户"/>
