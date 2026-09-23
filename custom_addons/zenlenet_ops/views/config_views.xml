@@ -179,7 +179,7 @@
         <field name="name">设置</field>
         <field name="res_model">res.config.settings</field>
         <field name="view_mode">form</field>
-        <field name="target">inline</field>
+        <field name="target">current</field>
         <field name="context">{'module': 'zenlenet_ops', 'bin_size': False}</field>
     </record>
     <record id="view_product_list_zenlenet" model="ir.ui.view">
