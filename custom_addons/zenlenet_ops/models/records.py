@@ -34,6 +34,8 @@ class ZenlenetAddress(models.Model):
     _name = 'zenlenet.address'
     _description = 'IP资源'
     _order = 'pop, address'
+    _rec_name = 'address'
+    _rec_names_search = ['address', 'block', 'pop']
 
     snapshot_id = fields.Integer(index=True, copy=False)
     address = fields.Char(string='地址', required=True, index=True)
@@ -253,6 +255,7 @@ class ZenlenetPurchase(models.Model):
     _name = 'zenlenet.purchase'
     _description = '采购'
     _order = 'id desc'
+    _rec_name = 'supplier'
 
     supplier = fields.Char(string='供应商', required=True)
     resource = fields.Char(string='资源', required=True)

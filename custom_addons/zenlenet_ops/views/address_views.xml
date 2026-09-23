@@ -89,9 +89,9 @@
                     <filter name="group_dc" string="数据中心类型" context="{'group_by': 'dc_type'}"/>
                 </group>
                 <searchpanel>
-                    <field name="dc_type" string="数据中心类型" enable_counters="1" icon="fa-building"/>
-                    <field name="status" string="分配状态" enable_counters="1" icon="fa-tags"/>
-                    <field name="net_attr" string="网络属性" enable_counters="1" icon="fa-globe"/>
+                    <field name="dc_type" string="数据中心类型" enable_counters="1" expand="1" icon="fa-building"/>
+                    <field name="status" string="分配状态" enable_counters="1" expand="1" icon="fa-tags"/>
+                    <field name="net_attr" string="网络属性" enable_counters="1" expand="1" icon="fa-globe"/>
                 </searchpanel>
             </search>
         </field>

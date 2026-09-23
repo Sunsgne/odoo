@@ -63,7 +63,7 @@
                     <notebook>
                         <page string="资源">
                             <field name="address_ids">
-                                <list>
+                                <list editable="bottom">
                                     <field name="address"/>
                                     <field name="block"/>
                                     <field name="pop"/>
@@ -71,7 +71,7 @@
                                 </list>
                             </field>
                             <field name="line_ids">
-                                <list>
+                                <list editable="bottom">
                                     <field name="name"/>
                                     <field name="kind"/>
                                     <field name="a_end"/>
