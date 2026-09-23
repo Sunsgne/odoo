@@ -14,6 +14,16 @@ $zl-mono: "Noto Sans Mono CJK SC", "DejaVu Sans Mono", Menlo, Consolas, monospac
     color: $zl-ink;
     font-size: 10.5pt;
     line-height: 1.5;
+    // wkhtmltopdf's WebKit paints Bootstrap's reboot (border-style: solid; border-width: 0) as a grid.
+    // Reset every cell explicitly; the rules below add back only the borders we want.
+    table, thead, tbody, tfoot, tr, th, td {
+        border: 0 none transparent;
+    }
+    table {
+        border-collapse: collapse;
+        border-spacing: 0;
+        table-layout: auto;
+    }
 }
 .zl-header-table, .zl-footer-table {
     width: 100%;
@@ -21,15 +31,16 @@ $zl-mono: "Noto Sans Mono CJK SC", "DejaVu Sans Mono", Menlo, Consolas, monospac
 }
 .zl-header {
     border-bottom: 2px solid $zl-primary;
-    padding-bottom: 6px;
+    padding-bottom: 8px;
+    margin-bottom: 4px;
 }
 .zl-header-brand {
     vertical-align: middle;
-    width: 72%;
+    width: 70%;
     .zl-logo {
-        max-height: 44px;
-        max-width: 140px;
-        margin-right: 12px;
+        max-height: 40px;
+        max-width: 120px;
+        margin-right: 14px;
         vertical-align: middle;
     }
     > div {
@@ -80,12 +91,10 @@ $zl-mono: "Noto Sans Mono CJK SC", "DejaVu Sans Mono", Menlo, Consolas, monospac
     }
     .zl-meta {
         width: 100%;
-        border-collapse: separate;
-        border-spacing: 0 0;
-        margin: 8px 0 14px;
+        margin: 10px 0 16px;
         td { vertical-align: top; padding: 0; }
-        .zl-meta-party { width: 50%; padding-right: 16px; }
-        .zl-meta-kv { width: 50%; }
+        .zl-meta-party { width: 48%; padding-right: 18px; }
+        .zl-meta-kv { width: 52%; }
     }
     .zl-party {
         background: $zl-soft;
@@ -112,7 +121,7 @@ $zl-mono: "Noto Sans Mono CJK SC", "DejaVu Sans Mono", Menlo, Consolas, monospac
         width: 100%;
         border-collapse: collapse;
         th, td {
-            padding: 4px 8px;
+            padding: 5px 10px;
             border-bottom: 1px solid $zl-line;
             text-align: left;
             vertical-align: top;
@@ -207,9 +216,13 @@ $zl-mono: "Noto Sans Mono CJK SC", "DejaVu Sans Mono", Menlo, Consolas, monospac
     .zl-two-col {
         display: table;
         width: 100%;
-        border-spacing: 12px 0;
-        margin: 10px -12px 0;
-        .zl-card { display: table-cell; width: 50%; }
+        margin: 10px 0 0;
+        .zl-card {
+            display: table-cell;
+            width: 50%;
+            &:first-child { border-right: 12px solid #fff; }
+            &:last-child { border-left: 12px solid #fff; }
+        }
     }
     .zl-card {
         background: $zl-soft;
@@ -251,10 +264,10 @@ $zl-mono: "Noto Sans Mono CJK SC", "DejaVu Sans Mono", Menlo, Consolas, monospac
     .zl-amount-small { font-size: 13pt; font-weight: 600; }
     .zl-sign {
         width: 100%;
-        margin-top: 28px;
-        border-collapse: collapse;
+        margin-top: 32px;
         page-break-inside: avoid;
-        td { width: 50%; vertical-align: top; padding: 0 24px 0 0; }
+        td { width: 50%; vertical-align: top; padding: 0 28px 0 0; }
+        td:last-child { padding: 0 0 0 28px; }
     }
     .zl-sign-role { font-size: 8.5pt; color: $zl-muted; }
     .zl-sign-name { font-weight: 700; margin-bottom: 26px; }
