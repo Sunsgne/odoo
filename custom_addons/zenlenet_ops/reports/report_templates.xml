@@ -24,7 +24,6 @@
                             <div class="zl-company-name" t-out="company['name']"/>
                             <div class="zl-company-line">
                                 <span t-out="company['address']"/>
-                                <span t-if="company['country']"> · <span t-out="company['country']"/></span>
                             </div>
                             <div class="zl-company-line">
                                 <span t-if="company['vat']">UEN <span t-out="company['vat']"/></span>

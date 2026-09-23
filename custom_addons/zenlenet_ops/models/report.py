@@ -179,7 +179,7 @@ class ReportInvoice(models.AbstractModel):
                 'qty': line.quantity,
                 'price': line.price_unit,
                 'subtotal': line.price_subtotal,
-            } for line in doc.invoice_line_ids.filtered(lambda item: not item.display_type)]
+            } for line in doc.invoice_line_ids.filtered(lambda item: item.display_type == 'product')]
             payment[doc.id] = PAYMENT_LABELS.get(doc.payment_state, (doc.payment_state or '', 'muted'))
         values.update({'rows_by_doc': rows, 'payment_by_doc': payment, 'footer_note': footer})
         return values

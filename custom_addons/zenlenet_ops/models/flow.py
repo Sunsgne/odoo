@@ -148,11 +148,12 @@ class ZenlenetFlow(models.Model):
             Task.create([
                 {
                     'flow_id': record.id,
+                    'sequence': (index + 1) * 10,
                     'stage': stage,
                     'name': name,
                     'user_id': record._person_for(stage).id if record._person_for(stage) else False,
                 }
-                for stage, name in DEFAULT_TASKS
+                for index, (stage, name) in enumerate(DEFAULT_TASKS)
             ])
 
     def write(self, vals):
@@ -303,7 +304,7 @@ class ZenlenetFlow(models.Model):
 class ZenlenetFlowTask(models.Model):
     _name = 'zenlenet.flow.task'
     _description = '交付任务'
-    _order = 'stage, sequence, id'
+    _order = 'sequence, id'
 
     flow_id = fields.Many2one('zenlenet.flow', required=True, ondelete='cascade')
     sequence = fields.Integer(default=10)
