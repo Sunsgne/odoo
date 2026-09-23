@@ -79,9 +79,7 @@
                     <button name="action_cancel" type="object" string="取消" invisible="state in ('done', 'cancel')"/>
                     <field name="state" widget="statusbar" options="{'clickable': false}" statusbar_visible="company,allocate,deliver,accept,done" invisible="move != 'out' or kind == 'test'"/>
                     <field name="state" widget="statusbar" options="{'clickable': false}" statusbar_visible="company,allocate,deliver,accept,reclaim,done" invisible="move != 'out' or kind != 'test'"/>
-                    <field name="state" widget="statusbar" options="{'clickable': false}" statusbar_visible="company,allocate,deliver,done" invisible="move != 'in'"/>
-                    <field name="state" widget="statusbar" options="{'clickable': false}" statusbar_visible="company,reclaim,done" invisible="move != 'back'"/>
-                    <field name="state" widget="statusbar" options="{'clickable': false}" statusbar_visible="company,deliver,allocate,accept,done" invisible="move != 'cutover'"/>
+                    <field name="state" invisible="1"/>
                 </header>
                 <sheet>
                     <div class="o_zl_chain">
