@@ -166,7 +166,7 @@
                                         </div>
                                     </div>
                                     <span>
-                                        <button type="button" class="btn btn-link btn-sm" t-if="state.canBill and invoice.state === 'draft'" t-att-disabled="state.busy" t-on-click="() => this.post(invoice.id)">确认</button>
+                                        <button type="button" class="btn btn-link btn-sm" t-if="state.canBill &amp;&amp; invoice.state === 'draft'" t-att-disabled="state.busy" t-on-click="() => this.post(invoice.id)">确认</button>
                                         <button type="button" class="btn btn-link btn-sm" t-if="state.canBill" t-on-click="() => this.openRecord('invoice', invoice.id)">打开</button>
                                     </span>
                                 </li>
