@@ -169,6 +169,17 @@
                                 </list>
                             </field>
                         </page>
+                        <page string="IP 地址">
+                            <field name="zenlenet_address_ids" readonly="1">
+                                <list limit="40">
+                                    <field name="address" class="font-monospace"/>
+                                    <field name="status" widget="badge"/>
+                                    <field name="usage"/>
+                                    <field name="datacenter_id"/>
+                                    <field name="prefix_id"/>
+                                </list>
+                            </field>
+                        </page>
                         <page string="线路">
                             <field name="zenlenet_line_ids" readonly="1">
                                 <list limit="20">

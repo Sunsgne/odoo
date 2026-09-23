@@ -103,12 +103,28 @@
                             <span>已选 <b t-out="state.selection.length"/> 个地址：</span>
                             <button class="btn btn-sm btn-primary" t-on-click="openBulkAssign"><i class="fa fa-user-plus"/> 分配给客户 / 交付工单</button>
                             <span class="text-muted small">｜ 不走交付的：</span>
-                            <button class="btn btn-sm btn-outline-secondary" t-on-click="() => this.bulkStatus('reserved')">预分配</button>
+                            <button class="btn btn-sm btn-outline-secondary" t-on-click="openBulkReserve">预分配</button>
                             <button class="btn btn-sm btn-outline-secondary" t-on-click="() => this.bulkStatus('internal')">自用</button>
                             <button class="btn btn-sm btn-outline-secondary" t-on-click="() => this.bulkStatus('testing')">测试</button>
                             <button class="btn btn-sm btn-outline-secondary" t-on-click="() => this.bulkStatus('returning')">出库中</button>
                             <button class="btn btn-sm btn-outline-secondary" t-on-click="() => this.bulkStatus('free')">释放为未分配</button>
                             <button class="btn btn-sm btn-link" t-on-click="clearSelection">取消选择</button>
+                        </div>
+                        <div t-if="state.bulkReserve" class="zl-bulk-assign">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <b>把 <t t-out="state.selection.length"/> 个地址预分配给谁</b>
+                                <button class="btn btn-sm btn-link" t-on-click="closeBulkReserve"><i class="fa fa-times"/></button>
+                            </div>
+                            <div class="small text-muted mb-2">预分配不走交付工单，只是先留给这家客户。正式开通再从交付工单分配。</div>
+                            <input type="text" class="form-control form-control-sm" placeholder="搜客户，然后点选" t-att-value="state.bulkReserve.partner_name" t-on-input="searchBulkCustomers"/>
+                            <ul t-if="state.bulkCustomers.length" class="zl-choices">
+                                <li t-foreach="state.bulkCustomers" t-as="customer" t-key="customer.id" t-on-click="() => this.pickBulkCustomer(customer)" t-out="customer.name"/>
+                            </ul>
+                            <div t-if="state.bulkReserve.partner_id" class="small mt-2">留给 <b t-out="state.bulkReserve.partner_name"/></div>
+                            <div class="d-flex justify-content-end gap-2 mt-2">
+                                <button class="btn btn-sm btn-secondary" t-on-click="closeBulkReserve">取消</button>
+                                <button class="btn btn-sm btn-primary" t-on-click="confirmBulkReserve"><i class="fa fa-check"/> 确认预分配</button>
+                            </div>
                         </div>
                         <div t-if="state.bulkAssign" class="zl-bulk-assign">
                             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -197,6 +213,13 @@
                             <dt>状态</dt><dd t-out="state.detail.status_label"/>
                             <dt>上级网段</dt><dd><a t-if="state.detail.parent_id" href="#" class="font-monospace" t-on-click.prevent="() => this.select(state.detail.parent_id)" t-out="state.detail.parent"/><span t-else="">—</span></dd>
                             <dt>分配给</dt><dd t-out="state.detail.partner || '—'"/>
+                            <dt>预分配给</dt>
+                            <dd>
+                                <t t-if="state.detail.reserved_for.length">
+                                    <div t-foreach="state.detail.reserved_for" t-as="row" t-key="row.partner"><t t-out="row.partner"/> · <t t-out="row.count"/> 个</div>
+                                </t>
+                                <span t-else="">—</span>
+                            </dd>
                             <dt>数据中心</dt><dd t-out="state.detail.datacenter || '—'"/>
                             <dt>用途角色</dt><dd t-out="state.detail.role || '—'"/>
                             <dt>VLAN</dt><dd t-out="state.detail.vlan || '—'"/>
@@ -216,7 +239,8 @@
                     <select class="form-select form-select-sm" t-model="state.cellForm.status">
                         <option t-foreach="statuses" t-as="status" t-key="status[0]" t-att-value="status[0]" t-out="status[1]"/>
                     </select>
-                    <label>分配给</label>
+                    <label><t t-if="state.cellForm.status === 'reserved'">预分配给</t><t t-else="">分配给</t></label>
+                    <div t-if="state.cellForm.status === 'reserved'" class="small text-muted">必填。从下面的名单里点选，不能只打字。</div>
                     <input type="text" class="form-control form-control-sm" placeholder="搜客户，留空表示无" t-att-value="state.cellForm.partner_name" t-on-input="(ev) => this.searchCustomers(ev, 'cell')"/>
                     <ul t-if="state.customers.length" class="zl-choices">
                         <li t-foreach="state.customers" t-as="customer" t-key="customer.id" t-on-click="() => this.pickCustomer(customer)" t-out="customer.name"/>

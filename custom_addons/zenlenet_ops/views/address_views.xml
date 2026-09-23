@@ -37,6 +37,9 @@
                     <field name="status" widget="statusbar" options="{'clickable': true}" statusbar_visible="free,reserved,allocated,returning"/>
                 </header>
                 <sheet>
+                    <div class="alert alert-warning" role="alert" invisible="status != 'reserved' or partner_id">
+                        预分配要写上留给哪家客户。这一步不走交付工单，只是先把地址留给这家客户。
+                    </div>
                     <group>
                         <group>
                             <field name="address" class="font-monospace"/>
@@ -112,6 +115,7 @@
                     <filter name="group_block" string="IP段（旧）" context="{'group_by': 'block'}"/>
                     <filter name="group_pop" string="机房" context="{'group_by': 'pop'}"/>
                     <filter name="group_status" string="分配状态" context="{'group_by': 'status'}"/>
+                    <filter name="group_partner" string="留给客户" context="{'group_by': 'partner_id'}"/>
                     <filter name="group_dc" string="数据中心类型" context="{'group_by': 'dc_type'}"/>
                 </group>
                 <searchpanel>

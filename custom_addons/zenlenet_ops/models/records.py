@@ -43,7 +43,7 @@ class ZenlenetAddress(models.Model):
     block = fields.Char(string='IP段', index=True)
     pop = fields.Char(string='机房', index=True)
     supplier = fields.Char(string='供应商（旧）')
-    partner_id = fields.Many2one('res.partner', string='客户', index=True)
+    partner_id = fields.Many2one('res.partner', string='留给客户', index=True)
     role = fields.Char(string='资源属性')
     net_attr = fields.Selection(NET_ATTRS, string='网络属性', default='公网', index=True)
     dc_type = fields.Selection(DC_TYPES, string='数据中心类型', index=True)
@@ -57,6 +57,26 @@ class ZenlenetAddress(models.Model):
         'unique(snapshot_id)',
         '这条地址已经导入过。',
     )
+
+    def _reject_anonymous_reservation(self):
+        """预分配必须写上留给哪家客户。导入和 NetBox 回写不拦历史数据。"""
+        if self.env.context.get('netbox_skip_push') or self.env.context.get('zenlenet_import'):
+            return
+        missing = self.filtered(lambda record: record.status == 'reserved' and not record.partner_id)
+        if missing:
+            raise UserError(f'{missing[0].address} 标成了预分配，但没有写留给哪家客户。')
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        records._reject_anonymous_reservation()
+        return records
+
+    def write(self, vals):
+        result = super().write(vals)
+        if {'status', 'partner_id'} & set(vals):
+            self._reject_anonymous_reservation()
+        return result
 
     def action_export_prefixes(self):
         return {

@@ -305,10 +305,10 @@ class ZenlenetLoader(models.AbstractModel):
                 'remark': (row['remark'] or '')[:2000],
             })
             if len(batch) >= 500:
-                Address.create(batch)
+                Address.with_context(zenlenet_import=True).create(batch)
                 batch = []
         if batch:
-            Address.create(batch)
+            Address.with_context(zenlenet_import=True).create(batch)
 
     def _lines(self, connection):
         Line = self.env['zenlenet.line'].sudo()

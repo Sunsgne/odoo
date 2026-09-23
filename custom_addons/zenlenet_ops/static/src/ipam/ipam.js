@@ -39,6 +39,7 @@ export class ZenlenetIpam extends Component {
             selection: [],
             drag: null,
             bulkAssign: null,
+            bulkReserve: null,
             pendingFlows: [],
             bulkCustomerQuery: "",
             bulkCustomers: [],
@@ -130,6 +131,8 @@ export class ZenlenetIpam extends Component {
         this.state.cell = null;
         this.state.selection = [];
         this.state.assignOpen = false;
+        this.state.bulkAssign = null;
+        this.state.bulkReserve = null;
         try {
             this.state.detail = await this.orm.call("zenlenet.prefix", "ipam_detail", [[id]]);
             let parent = this.state.detail.parent_id;
@@ -232,6 +235,7 @@ export class ZenlenetIpam extends Component {
 
     // --------------------------------------------------------- bulk assign
     async openBulkAssign() {
+        this.state.bulkReserve = null;
         this.state.bulkAssign = { flow_id: false, partner_id: false, partner_name: "", usage: "" };
         this.state.pendingFlows = await this.orm.call("zenlenet.prefix", "ipam_pending_flows", []);
         this.state.bulkCustomers = [];
@@ -249,18 +253,57 @@ export class ZenlenetIpam extends Component {
     }
 
     async searchBulkCustomers(ev) {
-        this.state.bulkCustomerQuery = ev.target.value;
-        this.state.bulkAssign.flow_id = false;
-        this.state.bulkAssign.partner_id = false;
-        this.state.bulkAssign.partner_name = ev.target.value;
-        this.state.bulkCustomers = await this.orm.call("zenlenet.prefix", "ipam_customers", [ev.target.value]);
+        const query = ev.target.value;
+        this.state.bulkCustomerQuery = query;
+        const target = this.state.bulkReserve || this.state.bulkAssign;
+        if (target) {
+            target.partner_id = false;
+            target.partner_name = query;
+        }
+        if (this.state.bulkAssign) {
+            this.state.bulkAssign.flow_id = false;
+        }
+        this.state.bulkCustomers = await this.orm.call("zenlenet.prefix", "ipam_customers", [query]);
     }
 
     pickBulkCustomer(customer) {
-        this.state.bulkAssign.partner_id = customer.id;
-        this.state.bulkAssign.partner_name = customer.name;
+        const target = this.state.bulkReserve || this.state.bulkAssign;
+        if (!target) {
+            return;
+        }
+        target.partner_id = customer.id;
+        target.partner_name = customer.name;
         this.state.bulkCustomerQuery = customer.name;
         this.state.bulkCustomers = [];
+    }
+
+    async openBulkReserve() {
+        this.state.bulkAssign = null;
+        this.state.bulkReserve = { partner_id: false, partner_name: "" };
+        this.state.bulkCustomerQuery = "";
+        this.state.bulkCustomers = await this.orm.call("zenlenet.prefix", "ipam_customers", [""]);
+    }
+
+    closeBulkReserve() {
+        this.state.bulkReserve = null;
+        this.state.bulkCustomers = [];
+    }
+
+    async confirmBulkReserve() {
+        const form = this.state.bulkReserve;
+        if (!form?.partner_id) {
+            this.notification.add("预分配要先从列表里点选客户。", { type: "warning" });
+            return;
+        }
+        try {
+            const result = await this.orm.call("zenlenet.prefix", "ipam_bulk_reserve", [[this.state.selectedId], this.state.selection, form.partner_id]);
+            this.notification.add(`已把 ${result.count} 个地址预分配给 ${result.partner}`, { type: "success" });
+            this.state.bulkReserve = null;
+            this.state.selection = [];
+            await this.select(this.state.selectedId);
+        } catch (error) {
+            this.notification.add(error.data?.message || String(error), { type: "danger" });
+        }
     }
 
     async confirmBulkAssign() {
@@ -297,7 +340,7 @@ export class ZenlenetIpam extends Component {
         this.state.cell = cell;
         this.state.cellForm = {
             status: cell.status === "none" ? "allocated" : cell.status,
-            partner_id: false,
+            partner_id: cell.partner_id || false,
             partner_name: cell.partner || "",
             usage: cell.usage || "",
         };
@@ -331,8 +374,12 @@ export class ZenlenetIpam extends Component {
 
     async saveCell() {
         const form = this.state.cellForm;
+        if (form.status === "reserved" && !form.partner_id) {
+            this.notification.add("预分配要先从列表里点选客户。", { type: "warning" });
+            return;
+        }
         const values = { status: form.status, usage: form.usage };
-        if (form.partner_id || !form.partner_name) {
+        if (form.status === "reserved" || form.partner_id || !form.partner_name) {
             values.partner_id = form.partner_id || false;
         }
         try {
@@ -349,8 +396,14 @@ export class ZenlenetIpam extends Component {
         if (!this.state.selection.length) {
             return;
         }
-        await this.orm.call("zenlenet.prefix", "ipam_bulk_status", [[this.state.selectedId], this.state.selection, status]);
+        try {
+            await this.orm.call("zenlenet.prefix", "ipam_bulk_status", [[this.state.selectedId], this.state.selection, status]);
+        } catch (error) {
+            this.notification.add(error.data?.message || String(error), { type: "danger" });
+            return;
+        }
         this.notification.add(`${this.state.selection.length} 个地址已标为${Object.fromEntries(STATUSES)[status]}`, { type: "success" });
+        this.state.selection = [];
         await this.select(this.state.selectedId);
     }
 

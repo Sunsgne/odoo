@@ -100,6 +100,7 @@ class ZenlenetPrefixIpam(models.Model):
                         'last': int(host) & 0xFF,
                         'status': row['status'] if row else ('special' if special else 'none'),
                         'partner': row['partner_id'][1] if row and row['partner_id'] else '',
+                        'partner_id': row['partner_id'][0] if row and row['partner_id'] else False,
                         'usage': row['usage'] if row else '',
                         'id': row['id'] if row else False,
                         'special': special,
@@ -111,8 +112,12 @@ class ZenlenetPrefixIpam(models.Model):
                     'used': sum(1 for cell in cells if cell['status'] not in ('none', 'free', 'special')),
                 })
         counts = {}
+        reserved_for = {}
         for row in found.values():
             counts[row['status']] = counts.get(row['status'], 0) + 1
+            if row['status'] == 'reserved':
+                name = row['partner_id'][1] if row['partner_id'] else '未指定客户'
+                reserved_for[name] = reserved_for.get(name, 0) + 1
         children = self.child_ids.read(['prefix', 'status', 'partner_id', 'size_display', 'allocated_count', 'free_count', 'utilization', 'description'])
         return {
             'id': self.id,
@@ -129,6 +134,10 @@ class ZenlenetPrefixIpam(models.Model):
             'counts': {STATUS_LABELS.get(key, key): value for key, value in counts.items()},
             'partner': self.partner_id.name or '',
             'partner_id': self.partner_id.id,
+            'reserved_for': [
+                {'partner': name, 'count': count}
+                for name, count in sorted(reserved_for.items(), key=lambda item: (-item[1], item[0]))
+            ],
             'datacenter': self.datacenter_id.name or '',
             'datacenter_id': self.datacenter_id.id,
             'parent': self.parent_id.prefix or '',
@@ -170,10 +179,16 @@ class ZenlenetPrefixIpam(models.Model):
         payload = {}
         if 'status' in values and values['status'] in STATUS_LABELS:
             payload['status'] = values['status']
-        if 'partner_id' in values:
+        if payload.get('status') in ('free', 'internal'):
+            payload['partner_id'] = False
+        elif 'partner_id' in values:
             payload['partner_id'] = values['partner_id'] or False
         if 'usage' in values:
             payload['usage'] = values['usage'] or ''
+        status = payload.get('status') or (record.status if record else 'allocated')
+        partner = payload['partner_id'] if 'partner_id' in payload else (record.partner_id.id if record else False)
+        if status == 'reserved' and not partner:
+            raise UserError('预分配要先选定客户。')
         if record:
             record.write(payload)
         else:
@@ -224,12 +239,45 @@ class ZenlenetPrefixIpam(models.Model):
                 })
         return {'count': len(records), 'flow': flow.name if flow else ''}
 
+    def ipam_bulk_reserve(self, ips, partner_id):
+        """Hold the selected hosts for a customer. No delivery ticket."""
+        self.ensure_one()
+        partner = self.env['res.partner'].browse(partner_id).exists()
+        if not partner or not partner.is_company:
+            raise UserError('请选择要预分配的客户。')
+        if not ips:
+            raise UserError('请先选地址。')
+        Address = self.env['zenlenet.address']
+        Resource = self.env['zenlenet.flow.resource']
+        for ip in ips:
+            existing = Address.search([('address', '=like', f'{ip}/%')], limit=1)
+            if existing and existing.status in ('allocated', 'testing', 'returning', 'transferring'):
+                who = existing.partner_id.name or '未填客户'
+                raise UserError(f'{ip} 已经分给 {who}，不能改成预分配。要改的话先释放。')
+            if existing and Resource.search_count([
+                ('address_id', '=', existing.id),
+                ('flow_id.state', 'not in', ('cancel', 'done')),
+            ]):
+                raise UserError(f'{ip} 还挂在交付工单上，不能改成预分配。')
+            values = {'status': 'reserved', 'partner_id': partner.id}
+            if not existing or not existing.usage:
+                values['usage'] = '预分配'
+            self.ipam_set_address(ip, values)
+        return {'count': len(ips), 'partner': partner.name}
+
     def ipam_bulk_status(self, ips, status):
         self.ensure_one()
         if status not in STATUS_LABELS:
             raise UserError('状态不对。')
+        if status == 'reserved':
+            raise UserError('预分配要指定客户。')
         for ip in ips:
-            self.ipam_set_address(ip, {'status': status, **({'partner_id': self.partner_id.id} if status in ('allocated', 'testing') and self.partner_id else {})})
+            values = {'status': status}
+            if status in ('free', 'internal'):
+                values['partner_id'] = False
+            elif status in ('allocated', 'testing') and self.partner_id:
+                values['partner_id'] = self.partner_id.id
+            self.ipam_set_address(ip, values)
         return True
 
     def ipam_assign(self, partner_id):
