@@ -3,15 +3,19 @@ from odoo.exceptions import UserError
 
 from odoo.addons.zenlenet_ops.tickets import (
     KINDS,
+    SLA_HOURS,
     PRIORITIES,
     STATES,
     due_at,
     is_overdue,
     next_state,
     prev_state,
-    sla_hours,
     state_label,
 )
+
+from .settings import param_int
+
+SLA_PARAMS = {'3': 'zenlenet.sla_urgent', '2': 'zenlenet.sla_high', '1': 'zenlenet.sla_normal', '0': 'zenlenet.sla_low'}
 
 
 class ZenlenetTicket(models.Model):
@@ -63,11 +67,19 @@ class ZenlenetTicket(models.Model):
     def _group_expand_states(self, states, domain):
         return [key for key, _label in STATES if key != 'cancel']
 
+    def _sla_table(self):
+        return {
+            key: param_int(self.env, SLA_PARAMS[key], SLA_HOURS[key])
+            for key in SLA_PARAMS
+        }
+
     @api.depends('opened_at', 'priority')
     def _compute_due(self):
+        table = self._sla_table()
         for record in self:
-            record.sla_hours = sla_hours(record.priority)
-            record.due_at = due_at(record.opened_at, record.priority)
+            hours = table.get(record.priority, SLA_HOURS['1'])
+            record.sla_hours = hours
+            record.due_at = due_at(record.opened_at, record.priority, hours)
 
     def _compute_overdue(self):
         now = fields.Datetime.now()

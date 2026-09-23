@@ -31,10 +31,10 @@ def sla_hours(priority):
     return SLA_HOURS.get(str(priority), SLA_HOURS['1'])
 
 
-def due_at(opened, priority):
+def due_at(opened, priority, hours=None):
     if not opened:
         return None
-    return opened + timedelta(hours=sla_hours(priority))
+    return opened + timedelta(hours=hours if hours else sla_hours(priority))
 
 
 def next_state(state):

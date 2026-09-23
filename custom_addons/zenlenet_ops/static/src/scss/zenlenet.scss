@@ -1,0 +1,230 @@
+// 尊领 home page and console polish. Uses Odoo's Bootstrap variables so it follows the active theme.
+
+.o_zl_home {
+    .o_form_sheet_bg {
+        background: var(--body-bg, #f8f9fa);
+    }
+    .o_zl_sheet.o_form_sheet {
+        max-width: 1400px;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+        padding: 0 8px 32px;
+    }
+    .o_zl_section_title {
+        font-size: 0.8rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted, #6c757d);
+        margin: 28px 0 10px 4px;
+        font-weight: 600;
+    }
+    .o_zl_section_title:first-of-type {
+        margin-top: 16px;
+    }
+    .o_zl_flow {
+        display: flex;
+        align-items: stretch;
+        gap: 4px;
+        overflow-x: auto;
+        padding: 4px 0;
+    }
+    .o_zl_step {
+        flex: 1 1 0;
+        min-width: 120px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 14px 10px;
+        border: 1px solid var(--border-color, #dee2e6);
+        border-radius: 12px;
+        background: #fff;
+        color: inherit;
+        transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+        .fa {
+            font-size: 1.35rem;
+            color: var(--primary, #714b67);
+        }
+        span {
+            font-weight: 600;
+        }
+        small {
+            color: var(--text-muted, #6c757d);
+            font-size: 0.75rem;
+            white-space: nowrap;
+        }
+        &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+            border-color: var(--primary, #714b67);
+        }
+    }
+    .o_zl_arrow {
+        align-self: center;
+        color: var(--text-muted, #adb5bd);
+        font-size: 1.2rem;
+        padding: 0 2px;
+    }
+    .o_zl_kpis {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 12px;
+    }
+    .o_zl_kpi {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+        padding: 16px 18px;
+        border-radius: 14px;
+        border: 0;
+        color: #fff;
+        text-align: left;
+        min-height: 110px;
+        transition: transform 0.12s ease, box-shadow 0.12s ease;
+        &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.14);
+            color: #fff;
+        }
+        .o_zl_kpi_value {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1.1;
+            .o_field_widget, .o_field_widget span, .o_field_widget input {
+                color: inherit !important;
+                font-size: inherit;
+                font-weight: inherit;
+            }
+        }
+        .o_zl_kpi_label {
+            font-weight: 600;
+            opacity: 0.95;
+        }
+        .o_zl_kpi_sub {
+            font-size: 0.8rem;
+            opacity: 0.85;
+            .o_field_widget {
+                display: inline;
+                color: inherit !important;
+            }
+        }
+    }
+    .o_zl_kpi_primary { background: linear-gradient(135deg, #714b67, #8f5f82); }
+    .o_zl_kpi_danger { background: linear-gradient(135deg, #c0392b, #e05a4a); }
+    .o_zl_kpi_warning { background: linear-gradient(135deg, #c7791b, #e0a030); }
+    .o_zl_kpi_info { background: linear-gradient(135deg, #1f6f8b, #2e8fb0); }
+    .o_zl_stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+    }
+    .o_zl_stat {
+        background: #fff;
+        border: 1px solid var(--border-color, #dee2e6);
+        border-radius: 12px;
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        .o_zl_stat_value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            .o_field_widget, .o_field_widget span {
+                font-size: inherit;
+                font-weight: inherit;
+            }
+        }
+        .o_zl_stat_label {
+            font-size: 0.8rem;
+            color: var(--text-muted, #6c757d);
+            .o_field_widget {
+                display: inline;
+            }
+        }
+    }
+    .o_zl_grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 16px;
+        margin-top: 28px;
+    }
+    .o_zl_group {
+        background: #fff;
+        border: 1px solid var(--border-color, #dee2e6);
+        border-radius: 14px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .o_zl_group_title {
+        font-weight: 700;
+        padding: 8px 10px 10px;
+        color: var(--primary, #714b67);
+        .fa {
+            margin-right: 4px;
+        }
+    }
+    .o_zl_tile {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 10px 12px;
+        border: 0;
+        border-radius: 10px;
+        background: transparent;
+        text-align: left;
+        color: inherit;
+        transition: background 0.12s ease;
+        .fa {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(113, 75, 103, 0.1);
+            color: var(--primary, #714b67);
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        span {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        b {
+            font-weight: 600;
+        }
+        small {
+            color: var(--text-muted, #6c757d);
+            font-size: 0.78rem;
+        }
+        &:hover {
+            background: rgba(113, 75, 103, 0.06);
+            color: inherit;
+        }
+    }
+    .o_field_widget.o_readonly_modifier {
+        display: inline;
+    }
+    .o_form_label {
+        display: none;
+    }
+}
+
+// Settings: only the console tab is relevant to operators.
+.o_setting_container .settings_tab .tab:not([data-key="zenlenet_ops"]) {
+    display: none;
+}
+
+// Kanban cards read better with a little air and a hover lift.
+.o_kanban_renderer .o_kanban_record {
+    border-radius: 10px;
+    transition: box-shadow 0.12s ease, transform 0.12s ease;
+    &:hover {
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    }
+}

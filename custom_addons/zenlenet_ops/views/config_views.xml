@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_zenlenet" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.zenlenet</field>
+        <field name="model">res.config.settings</field>
+        <field name="priority" eval="5"/>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app data-string="尊领运营" string="尊领运营" name="zenlenet_ops" logo="/zenlenet_ops/static/description/icon.png">
+                    <block title="公司资料" name="zenlenet_company" help="出现在报价单、合同和账单抬头。">
+                        <setting id="zenlenet_company_setting" string="抬头信息" help="公司名称、UEN、地址和账务联系方式。">
+                            <div class="content-group">
+                                <div class="row mt8">
+                                    <label for="zenlenet_company_name" class="col-lg-4 o_light_label"/>
+                                    <field name="zenlenet_company_name"/>
+                                </div>
+                                <div class="row">
+                                    <label for="zenlenet_company_vat" class="col-lg-4 o_light_label"/>
+                                    <field name="zenlenet_company_vat"/>
+                                </div>
+                                <div class="row">
+                                    <label for="zenlenet_company_street" class="col-lg-4 o_light_label"/>
+                                    <field name="zenlenet_company_street"/>
+                                </div>
+                                <div class="row">
+                                    <label for="zenlenet_company_email" class="col-lg-4 o_light_label"/>
+                                    <field name="zenlenet_company_email"/>
+                                </div>
+                                <div class="row">
+                                    <label for="zenlenet_company_phone" class="col-lg-4 o_light_label"/>
+                                    <field name="zenlenet_company_phone"/>
+                                </div>
+                                <div class="row">
+                                    <label for="zenlenet_currency_id" class="col-lg-4 o_light_label"/>
+                                    <field name="zenlenet_currency_id" readonly="1"/>
+                                </div>
+                            </div>
+                        </setting>
+                        <setting id="zenlenet_logo_setting" string="Logo" help="打印在报价单、合同和账单上。建议横版 PNG。">
+                            <field name="zenlenet_company_logo" widget="image" class="oe_avatar" options="{'size': [0, 80]}"/>
+                        </setting>
+                    </block>
+
+                    <block title="出账与收款" name="zenlenet_billing" help="账单怎么生成、多久到期。">
+                        <setting id="zenlenet_auto_billing_setting" string="自动出账" help="开着时，定时任务每天检查一次，为执行中的合同生成本账期账单，同一账期不会重复。">
+                            <field name="zenlenet_auto_billing"/>
+                            <div class="content-group" invisible="not zenlenet_auto_billing">
+                                <div class="row mt8">
+                                    <label for="zenlenet_billing_day" class="col-lg-5 o_light_label"/>
+                                    <field name="zenlenet_billing_day" class="col-lg-3"/>
+                                </div>
+                                <div class="row">
+                                    <label for="zenlenet_due_days" class="col-lg-5 o_light_label"/>
+                                    <field name="zenlenet_due_days" class="col-lg-3"/>
+                                </div>
+                            </div>
+                            <div class="mt8">
+                                <button name="action_open_crons" type="object" string="查看定时任务" icon="oi-arrow-right" class="btn-link"/>
+                            </div>
+                        </setting>
+                        <setting id="zenlenet_invoice_footer_setting" string="账单备注" help="收款账户、付款说明，打印在每张账单底部。">
+                            <field name="zenlenet_invoice_footer" placeholder="例如：DBS Bank 账户 xxx-xxxxxx-x，请在到期日前付款"/>
+                        </setting>
+                    </block>
+
+                    <block title="合同" name="zenlenet_contract" help="新建合同时的默认值和到期提醒。">
+                        <setting id="zenlenet_contract_term_setting" string="默认期限与续签" help="新合同默认签几个月，到期是否自动按原条款续一期。">
+                            <div class="content-group">
+                                <div class="row mt8">
+                                    <label for="zenlenet_contract_term" class="col-lg-5 o_light_label"/>
+                                    <field name="zenlenet_contract_term" class="col-lg-3"/>
+                                </div>
+                                <div class="row">
+                                    <label for="zenlenet_auto_renew" class="col-lg-5 o_light_label"/>
+                                    <field name="zenlenet_auto_renew" class="col-lg-3"/>
+                                </div>
+                            </div>
+                        </setting>
+                        <setting id="zenlenet_notice_setting" string="到期提醒" help="到期前多少天把合同标成「即将到期」，并给销售派一条待办。">
+                            <div class="row mt8">
+                                <label for="zenlenet_notice_days" class="col-lg-5 o_light_label"/>
+                                <field name="zenlenet_notice_days" class="col-lg-3"/>
+                            </div>
+                        </setting>
+                    </block>
+
+                    <block title="工单 SLA" name="zenlenet_sla" help="按优先级规定多少小时内要解决，超时的工单会标红。">
+                        <setting id="zenlenet_sla_setting" string="解决时限" help="从受理时间起算。">
+                            <div class="content-group">
+                                <div class="row mt8">
+                                    <label for="zenlenet_sla_urgent" class="col-lg-5 o_light_label"/>
+                                    <field name="zenlenet_sla_urgent" class="col-lg-3"/>
+                                </div>
+                                <div class="row">
+                                    <label for="zenlenet_sla_high" class="col-lg-5 o_light_label"/>
+                                    <field name="zenlenet_sla_high" class="col-lg-3"/>
+                                </div>
+                                <div class="row">
+                                    <label for="zenlenet_sla_normal" class="col-lg-5 o_light_label"/>
+                                    <field name="zenlenet_sla_normal" class="col-lg-3"/>
+                                </div>
+                                <div class="row">
+                                    <label for="zenlenet_sla_low" class="col-lg-5 o_light_label"/>
+                                    <field name="zenlenet_sla_low" class="col-lg-3"/>
+                                </div>
+                            </div>
+                        </setting>
+                    </block>
+
+                    <block title="账号与权限" name="zenlenet_users" help="谁能登录、属于哪个分组、谁能删除。">
+                        <setting id="zenlenet_users_setting" string="账号" help="账号分成 销售 / 交付 / 售后。业务流转按分组指派负责人。">
+                            <span class="fa fa-lg fa-users me-2"/>
+                            <field name="zenlenet_user_count" class="w-auto fw-bold"/>
+                            <span class="o_form_label">个内部账号</span>
+                            <div class="mt8">
+                                <button name="action_open_users" type="object" string="管理账号" icon="oi-arrow-right" class="btn-link"/>
+                            </div>
+                        </setting>
+                        <setting id="zenlenet_manager_setting" string="管理员" help="只有管理员能删除合同、工单、数据中心；普通账号只能新建和修改。">
+                            <div class="mt8">
+                                <button name="action_open_groups" type="object" string="查看管理员" icon="oi-arrow-right" class="btn-link"/>
+                            </div>
+                        </setting>
+                    </block>
+
+                    <block title="产品与资源目录" name="zenlenet_catalog" help="报价和订单用到的业务类型、单价，以及机房清单。">
+                        <setting id="zenlenet_products_setting" string="业务与价目" help="IPT / RMIPT、专线 / SD-WAN、云主机、托管、转售。这里的单价是演示价目，报价时可逐单改。">
+                            <span class="fa fa-lg fa-tags me-2"/>
+                            <field name="zenlenet_product_count" class="w-auto fw-bold"/>
+                            <span class="o_form_label">种业务</span>
+                            <div class="mt8">
+                                <button name="action_open_products" type="object" string="维护业务与价目" icon="oi-arrow-right" class="btn-link"/>
+                            </div>
+                        </setting>
+                        <setting id="zenlenet_datacenter_setting" string="数据中心" help="机房、POP 点、公有云。IP、线路、设备都挂在数据中心下。">
+                            <span class="fa fa-lg fa-building me-2"/>
+                            <field name="zenlenet_datacenter_count" class="w-auto fw-bold"/>
+                            <span class="o_form_label">个数据中心</span>
+                            <div class="mt8">
+                                <button name="action_open_datacenters" type="object" string="维护数据中心" icon="oi-arrow-right" class="btn-link"/>
+                            </div>
+                        </setting>
+                        <setting id="zenlenet_templates_setting" string="通知模板" help="维护、割接、风险、紧急、接入点五类邮件模板。">
+                            <span class="fa fa-lg fa-envelope-o me-2"/>
+                            <field name="zenlenet_template_count" class="w-auto fw-bold"/>
+                            <span class="o_form_label">个模板</span>
+                            <div class="mt8">
+                                <button name="action_open_templates" type="object" string="编辑模板" icon="oi-arrow-right" class="btn-link"/>
+                            </div>
+                        </setting>
+                    </block>
+
+                    <block title="登录与集成" name="zenlenet_integration" help="Office 365 单点登录和 NetBox 引擎。">
+                        <setting id="zenlenet_sso_setting" string="Office 365 登录" help="填入 Azure 注册应用的 Client ID 和租户 ID 后打开。回调地址：https://netbox.zenlenet.com/auth_oauth/signin">
+                            <field name="zenlenet_sso_enabled"/>
+                            <div class="content-group">
+                                <div class="row mt8">
+                                    <label for="zenlenet_sso_client_id" class="col-lg-4 o_light_label"/>
+                                    <field name="zenlenet_sso_client_id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"/>
+                                </div>
+                                <div class="row">
+                                    <label for="zenlenet_sso_tenant" class="col-lg-4 o_light_label"/>
+                                    <field name="zenlenet_sso_tenant" placeholder="租户 ID"/>
+                                </div>
+                                <div class="text-muted mt8" invisible="zenlenet_sso_ready">还没有填 Client ID，登录页暂不显示 Office 365 按钮。</div>
+                                <div class="text-success mt8" invisible="not zenlenet_sso_ready">Client ID 已填写。</div>
+                            </div>
+                        </setting>
+                        <setting id="zenlenet_netbox_setting" string="NetBox 引擎" help="IP 和线路的底层数据由 NetBox 4.7 维护，日常操作在本系统完成。">
+                            <field name="zenlenet_netbox_url" placeholder="https://netbox.zenlenet.com"/>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+    <record id="action_settings" model="ir.actions.act_window">
+        <field name="name">设置</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="target">inline</field>
+        <field name="context">{'module': 'zenlenet_ops', 'bin_size': False}</field>
+    </record>
+    <record id="view_product_list_zenlenet" model="ir.ui.view">
+        <field name="name">zenlenet.product.list</field>
+        <field name="model">product.template</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="default_code" string="编码"/>
+                <field name="name" string="业务"/>
+                <field name="list_price" string="单价（月）"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="sale_ok" string="可报价"/>
+                <field name="type" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_products" model="ir.actions.act_window">
+        <field name="name">业务与价目</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_product_list_zenlenet"/>
+        <field name="domain">[('sale_ok', '=', True)]</field>
+        <field name="context">{'default_type': 'service', 'default_sale_ok': True}</field>
+    </record>
+</odoo>

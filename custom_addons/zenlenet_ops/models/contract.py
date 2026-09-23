@@ -4,7 +4,6 @@ from odoo import api, fields, models
 from odoo.exceptions import UserError
 
 from odoo.addons.zenlenet_ops.billing import (
-    NOTICE_DAYS,
     bills_this_period,
     contract_end,
     contract_status,
@@ -13,6 +12,8 @@ from odoo.addons.zenlenet_ops.billing import (
     period_label,
     period_ref,
 )
+
+from .settings import param_int
 
 _logger = logging.getLogger(__name__)
 
@@ -47,10 +48,16 @@ class ZenlenetContract(models.Model):
         'sale.order', string='包含订单', domain="[('partner_id', '=', partner_id)]",
     )
     start_date = fields.Date(string='开始日期', default=fields.Date.context_today, required=True, tracking=True)
-    term_months = fields.Integer(string='期限（月）', default=12, required=True)
+    term_months = fields.Integer(
+        string='期限（月）', required=True,
+        default=lambda self: param_int(self.env, 'zenlenet.contract_term', 12),
+    )
     end_date = fields.Date(string='结束日期', compute='_compute_end_date', store=True, readonly=False, tracking=True)
     billing_cycle = fields.Selection(CYCLES, string='出账周期', default='monthly', required=True)
-    auto_renew = fields.Boolean(string='到期自动续签', default=True)
+    auto_renew = fields.Boolean(
+        string='到期自动续签',
+        default=lambda self: self.env['ir.config_parameter'].sudo().get_param('zenlenet.auto_renew', 'True') != 'False',
+    )
     monthly_amount = fields.Monetary(string='月费', compute='_compute_amounts', store=True)
     cycle_amount = fields.Monetary(string='每期金额', compute='_compute_amounts', store=True)
     state = fields.Selection(STATES, string='状态', default='draft', required=True, tracking=True, index=True)
@@ -160,6 +167,7 @@ class ZenlenetContract(models.Model):
         if Move.search_count([('ref', '=', ref), ('zenlenet_contract_id', '=', self.id), ('state', '!=', 'cancel')]):
             return Move
         first, last = period_bounds(day)
+        footer = self.env['ir.config_parameter'].sudo().get_param('zenlenet.invoice_footer', '')
         lines = []
         for order in self.order_ids:
             for line in order.order_line.filtered(lambda item: not item.display_type):
@@ -177,11 +185,11 @@ class ZenlenetContract(models.Model):
             'move_type': 'out_invoice',
             'partner_id': self.partner_id.id,
             'invoice_date': day,
-            'invoice_date_due': last,
+            'invoice_date_due': fields.Date.add(day, days=param_int(self.env, 'zenlenet.due_days', 30)),
             'ref': ref,
             'zenlenet_contract_id': self.id,
             'invoice_origin': self.name,
-            'narration': f'{self.title or "服务"} 账期 {first} 至 {last}',
+            'narration': '\n'.join(part for part in (f'{self.title or "服务"} 账期 {first} 至 {last}', footer) if part),
             'invoice_line_ids': lines,
         })
         self.message_post(body=f'已生成 {period_label(day)} 账单 {invoice.name or ""}'.strip())
@@ -190,8 +198,9 @@ class ZenlenetContract(models.Model):
     @api.model
     def _cron_daily(self):
         today = fields.Date.context_today(self)
+        notice_days = param_int(self.env, 'zenlenet.notice_days', 30)
         for record in self.search([('state', 'in', ('active', 'expiring', 'expired'))]):
-            wanted = contract_status(record.state, record.end_date, today, NOTICE_DAYS)
+            wanted = contract_status(record.state, record.end_date, today, notice_days)
             if wanted == 'expired' and record.auto_renew:
                 record.action_renew()
                 continue
@@ -207,6 +216,8 @@ class ZenlenetContract(models.Model):
     @api.model
     def _cron_monthly_billing(self):
         today = fields.Date.context_today(self)
+        if today.day < param_int(self.env, 'zenlenet.billing_day', 1):
+            return 0
         count = 0
         for record in self.search([('state', 'in', ('active', 'expiring'))]):
             if record._create_period_invoice(today):

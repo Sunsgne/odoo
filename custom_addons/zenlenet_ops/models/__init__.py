@@ -1,3 +1,4 @@
+from . import settings
 from . import maintenance
 from . import partner
 from . import sale
@@ -7,5 +8,6 @@ from . import datacenter
 from . import flow
 from . import ticket
 from . import contract
+from . import home
 from . import loader
 from . import shell

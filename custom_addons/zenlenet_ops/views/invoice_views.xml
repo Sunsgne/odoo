@@ -29,7 +29,8 @@
                 <header>
                     <button name="action_post" type="object" string="确认账单" class="btn-primary" invisible="state != 'draft'"/>
                     <button name="%(account.account_invoices)d" type="action" string="打印账单" invisible="state != 'posted'"/>
-                    <button name="button_draft" type="object" string="改回草稿" invisible="state != 'posted' or payment_state == 'paid'"/>
+                    <button name="action_register_payment" type="object" string="登记收款" class="btn-primary" invisible="state != 'posted' or payment_state in ('paid', 'in_payment', 'reversed')"/>
+                    <button name="button_draft" type="object" string="改回草稿" invisible="state != 'posted' or payment_state != 'not_paid'"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,posted"/>
                 </header>
                 <sheet>
@@ -89,6 +90,32 @@
                     <filter name="group_state" string="状态" context="{'group_by': 'state'}"/>
                 </group>
             </search>
+        </field>
+    </record>
+    <record id="view_payment_list_zenlenet" model="ir.ui.view">
+        <field name="name">zenlenet.payment.list</field>
+        <field name="model">account.payment</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false">
+                <field name="date" string="日期"/>
+                <field name="name" string="编号"/>
+                <field name="partner_id" string="客户"/>
+                <field name="journal_id" string="收款账户"/>
+                <field name="amount" string="金额" sum="合计"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="state" string="状态" widget="badge" decoration-success="state in ('paid', 'in_process')"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_payments" model="ir.actions.act_window">
+        <field name="name">收款记录</field>
+        <field name="res_model">account.payment</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_payment_list_zenlenet"/>
+        <field name="domain">[('payment_type', '=', 'inbound')]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">还没有收款</p>
+            <p>在已确认的账单上点「登记收款」，这里就会有记录。</p>
         </field>
     </record>
     <record id="action_invoices" model="ir.actions.act_window">
