@@ -84,6 +84,14 @@ class ZenlenetFlow(models.Model):
     resource_ids = fields.One2many('zenlenet.flow.resource', 'flow_id', string='资源')
     task_ids = fields.One2many('zenlenet.flow.task', 'flow_id', string='交付任务')
     task_progress = fields.Float(string='任务进度', compute='_compute_task_progress')
+    pm_user_id = fields.Many2one('res.users', string='项目经理', tracking=True, domain=[('share', '=', False)],
+                                 help='对整个交付负责的人，可以跨阶段调整任务。')
+    planned_date = fields.Date(string='计划交付日期', tracking=True)
+    actual_date = fields.Date(string='实际交付日期', readonly=True, copy=False)
+    risk = fields.Selection([('normal', '正常'), ('at_risk', '有风险'), ('blocked', '阻塞')], string='风险', compute='_compute_health', store=True)
+    next_task_id = fields.Many2one('zenlenet.flow.task', string='下一步', compute='_compute_health')
+    overdue_tasks = fields.Integer(string='逾期任务', compute='_compute_health')
+    blocked_tasks = fields.Integer(string='阻塞任务', compute='_compute_health', store=True)
     ticket_ids = fields.One2many('zenlenet.ticket', 'flow_id', string='工单')
     ticket_count = fields.Integer(compute='_compute_ticket_count')
     address_ids = fields.Many2many('zenlenet.address', string='IP资源')
@@ -115,6 +123,31 @@ class ZenlenetFlow(models.Model):
             done = len(record.task_ids.filtered('done'))
             record.task_progress = round(done * 100.0 / total, 0) if total else 0.0
 
+    @api.depends('task_ids.state', 'task_ids.due_date', 'planned_date', 'state')
+    def _compute_health(self):
+        today = fields.Date.context_today(self)
+        for record in self:
+            open_tasks = record.task_ids.filtered(lambda task: task.state not in ('done', 'skipped')).sorted(lambda task: (task.sequence, task.id))
+            record.next_task_id = open_tasks[:1]
+            record.blocked_tasks = len(open_tasks.filtered(lambda task: task.state == 'blocked'))
+            record.overdue_tasks = len(open_tasks.filtered(lambda task: task.due_date and task.due_date < today))
+            if record.state in ('done', 'cancel'):
+                record.risk = 'normal'
+            elif record.blocked_tasks:
+                record.risk = 'blocked'
+            elif record.overdue_tasks or (record.planned_date and record.planned_date < today):
+                record.risk = 'at_risk'
+            else:
+                record.risk = 'normal'
+
+    def action_open_tasks(self):
+        self.ensure_one()
+        action = self.env.ref('zenlenet_ops.action_flow_tasks').read()[0]
+        action['domain'] = [('flow_id', '=', self.id)]
+        action['context'] = {'default_flow_id': self.id, 'search_default_open': 1}
+        action['display_name'] = f'{self.name} · 交付任务'
+        return action
+
     @api.depends('ticket_ids')
     def _compute_ticket_count(self):
         for record in self:
@@ -139,6 +172,7 @@ class ZenlenetFlow(models.Model):
                     'order_line_id': line.id,
                     'spec': f'{line.name or line.product_id.name} × {line.product_uom_qty:g} {line.zenlenet_unit or ""}'.strip(),
                 })
+            record._ensure_default_tasks()
         return True
 
     def action_print_delivery(self):
@@ -175,21 +209,35 @@ class ZenlenetFlow(models.Model):
         records._ensure_default_tasks()
         return records
 
-    def _ensure_default_tasks(self):
+    def _ensure_default_tasks(self, service_types=None):
+        """Load tasks from templates for the ticket's business types; fall back to the built-in list."""
         Task = self.env['zenlenet.flow.task']
+        Template = self.env['zenlenet.task.template']
         for record in self:
-            if record.task_ids:
-                continue
-            Task.create([
-                {
+            types = set(service_types or record.resource_ids.mapped('service_type'))
+            templates = Template.search([('service_type', 'in', list(types | {'all'}))]) if types else Template.search([('service_type', '=', 'all')])
+            have = {(task.stage, task.name) for task in record.task_ids}
+            start = record.planned_date or fields.Date.context_today(self)
+            rows = [(template.stage, template.name, template.team, template.days, template.estimate_hours, template.priority) for template in templates]
+            if not rows and not record.task_ids:
+                rows = [(stage, name, team_for(stage), 1, 0.0, '0') for stage, name in DEFAULT_TASKS]
+            cursor = start
+            for index, (stage, name, team, days, hours, priority) in enumerate(rows):
+                if (stage, name) in have:
+                    continue
+                person = {'sales': record.sales_user_id, 'delivery': record.delivery_user_id, 'service': record.service_user_id}.get(team) or record._person_for(stage)
+                cursor = fields.Date.add(cursor, days=max(days or 0, 0))
+                Task.create({
                     'flow_id': record.id,
-                    'sequence': (index + 1) * 10,
+                    'sequence': (len(have) + index + 1) * 10,
                     'stage': stage,
                     'name': name,
-                    'user_id': record._person_for(stage).id if record._person_for(stage) else False,
-                }
-                for index, (stage, name) in enumerate(DEFAULT_TASKS)
-            ])
+                    'user_id': person.id if person else False,
+                    'due_date': cursor,
+                    'estimate_hours': hours,
+                    'priority': priority,
+                })
+                have.add((stage, name))
 
     def write(self, vals):
         if 'state' in vals or 'kind' in vals:
@@ -271,6 +319,8 @@ class ZenlenetFlow(models.Model):
             return
         if state == 'allocate' and user.has_group('zenlenet_ops.group_allocator'):
             return
+        if user.has_group('zenlenet_ops.group_pm') and (self.pm_user_id == user or not self.pm_user_id):
+            return
         raise UserError(f'这一步（{state_label(state)}）由{role[1]}岗位操作，你的岗位没有权限。')
 
     def _check_exit(self):
@@ -333,6 +383,8 @@ class ZenlenetFlow(models.Model):
             record._check_exit()
             record.state = nxt
             record._post(f'进入{state_label(nxt)}')
+            if nxt == 'done':
+                record.actual_date = fields.Date.context_today(self)
             if nxt == 'done' and record.kind == 'business' and record.order_id:
                 record.order_id.action_mark_active()
 
@@ -368,25 +420,114 @@ class ZenlenetFlow(models.Model):
             record._post('已取消')
 
 
+TASK_STATES = [
+    ('todo', '待开始'),
+    ('doing', '进行中'),
+    ('blocked', '阻塞'),
+    ('done', '已完成'),
+    ('skipped', '跳过'),
+]
+
+
 class ZenlenetFlowTask(models.Model):
     _name = 'zenlenet.flow.task'
     _description = '交付任务'
-    _order = 'sequence, id'
+    _order = 'flow_id, sequence, id'
+    _inherit = ['mail.thread']
 
-    flow_id = fields.Many2one('zenlenet.flow', required=True, ondelete='cascade')
+    flow_id = fields.Many2one('zenlenet.flow', string='交付工单', required=True, ondelete='cascade', index=True)
+    partner_id = fields.Many2one(related='flow_id.partner_id', string='客户', store=True)
     sequence = fields.Integer(default=10)
     stage = fields.Selection(TASK_STAGES, string='阶段', required=True, default='deliver')
     name = fields.Char(string='任务', required=True)
-    user_id = fields.Many2one('res.users', string='负责人', domain=[('share', '=', False)])
-    due_date = fields.Date(string='截止')
-    done = fields.Boolean(string='完成')
-    done_at = fields.Datetime(string='完成时间', readonly=True)
-    note = fields.Char(string='说明')
+    state = fields.Selection(TASK_STATES, string='状态', default='todo', required=True, index=True, tracking=True,
+                             group_expand='_group_expand_states')
+    priority = fields.Selection([('0', '普通'), ('1', '重要'), ('2', '关键路径')], string='优先级', default='0')
+    user_id = fields.Many2one('res.users', string='负责人', domain=[('share', '=', False)], tracking=True)
+    planned_start = fields.Date(string='计划开始')
+    due_date = fields.Date(string='计划完成', tracking=True)
+    actual_start = fields.Datetime(string='实际开始', readonly=True)
+    done_at = fields.Datetime(string='实际完成', readonly=True)
+    estimate_hours = fields.Float(string='预计工时')
+    depends_on_id = fields.Many2one('zenlenet.flow.task', string='前置任务', domain="[('flow_id', '=', flow_id), ('id', '!=', id)]")
+    blocker = fields.Char(string='阻塞原因')
+    note = fields.Text(string='说明')
+    done = fields.Boolean(string='完成', compute='_compute_done', inverse='_inverse_done', store=True)
+    overdue = fields.Boolean(string='逾期', compute='_compute_overdue', search='_search_overdue')
+    color = fields.Integer(compute='_compute_color')
+
+    @api.model
+    def _group_expand_states(self, states, domain):
+        return [key for key, _label in TASK_STATES]
+
+    @api.depends('state')
+    def _compute_done(self):
+        for task in self:
+            task.done = task.state in ('done', 'skipped')
+
+    def _inverse_done(self):
+        for task in self:
+            if task.done and task.state not in ('done', 'skipped'):
+                task.state = 'done'
+            elif not task.done and task.state in ('done', 'skipped'):
+                task.state = 'todo'
+
+    def _compute_overdue(self):
+        today = fields.Date.context_today(self)
+        for task in self:
+            task.overdue = bool(task.due_date) and task.due_date < today and task.state not in ('done', 'skipped')
+
+    def _search_overdue(self, operator, value):
+        today = fields.Date.context_today(self)
+        domain = [('due_date', '<', today), ('state', 'not in', ('done', 'skipped'))]
+        return domain if (operator == '=' and value) or (operator == '!=' and not value) else ['!'] + domain
+
+    @api.depends('state', 'priority')
+    def _compute_color(self):
+        for task in self:
+            task.color = {'blocked': 1, 'doing': 4, 'done': 10, 'skipped': 0}.get(task.state, 2 if task.priority == '2' else 0)
 
     def write(self, vals):
-        if 'done' in vals:
+        if vals.get('state') == 'doing':
+            for task in self.filtered(lambda item: not item.actual_start):
+                super(ZenlenetFlowTask, task).write({'actual_start': fields.Datetime.now()})
+        if 'state' in vals:
+            vals['done_at'] = fields.Datetime.now() if vals['state'] in ('done', 'skipped') else False
+            if vals['state'] != 'blocked':
+                vals.setdefault('blocker', False)
+        if 'done' in vals and 'state' not in vals:
             vals['done_at'] = fields.Datetime.now() if vals['done'] else False
         return super().write(vals)
+
+    def action_start(self):
+        self.write({'state': 'doing'})
+
+    def action_done(self):
+        self.write({'state': 'done'})
+
+    def action_block(self):
+        self.write({'state': 'blocked'})
+
+    def action_reopen(self):
+        self.write({'state': 'todo'})
+
+
+class ZenlenetTaskTemplate(models.Model):
+    """Default task list per business type; applied when a delivery ticket loads its order lines."""
+
+    _name = 'zenlenet.task.template'
+    _description = '交付任务模板'
+    _order = 'service_type, stage, sequence, id'
+
+    service_type = fields.Selection(SERVICE_TYPES + [('all', '所有业务')], string='业务类型', required=True, default='all')
+    stage = fields.Selection(TASK_STAGES, string='阶段', required=True, default='deliver')
+    sequence = fields.Integer(default=10)
+    name = fields.Char(string='任务', required=True)
+    team = fields.Selection(TEAMS, string='默认负责分组')
+    days = fields.Integer(string='计划用时（天）', default=1, help='从上一项任务的计划完成日往后推。')
+    estimate_hours = fields.Float(string='预计工时')
+    priority = fields.Selection([('0', '普通'), ('1', '重要'), ('2', '关键路径')], string='优先级', default='0')
+    active = fields.Boolean(default=True)
 
 
 class ZenlenetFlowResource(models.Model):

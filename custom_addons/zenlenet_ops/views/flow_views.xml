@@ -9,6 +9,8 @@
                 <field name="state"/>
                 <field name="kind"/>
                 <field name="task_progress"/>
+                <field name="risk"/>
+                <field name="planned_date"/>
                 <templates>
                     <t t-name="card">
                         <div class="d-flex justify-content-between">
@@ -16,7 +18,10 @@
                             <field name="kind" widget="badge" decoration-info="kind == 'test'" decoration-success="kind == 'business'"/>
                         </div>
                         <div class="text-truncate"><field name="partner_id"/></div>
-                        <div class="text-muted small"><field name="state"/></div>
+                        <div class="text-muted small d-flex justify-content-between">
+                            <field name="state"/>
+                            <span><field name="risk" widget="badge" decoration-warning="risk == 'at_risk'" decoration-danger="risk == 'blocked'" invisible="risk == 'normal'"/> <field name="planned_date"/></span>
+                        </div>
                         <div class="d-flex justify-content-between align-items-center mt-1">
                             <field name="task_progress" widget="progressbar" class="flex-grow-1 me-2"/>
                             <field name="user_id" widget="many2one_avatar_user"/>
@@ -37,9 +42,14 @@
                 <field name="state"/>
                 <field name="partner_id"/>
                 <field name="order_id"/>
-                <field name="sales_user_id"/>
-                <field name="delivery_user_id"/>
-                <field name="service_user_id"/>
+                <field name="pm_user_id" widget="many2one_avatar_user" optional="show"/>
+                <field name="planned_date" optional="show"/>
+                <field name="task_progress" widget="progressbar" optional="show"/>
+                <field name="risk" widget="badge" decoration-success="risk == 'normal'" decoration-warning="risk == 'at_risk'" decoration-danger="risk == 'blocked'"/>
+                <field name="next_task_id" optional="show"/>
+                <field name="sales_user_id" optional="hide"/>
+                <field name="delivery_user_id" optional="hide"/>
+                <field name="service_user_id" optional="hide"/>
             </list>
         </field>
     </record>
@@ -83,9 +93,17 @@
                             <field name="user_id" readonly="1"/>
                         </group>
                         <group string="负责人">
-                            <field name="sales_user_id"/>
-                            <field name="delivery_user_id"/>
-                            <field name="service_user_id"/>
+                            <field name="pm_user_id" widget="many2one_avatar_user"/>
+                            <field name="sales_user_id" widget="many2one_avatar_user"/>
+                            <field name="delivery_user_id" widget="many2one_avatar_user"/>
+                            <field name="service_user_id" widget="many2one_avatar_user"/>
+                        </group>
+                        <group string="进度">
+                            <field name="planned_date"/>
+                            <field name="actual_date" invisible="not actual_date"/>
+                            <field name="risk" widget="badge" decoration-success="risk == 'normal'" decoration-warning="risk == 'at_risk'" decoration-danger="risk == 'blocked'"/>
+                            <field name="next_task_id" invisible="state in ('done', 'cancel')"/>
+                            <field name="overdue_tasks" invisible="not overdue_tasks"/>
                             <field name="note"/>
                         </group>
                     </group>
@@ -108,19 +126,31 @@
                         </page>
                         <page string="交付任务">
                             <div class="d-flex align-items-center gap-3 mb-2">
-                                <span class="text-muted">每个阶段的任务勾完，才能推进到下一步。</span>
+                                <span class="text-muted">每个阶段的任务完成或跳过，才能推进到下一步。任务模板在 设置 → 交付任务模板 里维护。</span>
                                 <field name="task_progress" widget="progressbar" class="flex-grow-1"/>
+                                <button name="action_open_tasks" type="object" string="任务看板" class="btn btn-secondary btn-sm" icon="fa-th"/>
                             </div>
-                            <field name="task_ids">
-                                <list editable="bottom" decoration-success="done">
+                            <field name="task_ids" context="{'default_flow_id': id}">
+                                <list editable="bottom" decoration-success="state == 'done'" decoration-muted="state == 'skipped'" decoration-danger="state == 'blocked' or overdue" decoration-info="state == 'doing'">
                                     <field name="sequence" widget="handle"/>
-                                    <field name="done" widget="boolean_toggle"/>
                                     <field name="stage"/>
                                     <field name="name"/>
+                                    <field name="priority" widget="priority"/>
                                     <field name="user_id" widget="many2one_avatar_user"/>
+                                    <field name="planned_start" optional="hide"/>
                                     <field name="due_date"/>
-                                    <field name="note"/>
+                                    <field name="state" widget="badge" decoration-success="state == 'done'" decoration-info="state == 'doing'" decoration-danger="state == 'blocked'" decoration-muted="state in ('todo', 'skipped')"/>
+                                    <field name="depends_on_id" optional="hide"/>
+                                    <field name="blocker" optional="show"/>
+                                    <field name="estimate_hours" optional="hide" sum="合计"/>
+                                    <field name="actual_start" optional="hide"/>
                                     <field name="done_at" optional="hide"/>
+                                    <field name="overdue" column_invisible="1"/>
+                                    <field name="done" column_invisible="1"/>
+                                    <button name="action_start" type="object" icon="fa-play" title="开始" invisible="state != 'todo'"/>
+                                    <button name="action_done" type="object" icon="fa-check" title="完成" invisible="state in ('done', 'skipped')"/>
+                                    <button name="action_block" type="object" icon="fa-ban" title="阻塞" invisible="state in ('blocked', 'done', 'skipped')"/>
+                                    <button name="action_reopen" type="object" icon="fa-undo" title="重开" invisible="state not in ('done', 'skipped', 'blocked')"/>
                                 </list>
                             </field>
                         </page>
@@ -145,6 +175,8 @@
                 <filter name="test" string="测试" domain="[('kind', '=', 'test')]"/>
                 <filter name="business" string="商务" domain="[('kind', '=', 'business')]"/>
                 <filter name="open" string="未完成" domain="[('state', 'not in', ('done', 'cancel'))]"/>
+                <filter name="risky" string="有风险 / 阻塞" domain="[('risk', '!=', 'normal'), ('state', 'not in', ('done', 'cancel'))]"/>
+                <filter name="my_pm" string="我负责的项目" domain="[('pm_user_id', '=', uid)]"/>
             </search>
         </field>
     </record>
@@ -202,6 +234,126 @@
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">没有待分配的资源</p>
             <p>交付工单进入「分配资源」阶段后，需要网段、IP 或线路的业务行会排在这里。给每行挂上资源，再点「分配完成，转交付」。</p>
+        </field>
+    </record>
+    <record id="view_flow_task_kanban" model="ir.ui.view">
+        <field name="name">zenlenet.flow.task.kanban</field>
+        <field name="model">zenlenet.flow.task</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" quick_create="false" highlight_color="color" class="o_kanban_small_column">
+                <field name="state"/><field name="color"/><field name="overdue"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="d-flex justify-content-between">
+                            <span class="fw-bold"><field name="name"/></span>
+                            <field name="priority" widget="priority"/>
+                        </div>
+                        <div class="text-muted small"><field name="flow_id"/> · <field name="partner_id"/> · <field name="stage"/></div>
+                        <div t-if="record.blocker.raw_value" class="text-danger small"><i class="fa fa-ban"/> <field name="blocker"/></div>
+                        <div class="d-flex justify-content-between align-items-center mt-1">
+                            <span class="small" t-attf-class="#{record.overdue.raw_value ? 'text-danger fw-bold' : 'text-muted'}"><i class="fa fa-calendar-o"/> <field name="due_date"/></span>
+                            <field name="user_id" widget="many2one_avatar_user"/>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+    <record id="view_flow_task_list" model="ir.ui.view">
+        <field name="name">zenlenet.flow.task.list</field>
+        <field name="model">zenlenet.flow.task</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" decoration-danger="overdue or state == 'blocked'" decoration-success="state == 'done'" decoration-muted="state == 'skipped'">
+                <field name="flow_id" readonly="1"/>
+                <field name="partner_id" readonly="1"/>
+                <field name="stage"/>
+                <field name="name"/>
+                <field name="priority" widget="priority"/>
+                <field name="user_id" widget="many2one_avatar_user"/>
+                <field name="planned_start" optional="hide"/>
+                <field name="due_date"/>
+                <field name="state" widget="badge" decoration-success="state == 'done'" decoration-info="state == 'doing'" decoration-danger="state == 'blocked'"/>
+                <field name="blocker" optional="show"/>
+                <field name="estimate_hours" optional="hide" sum="合计"/>
+                <field name="done_at" optional="hide"/>
+                <field name="overdue" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_flow_task_calendar" model="ir.ui.view">
+        <field name="name">zenlenet.flow.task.calendar</field>
+        <field name="model">zenlenet.flow.task</field>
+        <field name="arch" type="xml">
+            <calendar date_start="due_date" color="flow_id" quick_create="0" event_open_popup="1">
+                <field name="flow_id"/>
+                <field name="partner_id"/>
+                <field name="user_id"/>
+                <field name="state"/>
+            </calendar>
+        </field>
+    </record>
+    <record id="view_flow_task_search" model="ir.ui.view">
+        <field name="name">zenlenet.flow.task.search</field>
+        <field name="model">zenlenet.flow.task</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="flow_id"/>
+                <field name="partner_id"/>
+                <field name="user_id"/>
+                <filter name="mine" string="我的任务" domain="[('user_id', '=', uid)]"/>
+                <filter name="open" string="未完成" domain="[('state', 'not in', ('done', 'skipped'))]"/>
+                <filter name="overdue" string="已逾期" domain="[('overdue', '=', True)]"/>
+                <filter name="blocked" string="阻塞" domain="[('state', '=', 'blocked')]"/>
+                <group>
+                    <filter name="group_flow" string="交付工单" context="{'group_by': 'flow_id'}"/>
+                    <filter name="group_user" string="负责人" context="{'group_by': 'user_id'}"/>
+                    <filter name="group_stage" string="阶段" context="{'group_by': 'stage'}"/>
+                </group>
+                <searchpanel>
+                    <field name="user_id" string="负责人" enable_counters="1" icon="fa-user" limit="30"/>
+                    <field name="stage" string="阶段" enable_counters="1" expand="1" icon="fa-flag"/>
+                </searchpanel>
+            </search>
+        </field>
+    </record>
+    <record id="action_flow_tasks" model="ir.actions.act_window">
+        <field name="name">交付任务</field>
+        <field name="res_model">zenlenet.flow.task</field>
+        <field name="view_mode">kanban,list,calendar</field>
+        <field name="search_view_id" ref="view_flow_task_search"/>
+        <field name="domain">[('flow_id.state', 'not in', ('done', 'cancel'))]</field>
+        <field name="context">{'search_default_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">没有进行中的交付任务</p>
+            <p>交付工单确认后，任务会按业务类型从模板生成，在这里按状态、负责人和日历跟进。</p>
+        </field>
+    </record>
+    <record id="view_task_template_list" model="ir.ui.view">
+        <field name="name">zenlenet.task.template.list</field>
+        <field name="model">zenlenet.task.template</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="service_type"/>
+                <field name="stage"/>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="team"/>
+                <field name="days"/>
+                <field name="estimate_hours"/>
+                <field name="priority" widget="priority"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_task_templates" model="ir.actions.act_window">
+        <field name="name">交付任务模板</field>
+        <field name="res_model">zenlenet.task.template</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'search_default_group_type': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">还没有任务模板</p>
+            <p>「所有业务」的模板每张交付工单都会带；按业务类型（IPT、专线、云主机、托管、转售）再加各自的步骤。</p>
         </field>
     </record>
     <record id="action_flow" model="ir.actions.act_window">

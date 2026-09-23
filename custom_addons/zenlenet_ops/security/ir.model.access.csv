@@ -74,3 +74,9 @@ access_zenlenet_return_allocator,zenlenet.supplier.return.allocator,model_zenlen
 access_zenlenet_flow_allocator,zenlenet.flow.allocator,model_zenlenet_flow,zenlenet_ops.group_allocator,1,1,1,0
 access_zenlenet_flow_resource_allocator,zenlenet.flow.resource.allocator,model_zenlenet_flow_resource,zenlenet_ops.group_allocator,1,1,1,1
 access_zenlenet_flow_task_allocator,zenlenet.flow.task.allocator,model_zenlenet_flow_task,zenlenet_ops.group_allocator,1,1,1,1
+access_zenlenet_flow_pm,zenlenet.flow.pm,model_zenlenet_flow,zenlenet_ops.group_pm,1,1,1,0
+access_zenlenet_flow_resource_pm,zenlenet.flow.resource.pm,model_zenlenet_flow_resource,zenlenet_ops.group_pm,1,1,1,1
+access_zenlenet_flow_task_pm,zenlenet.flow.task.pm,model_zenlenet_flow_task,zenlenet_ops.group_pm,1,1,1,1
+access_zenlenet_task_template_user,zenlenet.task.template.user,model_zenlenet_task_template,base.group_user,1,0,0,0
+access_zenlenet_task_template_pm,zenlenet.task.template.pm,model_zenlenet_task_template,zenlenet_ops.group_pm,1,1,1,1
+access_zenlenet_task_template_manager,zenlenet.task.template.manager,model_zenlenet_task_template,zenlenet_ops.group_manager,1,1,1,1
