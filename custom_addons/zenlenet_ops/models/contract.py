@@ -296,7 +296,7 @@ class AccountMove(models.Model):
 class SaleOrderQuote(models.Model):
     _inherit = 'sale.order'
 
-    zenlenet_contract_ids = fields.Many2many('zenlenet.contract', string='合同')
+    zenlenet_contract_ids = fields.Many2many('zenlenet.contract', string='关联合同')
 
     def action_print_quote(self):
         return self.env.ref('zenlenet_ops.report_quotation').report_action(self)
