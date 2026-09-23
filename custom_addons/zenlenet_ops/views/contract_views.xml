@@ -124,7 +124,9 @@
         <field name="domain">[('state', 'in', ('draft', 'sent')), ('zenlenet_stage', '=', False)]</field>
         <field name="context">{'default_state': 'draft'}</field>
         <field name="search_view_id" ref="view_order_search_zenlenet"/>
-        <field name="view_id" ref="view_order_list"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_order_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_quote_form')})]"/>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">还没有报价</p>
             <p>选客户、加业务明细、填月费，打印报价单。客户同意后点「确认成订单」。</p>

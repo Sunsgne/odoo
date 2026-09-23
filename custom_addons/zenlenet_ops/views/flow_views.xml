@@ -36,6 +36,7 @@
                 <field name="team"/>
                 <field name="state"/>
                 <field name="partner_id"/>
+                <field name="order_id"/>
                 <field name="sales_user_id"/>
                 <field name="delivery_user_id"/>
                 <field name="service_user_id"/>
@@ -72,6 +73,11 @@
                         <group>
                             <field name="kind" readonly="state != 'company'"/>
                             <field name="partner_id" context="{'default_is_company': True, 'default_company_type': 'company', 'default_customer_rank': 1, 'form_view_ref': 'zenlenet_ops.view_partner_form_simple', 'list_view_ref': 'zenlenet_ops.view_partner_list'}"/>
+                            <label for="order_id"/>
+                            <div class="d-flex gap-2 align-items-center">
+                                <field name="order_id" options="{'no_create': True}" context="{'list_view_ref': 'zenlenet_ops.view_order_list'}" class="flex-grow-1"/>
+                                <button name="action_load_order" type="object" string="从订单带入" class="btn btn-secondary btn-sm" invisible="not order_id or state not in ('company', 'allocate')"/>
+                            </div>
                             <field name="team" readonly="1"/>
                             <field name="user_id" readonly="1"/>
                         </group>
@@ -84,15 +90,17 @@
                     </group>
                     <notebook>
                         <page string="资源">
-                            <div class="text-muted mb-2">业务类型可选 IPT / RMIPT、专线 / SD-WAN、云主机、托管、转售、IP 地址段、单个 IP、线路。前五种选订单；IP 按整段分配，特殊情况才选单个 IP；线路选线路。没有单据时填写规格。</div>
+                            <div class="text-muted mb-2">选好服务订单点「从订单带入」，每条业务一行；在「交付资源」里给每行挂上实际交付的 IP 地址段或线路。</div>
                             <field name="resource_ids">
                                 <list editable="bottom">
-                                    <field name="service_type"/>
-                                    <field name="order_id" invisible="service_type not in ('ipt', 'pl', 'vm', 'colo', 'resale')" options="{'no_create': True}" context="{'list_view_ref': 'zenlenet_ops.view_order_list'}" domain="[('partner_id', '=', parent.partner_id), ('order_line.product_id.default_code', '=', service_type)]"/>
-                                    <field name="prefix_id" invisible="service_type != 'ip'" options="{'no_create': True}" domain="[('status', 'in', ('active', 'reserved')), '|', ('partner_id', '=', False), ('partner_id', '=', parent.partner_id)]"/>
-                                    <field name="address_id" invisible="service_type != 'ip_single'" options="{'no_create': True}"/>
-                                    <field name="line_id" invisible="service_type != 'line'"/>
-                                    <field name="spec"/>
+                                    <field name="service_type" string="业务"/>
+                                    <field name="order_line_id" column_invisible="1"/>
+                                    <field name="order_id" column_invisible="1"/>
+                                    <field name="spec" string="规格 / 说明"/>
+                                    <field name="resource_ref" string="交付资源" options="{'no_create': True}"/>
+                                    <field name="prefix_id" column_invisible="1"/>
+                                    <field name="address_id" column_invisible="1"/>
+                                    <field name="line_id" column_invisible="1"/>
                                 </list>
                             </field>
                             <field name="resource_note" placeholder="没有具体订单或地址时，写清楚要分配的业务"/>

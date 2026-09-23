@@ -197,6 +197,7 @@ class ResPartner(models.Model):
             'name': '新报价',
             'res_model': 'sale.order',
             'view_mode': 'form',
+            'view_id': self.env.ref('zenlenet_ops.view_quote_form').id,
             'target': 'current',
             'context': {
                 'default_partner_id': self.id,

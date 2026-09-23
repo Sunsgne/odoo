@@ -1,92 +1,113 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="view_order_form_zenlenet" model="ir.ui.view">
-        <field name="name">sale.order.form.zenlenet</field>
+    <record id="view_quote_form" model="ir.ui.view">
+        <field name="name">zenlenet.quote.form</field>
         <field name="model">sale.order</field>
-        <field name="inherit_id" ref="sale.view_order_form"/>
-        <field name="priority">99</field>
+        <field name="priority">1</field>
         <field name="arch" type="xml">
-            <xpath expr="//header" position="replace">
+            <form>
                 <header>
-                    <button name="action_print_quote" type="object" string="打印报价单" invisible="state not in ('draft', 'sent')"/>
-                    <button name="action_confirm" type="object" string="确认成订单" class="btn-primary" invisible="state not in ('draft', 'sent')"/>
-                    <button name="action_make_contract" type="object" string="生成合同" invisible="state != 'sale'"/>
-                    <button name="action_mark_active" type="object" string="在网" class="btn-primary" invisible="zenlenet_stage == 'active' or state in ('draft', 'sent')"/>
-                    <button name="action_mark_testing" type="object" string="测试" invisible="zenlenet_stage == 'testing' or state in ('draft', 'sent')"/>
-                    <button name="action_mark_terminated" type="object" string="已退租" invisible="zenlenet_stage == 'terminated' or state in ('draft', 'sent')"/>
-                    <field name="zenlenet_stage" widget="statusbar" statusbar_visible="testing,active,terminated" invisible="state in ('draft', 'sent')"/>
-                    <field name="state" invisible="1"/>
-                    <field name="locked" invisible="1"/>
+                    <button name="action_print_quote" type="object" string="打印报价单" invisible="state == 'cancel'"/>
+                    <button name="action_quotation_send" type="object" string="发送给客户" invisible="state not in ('draft', 'sent')"/>
+                    <button name="action_confirm" type="object" string="客户已确认" class="btn-primary" invisible="state not in ('draft', 'sent')" confirm="确认后会生成合同草稿和交付工单，报价不能再改。继续？"/>
+                    <button name="action_new_version" type="object" string="复制为新版本" invisible="state == 'cancel'"/>
+                    <button name="action_mark_active" type="object" string="标为在网" invisible="state != 'sale' or zenlenet_stage == 'active'"/>
+                    <button name="action_mark_testing" type="object" string="标为测试" invisible="state != 'sale' or zenlenet_stage == 'testing'"/>
+                    <button name="action_mark_terminated" type="object" string="退租" invisible="state != 'sale' or zenlenet_stage == 'terminated'" confirm="退租会取消这张服务订单，合同里的月费也会减少。继续？"/>
+                    <button name="action_draft" type="object" string="改回草稿" invisible="state != 'cancel'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,sent,sale"/>
                 </header>
-            </xpath>
-            <xpath expr="//page[@name='other_information']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath>
-            <xpath expr="//page[@name='customer_signature']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath>
-            <xpath expr="//field[@name='partner_invoice_id']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath>
-            <xpath expr="//field[@name='partner_shipping_id']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath>
-            <xpath expr="//field[@name='payment_term_id']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath>
-            <xpath expr="//label[@for='pricelist_id']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath>
-            <xpath expr="//field[@name='pricelist_id']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath>
-            <xpath expr="//field[@name='tax_ids']" position="attributes">
-                <attribute name="column_invisible">1</attribute>
-                <attribute name="invisible">1</attribute>
-            </xpath>
-            <xpath expr="//field[@name='tax_ids' and @optional='show']" position="attributes">
-                <attribute name="column_invisible">1</attribute>
-                <attribute name="optional">hide</attribute>
-            </xpath>
-            <xpath expr="//field[@name='validity_date']" position="attributes">
-                <attribute name="invisible">state not in ('draft', 'sent')</attribute>
-                <attribute name="string">报价有效期</attribute>
-            </xpath>
-            <xpath expr="//button[@name='action_update_prices']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath>
-            <xpath expr="//field[@name='partner_id']" position="after">
-                <field name="zenlenet_bill_mode"/>
-                <field name="zenlenet_graph_ref" invisible="zenlenet_bill_mode != 'p95'"/>
-            </xpath>
-            <xpath expr="//field[@name='order_line']/list/field[@name='product_uom_qty']" position="after">
-                <field name="zenlenet_sku" optional="show"/>
-                <field name="zenlenet_commit_mbps" optional="show"/>
-                <field name="zenlenet_overage_price" optional="show"/>
-            </xpath>
-            <xpath expr="//field[@name='tax_totals']" position="replace">
-                <field name="amount_untaxed" string="月费"/>
-            </xpath>
-            <xpath expr="//chatter" position="replace"/>
-            <xpath expr="//field[@name='discount']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath>
-            <xpath expr="//field[@name='note']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_contract" type="object" class="oe_stat_button" icon="fa-handshake-o" invisible="not zenlenet_contract_id">
+                            <div class="o_stat_info"><span class="o_stat_text">合同</span><span class="o_stat_value"><field name="zenlenet_contract_id" readonly="1" nolabel="1"/></span></div>
+                        </button>
+                        <button name="action_open_flows" type="object" class="oe_stat_button" icon="fa-random" invisible="state != 'sale'">
+                            <field name="zenlenet_flow_count" widget="statinfo" string="交付工单"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <div class="text-muted small">
+                            <span invisible="state == 'sale'">报价</span><span invisible="state != 'sale'">服务订单</span>
+                            · 第 <field name="zenlenet_version" readonly="1" class="w-auto d-inline"/> 版
+                            <span invisible="not zenlenet_stage"> · <field name="zenlenet_stage" readonly="1" class="w-auto d-inline"/></span>
+                        </div>
+                        <h1><field name="name" readonly="1"/></h1>
+                        <h2><field name="origin" placeholder="项目 / 业务名称，例如：HKG 500M IPT 接入" readonly="state == 'sale'"/></h2>
+                    </div>
+                    <group>
+                        <group string="客户">
+                            <field name="partner_id" string="客户" readonly="state != 'draft'" options="{'no_create': True}" context="{'form_view_ref': 'zenlenet_ops.view_partner_form_simple', 'list_view_ref': 'zenlenet_ops.view_partner_list'}" domain="[('is_company', '=', True), ('customer_rank', '>', 0)]"/>
+                            <field name="user_id" string="客户经理" widget="many2one_avatar_user" readonly="state == 'sale'" domain="[('share', '=', False)]"/>
+                            <field name="currency_id" string="结算币种" readonly="1"/>
+                            <field name="pricelist_id" invisible="1"/>
+                            <field name="payment_term_id" invisible="1"/>
+                            <field name="company_id" invisible="1"/>
+                        </group>
+                        <group string="条件">
+                            <field name="date_order" string="报价日期" readonly="state == 'sale'"/>
+                            <field name="validity_date" string="有效期至" readonly="state == 'sale'"/>
+                            <field name="zenlenet_term_months" readonly="state == 'sale'"/>
+                            <field name="zenlenet_bill_mode" readonly="state == 'sale'"/>
+                            <field name="zenlenet_graph_ref" invisible="zenlenet_bill_mode != 'p95'"/>
+                            <field name="zenlenet_parent_id" invisible="not zenlenet_parent_id"/>
+                        </group>
+                    </group>
+                    <field name="order_line" readonly="state == 'sale'" widget="sol_o2m">
+                        <list editable="bottom">
+                            <control>
+                                <create name="add_product_control" string="添加业务"/>
+                            </control>
+                            <field name="sequence" widget="handle"/>
+                            <field name="product_id" string="业务 / SKU" options="{'no_create': True}" domain="[('sale_ok', '=', True)]" required="1"/>
+                            <field name="zenlenet_sku" optional="hide"/>
+                            <field name="name" string="规格说明" widget="text"/>
+                            <field name="product_uom_qty" string="数量"/>
+                            <field name="zenlenet_unit" string="单位"/>
+                            <field name="price_unit" string="单价 / 月"/>
+                            <field name="discount" string="折扣 %" optional="show"/>
+                            <field name="price_subtotal" string="月费小计"/>
+                            <field name="zenlenet_setup_fee" string="一次性费用" optional="show"/>
+                            <field name="zenlenet_commit_mbps" optional="hide"/>
+                            <field name="zenlenet_overage_price" optional="hide"/>
+                            <field name="product_uom_id" column_invisible="1"/>
+                            <field name="tax_ids" column_invisible="1"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <field name="display_type" column_invisible="1"/>
+                            <field name="product_template_id" column_invisible="1"/>
+                            <field name="state" column_invisible="1"/>
+                        </list>
+                    </field>
+                    <group class="oe_subtotal_footer">
+                        <field name="amount_untaxed" string="月费合计（未税）"/>
+                        <field name="zenlenet_setup_total"/>
+                        <field name="zenlenet_contract_total" class="oe_subtotal_footer_separator"/>
+                        <field name="amount_total" invisible="1"/>
+                    </group>
+                    <field name="note" placeholder="条款与备注：开通周期、SLA、付款方式、特殊约定。会打印在报价单上。" readonly="state == 'sale'"/>
+                </sheet>
+                <chatter/>
+            </form>
         </field>
     </record>
     <record id="view_order_list" model="ir.ui.view">
         <field name="name">zenlenet.order.list</field>
         <field name="model">sale.order</field>
         <field name="arch" type="xml">
-            <list>
+            <list decoration-muted="state == 'cancel'">
                 <field name="name" string="单号"/>
                 <field name="partner_id" string="客户"/>
                 <field name="origin" string="业务"/>
+                <field name="user_id" string="客户经理" widget="many2one_avatar_user" optional="show"/>
                 <field name="amount_untaxed" string="月费"/>
+                <field name="zenlenet_setup_total" string="一次性" optional="hide"/>
+                <field name="zenlenet_term_months" string="合约期" optional="show"/>
+                <field name="zenlenet_contract_total" string="合约总额" optional="show"/>
                 <field name="currency_id" string="币种"/>
-                <field name="zenlenet_stage"/>
+                <field name="zenlenet_bill_mode" optional="hide"/>
+                <field name="state" string="报价状态" widget="badge" decoration-info="state in ('draft', 'sent')" decoration-success="state == 'sale'" optional="show"/>
+                <field name="zenlenet_stage" widget="badge" decoration-success="zenlenet_stage == 'active'" decoration-info="zenlenet_stage == 'testing'" decoration-muted="zenlenet_stage == 'terminated'"/>
+                <field name="validity_date" string="有效期" optional="hide"/>
                 <field name="date_order" string="日期" optional="hide"/>
             </list>
         </field>
@@ -99,9 +120,21 @@
                 <field name="partner_id"/>
                 <field name="origin"/>
                 <field name="name"/>
+                <field name="user_id"/>
+                <filter name="mine" string="我的" domain="[('user_id', '=', uid)]"/>
+                <filter name="quotes" string="报价中" domain="[('state', 'in', ('draft', 'sent'))]"/>
                 <filter name="stage_active" string="在网" domain="[('zenlenet_stage','=','active')]"/>
                 <filter name="stage_testing" string="测试" domain="[('zenlenet_stage','=','testing')]"/>
                 <filter name="stage_terminated" string="已退租" domain="[('zenlenet_stage','=','terminated')]"/>
+                <group>
+                    <filter name="group_partner" string="客户" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_user" string="客户经理" context="{'group_by': 'user_id'}"/>
+                    <filter name="group_stage" string="服务状态" context="{'group_by': 'zenlenet_stage'}"/>
+                </group>
+                <searchpanel>
+                    <field name="zenlenet_stage" string="服务状态" enable_counters="1" expand="1" icon="fa-flag"/>
+                    <field name="user_id" string="客户经理" enable_counters="1" icon="fa-user" limit="30"/>
+                </searchpanel>
             </search>
         </field>
     </record>
@@ -109,7 +142,11 @@
         <field name="name">服务订单</field>
         <field name="res_model">sale.order</field>
         <field name="view_mode">list,form</field>
+        <field name="domain">[('state', '=', 'sale')]</field>
         <field name="search_view_id" ref="view_order_search_zenlenet"/>
-        <field name="view_id" ref="view_order_list"/>
+        <field name="context">{'search_default_stage_active': 1}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_order_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_quote_form')})]"/>
     </record>
 </odoo>

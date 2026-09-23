@@ -73,6 +73,10 @@ class ZenlenetFlow(models.Model):
     )
     team = fields.Selection(TEAMS, string='分组', compute='_compute_team', store=True, group_expand='_group_expand_teams')
     partner_id = fields.Many2one('res.partner', string='公司', tracking=True, domain=[('is_company', '=', True)])
+    order_id = fields.Many2one(
+        'sale.order', string='服务订单', tracking=True, domain="[('partner_id', '=', partner_id)]",
+        help='从哪张订单来的交付。选好后点「从订单带入」生成业务行。',
+    )
     resource_ids = fields.One2many('zenlenet.flow.resource', 'flow_id', string='资源')
     task_ids = fields.One2many('zenlenet.flow.task', 'flow_id', string='交付任务')
     task_progress = fields.Float(string='任务进度', compute='_compute_task_progress')
@@ -106,6 +110,27 @@ class ZenlenetFlow(models.Model):
     def _compute_ticket_count(self):
         for record in self:
             record.ticket_count = len(record.ticket_ids)
+
+    def action_load_order(self):
+        """Create one resource row per service line of the order; rows that already exist are kept."""
+        Resource = self.env['zenlenet.flow.resource']
+        for record in self:
+            if not record.order_id:
+                raise UserError('请先选择服务订单。')
+            if not record.partner_id:
+                record.partner_id = record.order_id.partner_id.commercial_partner_id
+            have = set(record.resource_ids.mapped('order_line_id').ids)
+            for line in record.order_id.order_line.filtered(lambda item: not item.display_type):
+                if line.id in have:
+                    continue
+                Resource.create({
+                    'flow_id': record.id,
+                    'service_type': line._zenlenet_service_type(),
+                    'order_id': record.order_id.id,
+                    'order_line_id': line.id,
+                    'spec': f'{line.name or line.product_id.name} × {line.product_uom_qty:g} {line.zenlenet_unit or ""}'.strip(),
+                })
+        return True
 
     def action_print_delivery(self):
         return self.env.ref('zenlenet_ops.report_delivery').report_action(self)
@@ -188,8 +213,8 @@ class ZenlenetFlow(models.Model):
 
     def _linked_addresses(self):
         self.ensure_one()
-        picked = self.resource_ids.filtered(lambda item: item.service_type in ('ip', 'ip_single')).mapped('address_id')
-        blocks = self.resource_ids.filtered(lambda item: item.service_type == 'ip').mapped('prefix_id')
+        picked = self.resource_ids.mapped('address_id')
+        blocks = self.resource_ids.mapped('prefix_id')
         return picked | blocks.mapped('address_ids') | self.address_ids
 
     def _has_allocation(self):
@@ -197,7 +222,7 @@ class ZenlenetFlow(models.Model):
         if (self.resource_note or '').strip() or self.address_ids or self.line_ids:
             return True
         return any(
-            item.order_id or item.address_id or item.prefix_id or item.line_id or (item.spec or '').strip()
+            item.resource_ref or item.order_id or item.address_id or item.prefix_id or item.line_id or (item.spec or '').strip()
             for item in self.resource_ids
         )
 
@@ -245,7 +270,7 @@ class ZenlenetFlow(models.Model):
     def _apply_resources(self):
         for record in self:
             addresses = record._linked_addresses()
-            blocks = record.resource_ids.filtered(lambda item: item.service_type == 'ip').mapped('prefix_id')
+            blocks = record.resource_ids.mapped('prefix_id')
             if not addresses and not blocks:
                 continue
             partner = record.partner_id.id or False
@@ -280,6 +305,8 @@ class ZenlenetFlow(models.Model):
             record._check_exit()
             record.state = nxt
             record._post(f'进入{state_label(nxt)}')
+            if nxt == 'done' and record.kind == 'business' and record.order_id:
+                record.order_id.action_mark_active()
 
     def action_prev(self):
         for record in self:
@@ -340,10 +367,23 @@ class ZenlenetFlowResource(models.Model):
     flow_id = fields.Many2one('zenlenet.flow', required=True, ondelete='cascade')
     service_type = fields.Selection(SERVICE_TYPES, string='业务类型', required=True)
     order_id = fields.Many2one('sale.order', string='订单')
-    prefix_id = fields.Many2one('zenlenet.prefix', string='IP 地址段')
-    address_id = fields.Many2one('zenlenet.address', string='单个 IP')
-    line_id = fields.Many2one('zenlenet.line', string='线路')
-    spec = fields.Char(string='规格')
+    order_line_id = fields.Many2one('sale.order.line', string='订单行', ondelete='set null')
+    resource_ref = fields.Reference(
+        selection=[('zenlenet.prefix', 'IP 地址段'), ('zenlenet.address', '单个 IP'), ('zenlenet.line', '线路')],
+        string='交付资源', help='这项业务实际交付的资源：IP 地址段、单个 IP 或线路。',
+    )
+    prefix_id = fields.Many2one('zenlenet.prefix', string='IP 地址段', compute='_compute_targets', store=True, readonly=False)
+    address_id = fields.Many2one('zenlenet.address', string='单个 IP', compute='_compute_targets', store=True, readonly=False)
+    line_id = fields.Many2one('zenlenet.line', string='线路', compute='_compute_targets', store=True, readonly=False)
+    spec = fields.Char(string='规格 / 说明')
+
+    @api.depends('resource_ref')
+    def _compute_targets(self):
+        for record in self:
+            ref = record.resource_ref
+            record.prefix_id = ref if ref and ref._name == 'zenlenet.prefix' else record.prefix_id if not ref else False
+            record.address_id = ref if ref and ref._name == 'zenlenet.address' else record.address_id if not ref else False
+            record.line_id = ref if ref and ref._name == 'zenlenet.line' else record.line_id if not ref else False
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -353,6 +393,6 @@ class ZenlenetFlowResource(models.Model):
 
     def write(self, vals):
         result = super().write(vals)
-        if {'address_id', 'prefix_id', 'service_type'} & set(vals):
+        if {'address_id', 'prefix_id', 'resource_ref', 'service_type'} & set(vals):
             self.flow_id._apply_resources()
         return result

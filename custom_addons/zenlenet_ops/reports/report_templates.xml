@@ -122,6 +122,8 @@
                         </tbody>
                         <tfoot>
                             <tr class="zl-total"><td colspan="4">月费合计（未税）</td><td class="num" t-out="o.amount_untaxed" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></tr>
+                            <tr t-if="o.zenlenet_setup_total"><td colspan="4">一次性费用合计</td><td class="num" t-out="o.zenlenet_setup_total" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></tr>
+                            <tr t-if="o.zenlenet_term_months"><td colspan="4">合约期 <t t-out="o.zenlenet_term_months"/> 个月总额（月费 × 期限 + 一次性费用）</td><td class="num" t-out="o.zenlenet_contract_total" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></tr>
                         </tfoot>
                     </table>
 

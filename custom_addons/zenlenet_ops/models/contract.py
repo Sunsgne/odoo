@@ -209,6 +209,16 @@ class ZenlenetContract(models.Model):
                     'tax_ids': [(6, 0, [])],
                     'sale_line_ids': [(4, line.id)],
                 }))
+            if not order.zenlenet_setup_billed:
+                for line in order.order_line.filtered(lambda item: not item.display_type and item.zenlenet_setup_fee):
+                    lines.append((0, 0, {
+                        'product_id': line.product_id.id,
+                        'name': f'{clean_label(line.name) or line.product_id.name} 一次性费用',
+                        'quantity': 1.0,
+                        'price_unit': line.zenlenet_setup_fee,
+                        'tax_ids': [(6, 0, [])],
+                    }))
+                order.zenlenet_setup_billed = True
         if not lines:
             return Move
         invoice = Move.create({
