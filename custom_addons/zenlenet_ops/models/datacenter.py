@@ -201,6 +201,7 @@ class ZenlenetAddress(models.Model):
     supplier_id = fields.Many2one('res.partner', string='供应商', domain=[('supplier_rank', '>', 0)], index=True)
     netbox_id = fields.Integer(string='NetBox ID', index=True, copy=False)
     netbox_synced = fields.Datetime(string='上次同步')
+    netbox_pending = fields.Boolean(string='待写回 NetBox', default=False, index=True)
 
     @api.onchange('prefix_id')
     def _onchange_prefix(self):
@@ -211,13 +212,15 @@ class ZenlenetAddress(models.Model):
                     record.datacenter_id = record.prefix_id.datacenter_id
 
     def write(self, vals):
-        result = super().write(vals)
         if not self.env.context.get('netbox_skip_push') and {'status', 'partner_id', 'usage', 'dc_type', 'net_attr', 'expires_on'} & set(vals):
-            try:
-                self.env['zenlenet.netbox'].push_addresses(self)
-            except Exception as error:
-                _logger.warning('NetBox address push skipped: %s', type(error).__name__)
-        return result
+            vals = dict(vals, netbox_pending=True)
+        return super().write(vals)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        if not self.env.context.get('netbox_skip_push'):
+            vals_list = [dict(vals, netbox_pending=True) for vals in vals_list]
+        return super().create(vals_list)
 
     def action_open_netbox(self):
         self.ensure_one()

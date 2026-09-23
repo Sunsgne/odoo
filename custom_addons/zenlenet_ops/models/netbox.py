@@ -111,6 +111,25 @@ class ZenlenetNetbox(models.AbstractModel):
         }
 
     @api.model
+    def _cron_push(self):
+        """Every minute: write back addresses and prefixes changed in the console."""
+        if not self._params()['enabled'] or not self.is_configured():
+            return
+        Address = self.env['zenlenet.address'].sudo()
+        Prefix = self.env['zenlenet.prefix'].sudo()
+        try:
+            pending = Address.search([('netbox_pending', '=', True)], limit=200)
+            self.create_addresses(pending.filtered(lambda record: not record.netbox_id))
+            self.push_addresses(pending.filtered('netbox_id'))
+            pending.with_context(netbox_skip_push=True).write({'netbox_pending': False})
+            prefixes = Prefix.search([('netbox_pending', '=', True)], limit=100)
+            self.create_prefixes(prefixes.filtered(lambda record: not record.netbox_id))
+            self.push_prefixes(prefixes.filtered('netbox_id'))
+            prefixes.with_context(netbox_skip_push=True).write({'netbox_pending': False})
+        except Exception:
+            _logger.exception('NetBox push failed')
+
+    @api.model
     def _cron_sync(self):
         if not self._params()['enabled'] or not self.is_configured():
             return
@@ -165,9 +184,9 @@ class ZenlenetNetbox(models.AbstractModel):
             }
             record = existing.get(site['id']) or by_name.get(site['name'])
             if record:
-                record.write({key: value for key, value in values.items() if value or key in ('netbox_id', 'state')})
+                record.with_context(netbox_skip_push=True).write({key: value for key, value in values.items() if value or key in ('netbox_id', 'state')})
             else:
-                record = DC.create(values)
+                record = DC.with_context(netbox_skip_push=True).create(values)
                 by_name[record.name] = record
             count += 1
         return count
@@ -195,9 +214,9 @@ class ZenlenetNetbox(models.AbstractModel):
             }
             record = existing.get(item['prefix'])
             if record:
-                record.write(values)
+                record.with_context(netbox_skip_push=True).write(values)
             else:
-                existing[item['prefix']] = Prefix.create(values)
+                existing[item['prefix']] = Prefix.with_context(netbox_skip_push=True).create(values)
             count += 1
         return count
 

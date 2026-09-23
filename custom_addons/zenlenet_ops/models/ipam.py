@@ -182,10 +182,6 @@ class ZenlenetPrefixIpam(models.Model):
                 'dc_type': self.datacenter_id.kind or False,
                 'status': payload.get('status', 'allocated'),
             }))
-            try:
-                self.env['zenlenet.netbox'].create_addresses(record)
-            except Exception as error:  # noqa: BLE001
-                _logger.warning('NetBox address create skipped: %s', type(error).__name__)
         return {'id': record.id, 'status': record.status, 'partner': record.partner_id.name or '', 'usage': record.usage or ''}
 
     @api.model

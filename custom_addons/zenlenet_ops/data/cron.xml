@@ -33,6 +33,15 @@
         <field name="interval_type">hours</field>
         <field name="active" eval="True"/>
     </record>
+    <record id="cron_netbox_push" model="ir.cron">
+        <field name="name">尊领：NetBox 写回</field>
+        <field name="model_id" ref="model_zenlenet_netbox"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_push()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">minutes</field>
+        <field name="active" eval="True"/>
+    </record>
     <record id="seq_customer" model="ir.sequence">
         <field name="name">ZENLENET 客户编号</field>
         <field name="code">zenlenet.customer</field>

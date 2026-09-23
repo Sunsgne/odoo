@@ -24,6 +24,7 @@ class ZenlenetPrefix(models.Model):
 
     netbox_id = fields.Integer(string='NetBox ID', index=True, copy=False)
     netbox_synced = fields.Datetime(string='上次同步')
+    netbox_pending = fields.Boolean(string='待写回 NetBox', default=False, index=True)
     prefix = fields.Char(string='地址段', required=True, index=True)
     family = fields.Selection([('4', 'IPv4'), ('6', 'IPv6')], string='协议', compute='_compute_size', store=True)
     status = fields.Selection(PREFIX_STATUSES, string='状态', default='active', required=True, index=True)
@@ -181,14 +182,9 @@ class ZenlenetPrefix(models.Model):
             record.utilization = round(record.allocated_count * 100.0 / base, 1) if base else 0.0
 
     def write(self, vals):
-        result = super().write(vals)
         if not self.env.context.get('netbox_skip_push') and {'partner_id', 'status', 'description'} & set(vals):
-            try:
-                self.env['zenlenet.netbox'].push_prefixes(self)
-            except Exception as error:  # noqa: BLE001 - never block an operator on the mirror
-                import logging
-                logging.getLogger(__name__).warning('NetBox prefix push skipped: %s', type(error).__name__)
-        return result
+            vals = dict(vals, netbox_pending=True)
+        return super().write(vals)
 
     def action_allocate(self):
         """Mark the whole block and every address in it as allocated to the block's customer."""
