@@ -76,8 +76,8 @@ class ZenlenetMonth(models.Model):
 
     # ------------------------------------------------------------------ board
     @api.model
-    def month_board(self, period=None, shift=0):
-        payload = self._month_payload(period, shift)
+    def month_board(self, period=None, shift=0, include_holders=False):
+        payload = self._month_payload(period, shift, include_holders=bool(include_holders))
         payload.update(self._month_access())
         return payload
 
@@ -316,10 +316,14 @@ class ZenlenetMonth(models.Model):
             if row:
                 row['quotes'] |= quote
 
+        naked_count = 0
         if current:
-            Partner = self.env['res.partner'].sudo()
-            for partner_id in self._holder_ids():
-                self._ensure(found, Partner.browse(partner_id))
+            naked_ids = [partner_id for partner_id in self._holder_ids() if partner_id not in found]
+            naked_count = len(naked_ids)
+            if ctx.get('include_holders'):
+                Partner = self.env['res.partner'].sudo()
+                for partner_id in naked_ids:
+                    self._ensure(found, Partner.browse(partner_id))
 
         self._apply_credits(found, moves, ctx)
         counts = self._resource_maps(list(found))
@@ -330,7 +334,7 @@ class ZenlenetMonth(models.Model):
             row['line_count'] = line_count
             row['resources'] = prefix_count + address_count + line_count
             self._finish_row(row, label)
-        return found
+        return found, naked_count
 
     def _item_applies(self, item, logical, day, first, last):
         """Rules for a new bill, plus a one-time fee already sitting on this month's invoice."""
@@ -454,9 +458,10 @@ class ZenlenetMonth(models.Model):
                 return quote.user_id.name
         return ''
 
-    def _month_payload(self, period, shift):
+    def _month_payload(self, period, shift, include_holders=False):
         ctx = self._period_context(period, shift)
-        found = self._month_index(ctx)
+        ctx['include_holders'] = bool(include_holders)
+        found, naked_count = self._month_index(ctx)
         rows = [self._row_payload(row) for row in found.values()]
         rows.sort(key=lambda row: (STATUS_RANK.get(row['status'], 99), row['name'] or ''))
         totals = {}
@@ -486,6 +491,7 @@ class ZenlenetMonth(models.Model):
             'rows': rows,
             'totals': total_rows,
             'count': len(rows),
+            'naked_count': naked_count,
         }
 
     def _row_payload(self, row):
@@ -554,7 +560,7 @@ class ZenlenetMonth(models.Model):
         if not partner:
             raise UserError('没有这个客户。')
         company = partner.commercial_partner_id
-        found = self._month_index(ctx)
+        found, _naked_count = self._month_index(ctx)
         row = found.get(company.id)
         if not row:
             row = self._ensure(found, company)

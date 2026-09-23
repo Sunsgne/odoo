@@ -103,16 +103,17 @@ STATUS_HINT = {
 
 STATUS_RANK = {
     'missing': 0,
-    'naked': 1,
-    'no_items': 2,
-    'draft_contract': 3,
-    'unpaid': 4,
-    'partial': 5,
-    'draft': 6,
-    'mixed': 7,
-    'quote': 8,
-    'skip': 9,
-    'paid': 10,
+    'no_items': 1,
+    'draft_contract': 2,
+    'unpaid': 3,
+    'partial': 4,
+    'draft': 5,
+    'mixed': 6,
+    'quote': 7,
+    'skip': 8,
+    'paid': 9,
+    # Resource-only customers are a tail, so they do not bury the month's bills.
+    'naked': 20,
 }
 
 

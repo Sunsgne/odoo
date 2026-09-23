@@ -28,6 +28,8 @@ export class ZenlenetMonth extends Component {
             rows: [],
             totals: [],
             count: 0,
+            nakedCount: 0,
+            includeHolders: false,
             search: "",
             filter: "all",
             selectedId: null,
@@ -44,13 +46,16 @@ export class ZenlenetMonth extends Component {
     async load(period, shift) {
         this.state.loading = true;
         try {
-            const board = await this.orm.call("zenlenet.contract", "month_board", [period || false, shift || 0]);
+            const board = await this.orm.call("zenlenet.contract", "month_board", [
+                period || false, shift || 0, this.state.includeHolders,
+            ]);
             this.state.period = board.period;
             this.state.title = board.title;
             this.state.todayPeriod = board.today_period;
             this.state.rows = board.rows;
             this.state.totals = board.totals;
             this.state.count = board.count;
+            this.state.nakedCount = board.naked_count || 0;
             this.state.canBill = board.can_bill;
             this.state.canQuote = board.can_quote;
             const still = board.rows.some((row) => row.id === this.state.selectedId);
@@ -71,6 +76,12 @@ export class ZenlenetMonth extends Component {
 
     async shift(step) {
         await this.load(this.state.period, step);
+    }
+
+    async showHolders(flag) {
+        this.state.includeHolders = flag;
+        this.state.filter = flag ? "naked" : "all";
+        await this.load(this.state.period, 0);
     }
 
     onSearch(ev) {

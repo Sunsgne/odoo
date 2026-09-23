@@ -27,6 +27,14 @@
                 </div>
             </header>
             <div class="zl-mo-notice" t-if="state.notice" t-out="state.notice"/>
+            <div class="zl-mo-naked" t-if="state.nakedCount &amp;&amp; !state.includeHolders">
+                另有 <b t-out="state.nakedCount"/> 家客户现在名下有资源，这个月没有报价、合同或账单。
+                <button type="button" class="btn btn-link btn-sm" t-on-click="() => this.showHolders(true)">列出来</button>
+            </div>
+            <div class="zl-mo-naked" t-if="state.includeHolders">
+                下面这些客户只有资源，还没有进入这个月的报价或合同。
+                <button type="button" class="btn btn-link btn-sm" t-on-click="() => this.showHolders(false)">回到这个月的出账</button>
+            </div>
 
             <div class="zl-mo-body">
                 <section class="zl-mo-list">
