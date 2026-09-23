@@ -1,4 +1,4 @@
-from odoo import fields, models
+from odoo import api, fields, models
 from odoo.exceptions import UserError
 
 
@@ -9,7 +9,31 @@ class ResUsers(models.Model):
         ('sales', '销售'),
         ('delivery', '交付'),
         ('service', '售后'),
-    ], string='分组')
+    ], string='分组', help='业务流转里按这个分组指派负责人。')
+    zenlenet_role_ids = fields.Many2many(
+        'res.groups', string='岗位', compute='_compute_roles', inverse='_inverse_roles',
+        domain=lambda self: [('privilege_id', '=', self.env.ref('zenlenet_ops.privilege_zenlenet').id)],
+        help='岗位决定能看什么菜单、能改什么数据。一个人可以有多个岗位。',
+    )
+    zenlenet_role_names = fields.Char(string='岗位', compute='_compute_roles')
+
+    def _zenlenet_role_groups(self):
+        privilege = self.env.ref('zenlenet_ops.privilege_zenlenet', raise_if_not_found=False)
+        return self.env['res.groups'].sudo().search([('privilege_id', '=', privilege.id)]) if privilege else self.env['res.groups']
+
+    @api.depends('group_ids')
+    def _compute_roles(self):
+        roles = self._zenlenet_role_groups()
+        for user in self:
+            mine = user.group_ids & roles
+            user.zenlenet_role_ids = mine
+            user.zenlenet_role_names = '、'.join(mine.sorted('sequence').mapped('name'))
+
+    def _inverse_roles(self):
+        roles = self._zenlenet_role_groups()
+        for user in self:
+            keep = user.group_ids - roles
+            user.sudo().write({'group_ids': [(6, 0, (keep | user.zenlenet_role_ids).ids)]})
 
     def _generate_signup_values(self, provider, validation, params):
         values = super()._generate_signup_values(provider, validation, params)
@@ -52,6 +76,19 @@ class ZenlenetUserAdd(models.TransientModel):
         ('delivery', '交付'),
         ('service', '售后'),
     ], string='分组')
+    role_ids = fields.Many2many(
+        'res.groups', string='岗位',
+        domain=lambda self: [('privilege_id', '=', self.env.ref('zenlenet_ops.privilege_zenlenet').id)],
+    )
+
+    @api.onchange('team')
+    def _onchange_team(self):
+        mapping = {'sales': 'zenlenet_ops.group_sales', 'delivery': 'zenlenet_ops.group_delivery', 'service': 'zenlenet_ops.group_service'}
+        for wizard in self:
+            if wizard.team and not wizard.role_ids:
+                group = self.env.ref(mapping[wizard.team], raise_if_not_found=False)
+                if group:
+                    wizard.role_ids = group
 
     def action_create(self):
         self.ensure_one()
@@ -68,6 +105,6 @@ class ZenlenetUserAdd(models.TransientModel):
             'password': self.password,
             'share': False,
             'zenlenet_team': self.team or False,
-            'group_ids': [(4, self.env.ref('base.group_user').id)],
+            'group_ids': [(6, 0, (self.env.ref('base.group_user') | self.role_ids).ids)],
         })
         return {'type': 'ir.actions.act_window_close'}

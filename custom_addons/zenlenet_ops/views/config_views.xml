@@ -139,7 +139,7 @@
                                 <button name="action_open_users" type="object" string="管理账号" icon="oi-arrow-right" class="btn-link"/>
                             </div>
                         </setting>
-                        <setting id="zenlenet_manager_setting" string="管理员" help="只有管理员能删除合同、工单、数据中心；普通账号只能新建和修改。">
+                        <setting id="zenlenet_manager_setting" string="岗位与权限" help="岗位：销售、交付、售后、财务、采购、管理员。每个岗位只能改自己那部分数据，其余只读；财务、采购与资产、设置菜单只对相应岗位显示。">
                             <div class="mt8">
                                 <button name="action_open_groups" type="object" string="查看管理员" icon="oi-arrow-right" class="btn-link"/>
                             </div>

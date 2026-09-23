@@ -1,11 +1,11 @@
 {
     'name': '运营后台',
-    'version': '19.0.3.3.0',
+    'version': '19.0.3.4.0',
     'category': 'Sales',
     'summary': '数据中心、线路、IP；客户、报价、合同、出账；业务流转与工单',
     'author': 'ZENLENET PTE. LTD.',
     'license': 'LGPL-3',
-    'depends': ['contacts', 'sale_management', 'account', 'mail', 'auth_oauth'],
+    'depends': ['contacts', 'sale_management', 'sales_team', 'account', 'mail', 'auth_oauth'],
     'data': [
         'security/groups.xml',
         'security/ir.model.access.csv',
