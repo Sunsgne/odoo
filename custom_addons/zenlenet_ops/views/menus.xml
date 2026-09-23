@@ -2,23 +2,35 @@
 <odoo>
     <menuitem id="menu_root" name="尊领" sequence="1" action="action_desk" web_icon="zenlenet_ops,static/description/icon.png"/>
     <menuitem id="menu_home" name="首页" parent="menu_root" action="action_desk" sequence="1"/>
-    <menuitem id="menu_flow" name="业务流转" parent="menu_root" action="action_flow" sequence="5"/>
-    <menuitem id="menu_customers" name="客户管理" parent="menu_root" action="action_customers" sequence="10"/>
-    <menuitem id="menu_orders" name="订单管理" parent="menu_root" action="action_orders" sequence="20"/>
-    <menuitem id="menu_invoices" name="出账" parent="menu_root" action="action_invoices" sequence="30"/>
-    <menuitem id="menu_resources" name="资源管理" parent="menu_root" action="action_addresses" sequence="40"/>
-    <menuitem id="menu_addresses" name="IP资源" parent="menu_resources" action="action_addresses" sequence="10"/>
-    <menuitem id="menu_blocks" name="IP段" parent="menu_resources" action="action_blocks" sequence="20"/>
-    <menuitem id="menu_prefix_export" name="导出IP段" parent="menu_resources" action="action_prefix_export" sequence="30"/>
-    <menuitem id="menu_ipsets" name="IP集" parent="menu_resources" action="action_ipsets" sequence="40"/>
-    <menuitem id="menu_prefix_add" name="添加IP段" parent="menu_resources" action="action_prefix_add" sequence="50"/>
-    <menuitem id="menu_lines" name="线路" parent="menu_resources" action="action_lines" sequence="60"/>
-    <menuitem id="menu_returns" name="退资源" parent="menu_resources" action="action_returns" sequence="70"/>
-    <menuitem id="menu_maintenance" name="数据中心维护" parent="menu_root" action="action_maintenance" sequence="50"/>
-    <menuitem id="menu_purchases" name="采购管理" parent="menu_root" action="action_purchases" sequence="60"/>
-    <menuitem id="menu_stock" name="库存管理" parent="menu_root" action="action_stock" sequence="70"/>
-    <menuitem id="menu_assets" name="固定资产" parent="menu_root" action="action_assets" sequence="80"/>
-    <menuitem id="menu_settings" name="系统设置" parent="menu_root" action="action_users" sequence="90"/>
-    <menuitem id="menu_other" name="其它系统" parent="menu_root" sequence="100"/>
-    <menuitem id="menu_templates" name="通知模板" parent="menu_other" action="action_templates" sequence="10"/>
+
+    <menuitem id="menu_work" name="工作台" parent="menu_root" sequence="5"/>
+    <menuitem id="menu_flow" name="业务流转" parent="menu_work" action="action_flow" sequence="10"/>
+    <menuitem id="menu_tickets" name="工单" parent="menu_work" action="action_tickets" sequence="20"/>
+    <menuitem id="menu_maintenance" name="割接与维护" parent="menu_work" action="action_maintenance" sequence="30"/>
+
+    <menuitem id="menu_customer" name="客户" parent="menu_root" sequence="10"/>
+    <menuitem id="menu_customers" name="客户管理" parent="menu_customer" action="action_customers" sequence="10"/>
+    <menuitem id="menu_quotes" name="报价" parent="menu_customer" action="action_quotes" sequence="20"/>
+    <menuitem id="menu_orders" name="订单管理" parent="menu_customer" action="action_orders" sequence="30"/>
+    <menuitem id="menu_contracts" name="合同" parent="menu_customer" action="action_contracts" sequence="40"/>
+    <menuitem id="menu_invoices" name="出账" parent="menu_customer" action="action_invoices" sequence="50"/>
+
+    <menuitem id="menu_res" name="资源" parent="menu_root" sequence="20"/>
+    <menuitem id="menu_datacenters" name="数据中心" parent="menu_res" action="action_datacenters" sequence="5"/>
+    <menuitem id="menu_addresses" name="IP资源" parent="menu_res" action="action_addresses" sequence="10"/>
+    <menuitem id="menu_blocks" name="IP段" parent="menu_res" action="action_blocks" sequence="20"/>
+    <menuitem id="menu_ipsets" name="IP集" parent="menu_res" action="action_ipsets" sequence="30"/>
+    <menuitem id="menu_stock" name="库存（未分配）" parent="menu_res" action="action_stock" sequence="40"/>
+    <menuitem id="menu_lines" name="线路" parent="menu_res" action="action_lines" sequence="50"/>
+    <menuitem id="menu_returns" name="退资源" parent="menu_res" action="action_returns" sequence="60"/>
+    <menuitem id="menu_prefix_add" name="添加IP段" parent="menu_res" action="action_prefix_add" sequence="70"/>
+    <menuitem id="menu_prefix_export" name="导出IP段" parent="menu_res" action="action_prefix_export" sequence="80"/>
+
+    <menuitem id="menu_operations" name="运营" parent="menu_root" sequence="30"/>
+    <menuitem id="menu_purchases" name="采购管理" parent="menu_operations" action="action_purchases" sequence="10"/>
+    <menuitem id="menu_assets" name="固定资产" parent="menu_operations" action="action_assets" sequence="20"/>
+    <menuitem id="menu_templates" name="通知模板" parent="menu_operations" action="action_templates" sequence="30"/>
+
+    <menuitem id="menu_setup" name="设置" parent="menu_root" sequence="90"/>
+    <menuitem id="menu_users" name="账号与分组" parent="menu_setup" action="action_users" sequence="10"/>
 </odoo>

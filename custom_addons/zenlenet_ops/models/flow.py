@@ -17,6 +17,17 @@ TEAMS = [
     ('delivery', '交付'),
     ('service', '售后'),
 ]
+DEFAULT_TASKS = [
+    ('allocate', '按业务类型分配资源'),
+    ('deliver', '开通配置'),
+    ('deliver', '连通性 / 带宽测试'),
+    ('accept', '客户验收确认'),
+]
+TASK_STAGES = [
+    ('allocate', '分配资源'),
+    ('deliver', '交付'),
+    ('accept', '验收'),
+]
 SERVICE_TYPES = [
     ('ipt', 'IPT / RMIPT'),
     ('pl', '专线 / SD-WAN'),
@@ -62,6 +73,10 @@ class ZenlenetFlow(models.Model):
     team = fields.Selection(TEAMS, string='分组', compute='_compute_team', store=True, group_expand='_group_expand_teams')
     partner_id = fields.Many2one('res.partner', string='公司', tracking=True, domain=[('is_company', '=', True)])
     resource_ids = fields.One2many('zenlenet.flow.resource', 'flow_id', string='资源')
+    task_ids = fields.One2many('zenlenet.flow.task', 'flow_id', string='交付任务')
+    task_progress = fields.Float(string='任务进度', compute='_compute_task_progress')
+    ticket_ids = fields.One2many('zenlenet.ticket', 'flow_id', string='工单')
+    ticket_count = fields.Integer(compute='_compute_ticket_count')
     address_ids = fields.Many2many('zenlenet.address', string='IP资源')
     line_ids = fields.Many2many('zenlenet.line', string='线路')
     resource_note = fields.Text(string='资源说明')
@@ -78,6 +93,29 @@ class ZenlenetFlow(models.Model):
     def _compute_team(self):
         for record in self:
             record.team = team_for(record.state) or False
+
+    @api.depends('task_ids.done')
+    def _compute_task_progress(self):
+        for record in self:
+            total = len(record.task_ids)
+            done = len(record.task_ids.filtered('done'))
+            record.task_progress = round(done * 100.0 / total, 0) if total else 0.0
+
+    @api.depends('ticket_ids')
+    def _compute_ticket_count(self):
+        for record in self:
+            record.ticket_count = len(record.ticket_ids)
+
+    def action_open_tickets(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': f'{self.name} · 工单',
+            'res_model': 'zenlenet.ticket',
+            'view_mode': 'kanban,list,form',
+            'domain': [('flow_id', '=', self.id)],
+            'context': {'default_flow_id': self.id, 'default_partner_id': self.partner_id.id, 'default_kind': 'change'},
+        }
 
     @api.model
     def _group_expand_states(self, states, domain):
@@ -96,7 +134,23 @@ class ZenlenetFlow(models.Model):
             vals['state'] = 'company'
         records = super().create(vals_list)
         records._sync_assignee()
+        records._ensure_default_tasks()
         return records
+
+    def _ensure_default_tasks(self):
+        Task = self.env['zenlenet.flow.task']
+        for record in self:
+            if record.task_ids:
+                continue
+            Task.create([
+                {
+                    'flow_id': record.id,
+                    'stage': stage,
+                    'name': name,
+                    'user_id': record._person_for(stage).id if record._person_for(stage) else False,
+                }
+                for stage, name in DEFAULT_TASKS
+            ])
 
     def write(self, vals):
         if 'state' in vals or 'kind' in vals:
@@ -177,6 +231,10 @@ class ZenlenetFlow(models.Model):
                 raise UserError('请先按业务类型分配资源，或写上资源说明。')
         if self.state == 'deliver' and not self.service_user_id:
             raise UserError('请指定售后。')
+        pending = self.task_ids.filtered(lambda task: task.stage == self.state and not task.done)
+        if pending:
+            names = '、'.join(pending.mapped('name'))
+            raise UserError(f'还有任务没完成：{names}。勾掉之后再推进。')
 
     def _apply_resources(self):
         for record in self:
@@ -237,6 +295,27 @@ class ZenlenetFlow(models.Model):
                 continue
             record.state = 'cancel'
             record._post('已取消')
+
+
+class ZenlenetFlowTask(models.Model):
+    _name = 'zenlenet.flow.task'
+    _description = '交付任务'
+    _order = 'stage, sequence, id'
+
+    flow_id = fields.Many2one('zenlenet.flow', required=True, ondelete='cascade')
+    sequence = fields.Integer(default=10)
+    stage = fields.Selection(TASK_STAGES, string='阶段', required=True, default='deliver')
+    name = fields.Char(string='任务', required=True)
+    user_id = fields.Many2one('res.users', string='负责人', domain=[('share', '=', False)])
+    due_date = fields.Date(string='截止')
+    done = fields.Boolean(string='完成')
+    done_at = fields.Datetime(string='完成时间', readonly=True)
+    note = fields.Char(string='说明')
+
+    def write(self, vals):
+        if 'done' in vals:
+            vals['done_at'] = fields.Datetime.now() if vals['done'] else False
+        return super().write(vals)
 
 
 class ZenlenetFlowResource(models.Model):

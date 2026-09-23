@@ -4,13 +4,20 @@
         <field name="name">zenlenet.invoice.list</field>
         <field name="model">account.move</field>
         <field name="arch" type="xml">
-            <list create="false">
+            <list create="false" decoration-muted="state == 'draft'" decoration-success="payment_state == 'paid'">
+                <header>
+                    <button name="action_zenlenet_bill_period" type="object" string="生成本月账单" class="btn-primary" display="always"/>
+                </header>
                 <field name="name" string="账单"/>
                 <field name="partner_id" string="客户"/>
+                <field name="ref" string="账期"/>
+                <field name="zenlenet_contract_id" optional="show"/>
                 <field name="invoice_date" string="日期"/>
-                <field name="amount_total" string="金额"/>
-                <field name="state" string="状态"/>
-                <field name="payment_state" string="收款"/>
+                <field name="invoice_date_due" string="到期" optional="hide"/>
+                <field name="amount_total" string="金额" sum="合计"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="state" string="状态" widget="badge" decoration-info="state == 'draft'" decoration-success="state == 'posted'"/>
+                <field name="payment_state" string="收款" widget="badge" decoration-success="payment_state == 'paid'" decoration-warning="payment_state in ('not_paid', 'partial')"/>
             </list>
         </field>
     </record>
@@ -19,12 +26,23 @@
         <field name="model">account.move</field>
         <field name="arch" type="xml">
             <form create="false">
+                <header>
+                    <button name="action_post" type="object" string="确认账单" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="%(account.account_invoices)d" type="action" string="打印账单" invisible="state != 'posted'"/>
+                    <button name="button_draft" type="object" string="改回草稿" invisible="state != 'posted' or payment_state == 'paid'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,posted"/>
+                </header>
                 <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
                     <group>
                         <group>
-                            <field name="partner_id" string="客户"/>
-                            <field name="invoice_date" string="日期"/>
-                            <field name="state" string="状态"/>
+                            <field name="partner_id" string="客户" readonly="state != 'draft'"/>
+                            <field name="invoice_date" string="日期" readonly="state != 'draft'"/>
+                            <field name="invoice_date_due" string="付款期限" readonly="state != 'draft'"/>
+                            <field name="ref" string="账期" readonly="state != 'draft'"/>
+                            <field name="zenlenet_contract_id" readonly="1"/>
                         </group>
                         <group>
                             <field name="amount_untaxed" string="未税金额"/>
@@ -35,16 +53,42 @@
                             <field name="company_id" invisible="1"/>
                         </group>
                     </group>
-                    <field name="invoice_line_ids" readonly="1">
-                        <list>
+                    <field name="invoice_line_ids" readonly="state != 'draft'">
+                        <list editable="bottom">
+                            <field name="product_id" string="业务" optional="hide"/>
                             <field name="name" string="项目"/>
                             <field name="quantity" string="数量"/>
                             <field name="price_unit" string="单价"/>
                             <field name="price_subtotal" string="金额"/>
+                            <field name="tax_ids" column_invisible="1"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <field name="display_type" column_invisible="1"/>
                         </list>
                     </field>
+                    <field name="narration" placeholder="账期说明" readonly="state != 'draft'"/>
                 </sheet>
+                <chatter/>
             </form>
+        </field>
+    </record>
+    <record id="view_invoice_search" model="ir.ui.view">
+        <field name="name">zenlenet.invoice.search</field>
+        <field name="model">account.move</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="ref" string="账期"/>
+                <filter name="draft" string="草稿" domain="[('state', '=', 'draft')]"/>
+                <filter name="posted" string="已确认" domain="[('state', '=', 'posted')]"/>
+                <filter name="unpaid" string="未收款" domain="[('state', '=', 'posted'), ('payment_state', 'in', ('not_paid', 'partial'))]"/>
+                <filter name="paid" string="已收款" domain="[('payment_state', '=', 'paid')]"/>
+                <group>
+                    <filter name="group_partner" string="客户" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_period" string="账期" context="{'group_by': 'ref'}"/>
+                    <filter name="group_state" string="状态" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
         </field>
     </record>
     <record id="action_invoices" model="ir.actions.act_window">
@@ -52,6 +96,8 @@
         <field name="res_model">account.move</field>
         <field name="view_mode">list,form</field>
         <field name="domain">[('move_type', '=', 'out_invoice'), ('state', '!=', 'cancel')]</field>
+        <field name="context">{'default_move_type': 'out_invoice'}</field>
+        <field name="search_view_id" ref="view_invoice_search"/>
         <field name="view_ids" eval="[(5, 0, 0),
             (0, 0, {'view_mode': 'list', 'view_id': ref('view_invoice_list')}),
             (0, 0, {'view_mode': 'form', 'view_id': ref('view_invoice_form')})]"/>

@@ -4,14 +4,29 @@
         <field name="name">zenlenet.desk.kanban</field>
         <field name="model">zenlenet.desk</field>
         <field name="arch" type="xml">
-            <kanban create="0" records_draggable="0" action="action_open" type="object">
+            <kanban create="0" records_draggable="0" group_create="false" group_delete="false" default_group_by="group" action="action_open" type="object" class="o_zenlenet_desk">
                 <field name="name"/>
                 <field name="hint"/>
+                <field name="icon"/>
+                <field name="count"/>
+                <field name="count_label"/>
+                <field name="group"/>
                 <templates>
                     <t t-name="card">
-                        <div class="p-2">
-                            <div class="fw-bold fs-4"><field name="name"/></div>
-                            <div class="text-muted"><field name="hint"/></div>
+                        <div class="p-2 d-flex gap-3 align-items-start">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center bg-primary-subtle text-primary flex-shrink-0" style="width: 44px; height: 44px;">
+                                <i t-attf-class="fa fa-lg #{record.icon.raw_value}" role="img"/>
+                            </div>
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="d-flex justify-content-between align-items-baseline">
+                                    <div class="fw-bold fs-5 text-truncate"><field name="name"/></div>
+                                    <div t-if="record.count_label.raw_value" class="text-nowrap ms-2">
+                                        <span class="fw-bold fs-4"><field name="count"/></span>
+                                        <span class="text-muted small ms-1"><field name="count_label"/></span>
+                                    </div>
+                                </div>
+                                <div class="text-muted small"><field name="hint"/></div>
+                            </div>
                         </div>
                     </t>
                 </templates>
@@ -24,70 +39,181 @@
         <field name="view_mode">kanban</field>
         <field name="target">current</field>
     </record>
+
     <record id="desk_flow" model="zenlenet.desk">
         <field name="name">业务流转</field>
+        <field name="group">work</field>
+        <field name="icon">fa-random</field>
         <field name="sequence">5</field>
         <field name="hint">销售录入公司，交付分配资源，售后验收。测试要回收或转商务</field>
         <field name="action_ref">zenlenet_ops.action_flow</field>
+        <field name="count_model">zenlenet.flow</field>
+        <field name="count_domain">[('state', 'not in', ('done', 'cancel'))]</field>
+        <field name="count_label">在办</field>
     </record>
+    <record id="desk_tickets" model="zenlenet.desk">
+        <field name="name">工单</field>
+        <field name="group">work</field>
+        <field name="icon">fa-life-ring</field>
+        <field name="sequence">6</field>
+        <field name="hint">故障、变更、咨询、投诉，按优先级有 SLA 截止时间</field>
+        <field name="action_ref">zenlenet_ops.action_tickets</field>
+        <field name="count_model">zenlenet.ticket</field>
+        <field name="count_domain">[('state', 'not in', ('closed', 'cancel'))]</field>
+        <field name="count_label">未关闭</field>
+    </record>
+    <record id="desk_maintenance" model="zenlenet.desk">
+        <field name="name">割接与维护</field>
+        <field name="group">work</field>
+        <field name="icon">fa-wrench</field>
+        <field name="sequence">7</field>
+        <field name="hint">方案评审、通知客户、执行、验证</field>
+        <field name="action_ref">zenlenet_ops.action_maintenance</field>
+        <field name="count_model">zenlenet.maintenance</field>
+        <field name="count_domain">[('state', 'not in', ('done', 'cancel'))]</field>
+        <field name="count_label">进行中</field>
+    </record>
+
     <record id="desk_customers" model="zenlenet.desk">
         <field name="name">客户管理</field>
+        <field name="group">customer</field>
+        <field name="icon">fa-building-o</field>
         <field name="sequence">10</field>
         <field name="hint">在网、测试、已退租</field>
         <field name="action_ref">zenlenet_ops.action_customers</field>
+        <field name="count_model">res.partner</field>
+        <field name="count_domain">[('is_company', '=', True), ('customer_rank', '>', 0)]</field>
+        <field name="count_label">家</field>
+    </record>
+    <record id="desk_quotes" model="zenlenet.desk">
+        <field name="name">报价</field>
+        <field name="group">customer</field>
+        <field name="icon">fa-calculator</field>
+        <field name="sequence">15</field>
+        <field name="hint">选客户、加业务、打印报价单，确认后变成订单</field>
+        <field name="action_ref">zenlenet_ops.action_quotes</field>
+        <field name="count_model">sale.order</field>
+        <field name="count_domain">[('state', 'in', ('draft', 'sent'))]</field>
+        <field name="count_label">待确认</field>
     </record>
     <record id="desk_orders" model="zenlenet.desk">
         <field name="name">订单管理</field>
+        <field name="group">customer</field>
+        <field name="icon">fa-file-text-o</field>
         <field name="sequence">20</field>
         <field name="hint">IPT、专线、云主机、托管、转售</field>
         <field name="action_ref">zenlenet_ops.action_orders</field>
+        <field name="count_model">sale.order</field>
+        <field name="count_domain">[('zenlenet_stage', '=', 'active')]</field>
+        <field name="count_label">在网</field>
+    </record>
+    <record id="desk_contracts" model="zenlenet.desk">
+        <field name="name">合同</field>
+        <field name="group">customer</field>
+        <field name="icon">fa-handshake-o</field>
+        <field name="sequence">25</field>
+        <field name="hint">期限、出账周期、到期前 30 天提醒续签</field>
+        <field name="action_ref">zenlenet_ops.action_contracts</field>
+        <field name="count_model">zenlenet.contract</field>
+        <field name="count_domain">[('state', 'in', ('expiring', 'expired'))]</field>
+        <field name="count_label">待续签</field>
     </record>
     <record id="desk_invoices" model="zenlenet.desk">
         <field name="name">出账</field>
+        <field name="group">customer</field>
+        <field name="icon">fa-money</field>
         <field name="sequence">30</field>
-        <field name="hint">按客户汇总。单价是演示价目，不是合同价</field>
+        <field name="hint">每月自动按合同生成账单。单价是演示价目，不是合同价</field>
         <field name="action_ref">zenlenet_ops.action_invoices</field>
+        <field name="count_model">account.move</field>
+        <field name="count_domain">[('move_type', '=', 'out_invoice'), ('state', '=', 'draft')]</field>
+        <field name="count_label">草稿</field>
+    </record>
+
+    <record id="desk_datacenters" model="zenlenet.desk">
+        <field name="name">数据中心</field>
+        <field name="group">resource</field>
+        <field name="icon">fa-building</field>
+        <field name="sequence">35</field>
+        <field name="hint">机房、POP 点、公有云，看每个点的 IP 和线路使用率</field>
+        <field name="action_ref">zenlenet_ops.action_datacenters</field>
+        <field name="count_model">zenlenet.datacenter</field>
+        <field name="count_domain">[('state', '=', 'active')]</field>
+        <field name="count_label">在用</field>
     </record>
     <record id="desk_addresses" model="zenlenet.desk">
-        <field name="name">资源管理</field>
+        <field name="name">IP资源</field>
+        <field name="group">resource</field>
+        <field name="icon">fa-sitemap</field>
         <field name="sequence">40</field>
-        <field name="hint">IP、线路、退资源</field>
+        <field name="hint">按数据中心、分配状态、网络属性筛选</field>
         <field name="action_ref">zenlenet_ops.action_addresses</field>
+        <field name="count_model">zenlenet.address</field>
+        <field name="count_domain">[('status', '=', 'free')]</field>
+        <field name="count_label">未分配</field>
     </record>
     <record id="desk_blocks" model="zenlenet.desk">
-        <field name="name">库存管理</field>
-        <field name="sequence">70</field>
-        <field name="hint">还没分出去的地址</field>
-        <field name="action_ref">zenlenet_ops.action_stock</field>
+        <field name="name">线路</field>
+        <field name="group">resource</field>
+        <field name="icon">fa-exchange</field>
+        <field name="sequence">45</field>
+        <field name="hint">供应商专线和 VXLAN，客户、成本、到期</field>
+        <field name="action_ref">zenlenet_ops.action_lines</field>
+        <field name="count_model">zenlenet.line</field>
+        <field name="count_domain">[('stopped', '=', False)]</field>
+        <field name="count_label">在用</field>
     </record>
+    <record id="desk_returns" model="zenlenet.desk">
+        <field name="name">退资源</field>
+        <field name="group">resource</field>
+        <field name="icon">fa-reply</field>
+        <field name="sequence">50</field>
+        <field name="hint">退给供应商的 IP 和线路</field>
+        <field name="action_ref">zenlenet_ops.action_returns</field>
+        <field name="count_model">zenlenet.supplier.return</field>
+        <field name="count_domain">[]</field>
+        <field name="count_label">条</field>
+    </record>
+
     <record id="desk_lines" model="zenlenet.desk">
         <field name="name">采购管理</field>
+        <field name="group">operation</field>
+        <field name="icon">fa-shopping-cart</field>
         <field name="sequence">60</field>
         <field name="hint">待采购、已下单、已到货</field>
         <field name="action_ref">zenlenet_ops.action_purchases</field>
+        <field name="count_model">zenlenet.purchase</field>
+        <field name="count_domain">[('state', '=', 'draft')]</field>
+        <field name="count_label">待采购</field>
     </record>
-    <record id="desk_returns" model="zenlenet.desk">
+    <record id="desk_assets" model="zenlenet.desk">
         <field name="name">固定资产</field>
-        <field name="sequence">80</field>
+        <field name="group">operation</field>
+        <field name="icon">fa-server</field>
+        <field name="sequence">70</field>
         <field name="hint">在用、闲置、报废</field>
         <field name="action_ref">zenlenet_ops.action_assets</field>
-    </record>
-    <record id="desk_maintenance" model="zenlenet.desk">
-        <field name="name">数据中心维护</field>
-        <field name="sequence">50</field>
-        <field name="hint">割接和维护通知</field>
-        <field name="action_ref">zenlenet_ops.action_maintenance</field>
-    </record>
-    <record id="desk_settings" model="zenlenet.desk">
-        <field name="name">系统设置</field>
-        <field name="sequence">90</field>
-        <field name="hint">账号</field>
-        <field name="action_ref">zenlenet_ops.action_users</field>
+        <field name="count_model">zenlenet.asset</field>
+        <field name="count_domain">[('state', '=', 'in_use')]</field>
+        <field name="count_label">在用</field>
     </record>
     <record id="desk_templates" model="zenlenet.desk">
         <field name="name">通知模板</field>
-        <field name="sequence">100</field>
+        <field name="group">operation</field>
+        <field name="icon">fa-envelope-o</field>
+        <field name="sequence">80</field>
         <field name="hint">维护、割接、风险、紧急、接入点</field>
         <field name="action_ref">zenlenet_ops.action_templates</field>
+    </record>
+    <record id="desk_settings" model="zenlenet.desk">
+        <field name="name">账号与分组</field>
+        <field name="group">operation</field>
+        <field name="icon">fa-users</field>
+        <field name="sequence">90</field>
+        <field name="hint">销售、交付、售后</field>
+        <field name="action_ref">zenlenet_ops.action_users</field>
+        <field name="count_model">res.users</field>
+        <field name="count_domain">[('share', '=', False)]</field>
+        <field name="count_label">人</field>
     </record>
 </odoo>

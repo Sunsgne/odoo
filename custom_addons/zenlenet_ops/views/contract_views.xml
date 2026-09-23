@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_contract_list" model="ir.ui.view">
+        <field name="name">zenlenet.contract.list</field>
+        <field name="model">zenlenet.contract</field>
+        <field name="arch" type="xml">
+            <list decoration-warning="state == 'expiring'" decoration-danger="state == 'expired'" decoration-muted="state == 'terminated'">
+                <header>
+                    <button name="action_bill_period" type="object" string="生成本月账单" class="btn-primary" display="always"/>
+                </header>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="title" optional="hide"/>
+                <field name="start_date"/>
+                <field name="end_date"/>
+                <field name="days_left"/>
+                <field name="billing_cycle"/>
+                <field name="monthly_amount" sum="合计"/>
+                <field name="sales_user_id" optional="show"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="state" widget="badge" decoration-success="state == 'active'" decoration-warning="state == 'expiring'" decoration-danger="state == 'expired'"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_contract_form" model="ir.ui.view">
+        <field name="name">zenlenet.contract.form</field>
+        <field name="model">zenlenet.contract</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_activate" type="object" string="开始执行" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_bill_now" type="object" string="立即出账" class="btn-primary" invisible="state not in ('active', 'expiring')"/>
+                    <button name="%(zenlenet_ops.report_contract)d" type="action" string="打印合同"/>
+                    <button name="action_renew" type="object" string="续签一期" invisible="state not in ('expiring', 'expired')"/>
+                    <button name="action_terminate" type="object" string="终止" invisible="state in ('terminated', 'draft')"/>
+                    <button name="action_reset" type="object" string="改回草稿" invisible="state != 'terminated'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,active,expiring,expired"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_invoices" type="object" class="oe_stat_button" icon="fa-file-text-o">
+                            <field name="invoice_count" widget="statinfo" string="账单"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                        <h2><field name="title" placeholder="合同名称"/></h2>
+                    </div>
+                    <group>
+                        <group string="客户与期限">
+                            <field name="partner_id" readonly="state != 'draft'" context="{'form_view_ref': 'zenlenet_ops.view_partner_form_simple', 'list_view_ref': 'zenlenet_ops.view_partner_list'}"/>
+                            <field name="start_date"/>
+                            <field name="term_months"/>
+                            <field name="end_date"/>
+                            <field name="days_left" invisible="state in ('draft', 'terminated')"/>
+                            <field name="auto_renew"/>
+                            <field name="signed_on"/>
+                        </group>
+                        <group string="出账">
+                            <field name="billing_cycle"/>
+                            <field name="monthly_amount"/>
+                            <field name="cycle_amount"/>
+                            <field name="sales_user_id"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="company_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="订单">
+                            <field name="order_ids" context="{'list_view_ref': 'zenlenet_ops.view_order_list'}" options="{'no_create': True}">
+                                <list>
+                                    <field name="name" string="单号"/>
+                                    <field name="origin" string="业务"/>
+                                    <field name="amount_total" string="月费"/>
+                                    <field name="zenlenet_stage"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="补充条款">
+                            <field name="terms" placeholder="SLA、付款方式、违约责任等补充约定"/>
+                        </page>
+                        <page string="备注">
+                            <field name="note"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="view_contract_search" model="ir.ui.view">
+        <field name="name">zenlenet.contract.search</field>
+        <field name="model">zenlenet.contract</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <filter name="running" string="执行中" domain="[('state', 'in', ('active', 'expiring'))]"/>
+                <filter name="expiring" string="即将到期" domain="[('state', '=', 'expiring')]"/>
+                <filter name="expired" string="已到期" domain="[('state', '=', 'expired')]"/>
+                <filter name="draft" string="草稿" domain="[('state', '=', 'draft')]"/>
+                <group>
+                    <filter name="group_state" string="状态" context="{'group_by': 'state'}"/>
+                    <filter name="group_cycle" string="出账周期" context="{'group_by': 'billing_cycle'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_contracts" model="ir.actions.act_window">
+        <field name="name">合同</field>
+        <field name="res_model">zenlenet.contract</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_contract_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">还没有合同</p>
+            <p>把客户的订单放进合同，每月 1 日自动生成账单，到期前 30 天提醒销售续签。</p>
+        </field>
+    </record>
+    <record id="action_quotes" model="ir.actions.act_window">
+        <field name="name">报价</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', 'in', ('draft', 'sent'))]</field>
+        <field name="context">{'default_state': 'draft'}</field>
+        <field name="search_view_id" ref="view_order_search_zenlenet"/>
+        <field name="view_id" ref="view_order_list"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">还没有报价</p>
+            <p>选客户、加业务明细、填月费，打印报价单。客户同意后点「确认成订单」。</p>
+        </field>
+    </record>
+</odoo>

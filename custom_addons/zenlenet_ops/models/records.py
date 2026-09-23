@@ -1,3 +1,5 @@
+import ast
+
 from odoo import fields, models
 from odoo.exceptions import UserError
 
@@ -193,8 +195,30 @@ class ZenlenetDesk(models.Model):
 
     name = fields.Char(required=True)
     hint = fields.Char(string='说明')
+    group = fields.Selection([
+        ('work', '工作台'),
+        ('customer', '客户'),
+        ('resource', '资源'),
+        ('operation', '运营'),
+    ], string='分区', default='work', required=True)
+    icon = fields.Char(default='fa-folder-o')
     sequence = fields.Integer(default=10)
     action_ref = fields.Char()
+    count_model = fields.Char()
+    count_domain = fields.Char()
+    count_label = fields.Char(string='计数说明')
+    count = fields.Integer(compute='_compute_count')
+
+    def _compute_count(self):
+        for record in self:
+            record.count = 0
+            if not record.count_model or record.count_model not in self.env:
+                continue
+            try:
+                domain = ast.literal_eval(record.count_domain) if record.count_domain else []
+                record.count = self.env[record.count_model].sudo().search_count(domain)
+            except (ValueError, SyntaxError, KeyError):
+                record.count = 0
 
     def action_open(self):
         self.ensure_one()

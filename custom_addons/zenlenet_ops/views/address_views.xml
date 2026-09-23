@@ -13,9 +13,10 @@
                 </header>
                 <field name="address"/>
                 <field name="block" optional="show"/>
-                <field name="pop"/>
+                <field name="datacenter_id"/>
+                <field name="pop" optional="hide"/>
                 <field name="partner_id"/>
-                <field name="status"/>
+                <field name="status" widget="badge" decoration-success="status == 'allocated'" decoration-info="status == 'free'" decoration-warning="status in ('reserved', 'transferring', 'returning')" decoration-muted="status == 'internal'"/>
                 <field name="net_attr"/>
                 <field name="dc_type" optional="show"/>
                 <field name="role" optional="show"/>
@@ -35,6 +36,7 @@
                         <group>
                             <field name="address"/>
                             <field name="block"/>
+                            <field name="datacenter_id"/>
                             <field name="pop"/>
                             <field name="partner_id"/>
                             <field name="status"/>
@@ -89,7 +91,8 @@
                     <filter name="group_dc" string="数据中心类型" context="{'group_by': 'dc_type'}"/>
                 </group>
                 <searchpanel>
-                    <field name="dc_type" string="数据中心类型" enable_counters="1" expand="1" icon="fa-building"/>
+                    <field name="datacenter_id" string="数据中心" enable_counters="1" icon="fa-building"/>
+                    <field name="dc_type" string="数据中心类型" enable_counters="1" expand="1" icon="fa-tag"/>
                     <field name="status" string="分配状态" enable_counters="1" expand="1" icon="fa-tags"/>
                     <field name="net_attr" string="网络属性" enable_counters="1" expand="1" icon="fa-globe"/>
                 </searchpanel>

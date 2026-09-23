@@ -49,6 +49,7 @@
                         <group>
                             <field name="kind"/>
                             <field name="partner_id"/>
+                            <field name="datacenter_id"/>
                             <field name="place"/>
                             <field name="duration"/>
                         </group>

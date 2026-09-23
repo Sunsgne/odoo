@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_ticket_kanban" model="ir.ui.view">
+        <field name="name">zenlenet.ticket.kanban</field>
+        <field name="model">zenlenet.ticket</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" records_draggable="0" group_create="false" group_delete="false" quick_create="false" highlight_color="color">
+                <field name="state"/>
+                <field name="priority"/>
+                <field name="overdue"/>
+                <field name="color"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="d-flex justify-content-between">
+                            <span class="fw-bold"><field name="name"/></span>
+                            <field name="priority" widget="priority"/>
+                        </div>
+                        <div class="fw-bold text-truncate"><field name="subject"/></div>
+                        <div class="text-muted small">
+                            <field name="kind"/>
+                            <t t-if="record.partner_id.raw_value"> · <field name="partner_id"/></t>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-1">
+                            <span class="small">
+                                <span t-if="record.overdue.raw_value" class="badge text-bg-danger">超时</span>
+                                <span t-else="" class="text-muted">截止 <field name="due_at"/></span>
+                            </span>
+                            <field name="user_id" widget="many2one_avatar_user"/>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+    <record id="view_ticket_list" model="ir.ui.view">
+        <field name="name">zenlenet.ticket.list</field>
+        <field name="model">zenlenet.ticket</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="overdue" decoration-muted="state in ('closed', 'cancel')">
+                <field name="name"/>
+                <field name="priority" widget="priority"/>
+                <field name="subject"/>
+                <field name="kind"/>
+                <field name="partner_id"/>
+                <field name="datacenter_id" optional="hide"/>
+                <field name="user_id" widget="many2one_avatar_user"/>
+                <field name="team" optional="show"/>
+                <field name="opened_at" optional="hide"/>
+                <field name="due_at"/>
+                <field name="overdue"/>
+                <field name="state" widget="badge" decoration-info="state in ('new', 'assigned')" decoration-warning="state in ('processing', 'waiting')" decoration-success="state in ('resolved', 'closed')"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_ticket_form" model="ir.ui.view">
+        <field name="name">zenlenet.ticket.form</field>
+        <field name="model">zenlenet.ticket</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_take" type="object" string="我来处理" class="btn-primary" invisible="state != 'new'"/>
+                    <button name="action_next" type="object" string="开始处理" class="btn-primary" invisible="state != 'assigned'"/>
+                    <button name="action_next" type="object" string="已解决" class="btn-primary" invisible="state != 'processing'"/>
+                    <button name="action_next" type="object" string="继续处理" class="btn-primary" invisible="state != 'waiting'"/>
+                    <button name="action_next" type="object" string="关闭" class="btn-primary" invisible="state != 'resolved'"/>
+                    <button name="action_wait" type="object" string="等待客户" invisible="state not in ('assigned', 'processing')"/>
+                    <button name="action_prev" type="object" string="退回" invisible="state in ('new', 'closed', 'cancel', 'waiting')"/>
+                    <button name="action_cancel" type="object" string="取消" invisible="state in ('closed', 'cancel')"/>
+                    <field name="state" widget="statusbar" options="{'clickable': false}" statusbar_visible="new,assigned,processing,resolved,closed"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_flow" type="object" class="oe_stat_button" icon="fa-random" invisible="not flow_id">
+                            <div class="o_stat_info"><span class="o_stat_text">业务流转</span></div>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1 class="d-flex align-items-center gap-2">
+                            <field name="priority" widget="priority"/>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                        <h2><field name="subject" placeholder="一句话说明问题"/></h2>
+                    </div>
+                    <div class="alert alert-danger py-1" role="alert" invisible="not overdue">这张工单已经超过 SLA 截止时间。</div>
+                    <group>
+                        <group string="工单">
+                            <field name="kind"/>
+                            <field name="channel"/>
+                            <field name="partner_id" context="{'form_view_ref': 'zenlenet_ops.view_partner_form_simple', 'list_view_ref': 'zenlenet_ops.view_partner_list'}"/>
+                            <field name="contact"/>
+                            <field name="flow_id"/>
+                        </group>
+                        <group string="处理">
+                            <field name="team"/>
+                            <field name="user_id" widget="many2one_avatar_user"/>
+                            <field name="opened_at"/>
+                            <field name="sla_hours"/>
+                            <field name="due_at"/>
+                            <field name="resolved_at" invisible="not resolved_at"/>
+                            <field name="closed_at" invisible="not closed_at"/>
+                            <field name="overdue" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="问题描述">
+                            <field name="description" placeholder="现象、开始时间、影响范围、客户已做的排查"/>
+                        </page>
+                        <page string="处理结果">
+                            <field name="resolution" placeholder="根因、处理动作、是否需要后续跟进"/>
+                        </page>
+                        <page string="涉及资源">
+                            <group>
+                                <field name="datacenter_id"/>
+                            </group>
+                            <field name="address_ids" widget="many2many_tags"/>
+                            <field name="line_ids" widget="many2many_tags"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="view_ticket_search" model="ir.ui.view">
+        <field name="name">zenlenet.ticket.search</field>
+        <field name="model">zenlenet.ticket</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="subject"/>
+                <field name="partner_id"/>
+                <field name="user_id"/>
+                <filter name="mine" string="我的" domain="[('user_id', '=', uid)]"/>
+                <filter name="unassigned" string="待派单" domain="[('state', '=', 'new')]"/>
+                <filter name="open" string="未关闭" domain="[('state', 'not in', ('closed', 'cancel'))]"/>
+                <filter name="overdue" string="已超时" domain="[('overdue', '=', True)]"/>
+                <separator/>
+                <filter name="fault" string="故障" domain="[('kind', '=', 'fault')]"/>
+                <filter name="change" string="变更" domain="[('kind', '=', 'change')]"/>
+                <filter name="urgent" string="紧急" domain="[('priority', '=', '3')]"/>
+                <group>
+                    <filter name="group_state" string="状态" context="{'group_by': 'state'}"/>
+                    <filter name="group_user" string="处理人" context="{'group_by': 'user_id'}"/>
+                    <filter name="group_partner" string="客户" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_kind" string="类型" context="{'group_by': 'kind'}"/>
+                </group>
+                <searchpanel>
+                    <field name="team" string="分组" enable_counters="1" expand="1" icon="fa-users"/>
+                    <field name="kind" string="类型" enable_counters="1" expand="1" icon="fa-tag"/>
+                </searchpanel>
+            </search>
+        </field>
+    </record>
+    <record id="action_tickets" model="ir.actions.act_window">
+        <field name="name">工单</field>
+        <field name="res_model">zenlenet.ticket</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="view_ticket_search"/>
+        <field name="context">{'search_default_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">还没有工单</p>
+            <p>故障、变更、咨询、投诉都从这里进来。紧急 4 小时、高 8 小时、普通 24 小时、低 72 小时内要解决。</p>
+        </field>
+    </record>
+</odoo>

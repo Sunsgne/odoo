@@ -6,10 +6,13 @@
         <field name="arch" type="xml">
             <list>
                 <field name="name"/>
+                <field name="model" optional="show"/>
                 <field name="partner_id"/>
-                <field name="pop"/>
+                <field name="datacenter_id"/>
+                <field name="pop" optional="hide"/>
                 <field name="serial"/>
-                <field name="state"/>
+                <field name="purchased_on" optional="hide"/>
+                <field name="state" widget="badge" decoration-success="state == 'in_use'" decoration-warning="state == 'idle'" decoration-danger="state == 'scrap'"/>
             </list>
         </field>
     </record>
@@ -20,11 +23,18 @@
             <form>
                 <sheet>
                     <group>
-                        <field name="name"/>
-                        <field name="partner_id"/>
-                        <field name="pop"/>
-                        <field name="serial"/>
-                        <field name="state"/>
+                        <group>
+                            <field name="name"/>
+                            <field name="model"/>
+                            <field name="serial"/>
+                            <field name="state"/>
+                        </group>
+                        <group>
+                            <field name="partner_id"/>
+                            <field name="datacenter_id"/>
+                            <field name="pop"/>
+                            <field name="purchased_on"/>
+                        </group>
                     </group>
                 </sheet>
             </form>

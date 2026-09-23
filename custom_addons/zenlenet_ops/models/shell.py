@@ -19,6 +19,8 @@ class ZenlenetShell(models.AbstractModel):
         self.env['zenlenet.notice.template'].sudo().load_workbook_templates()
         self.env['zenlenet.loader'].sudo().load_operational()
         self.env['zenlenet.flow'].sudo().migrate_resources()
+        self.env['zenlenet.flow'].sudo().search([]).sudo()._ensure_default_tasks()
+        self.env['zenlenet.datacenter'].sudo().migrate_places()
         action = self.env.ref('zenlenet_ops.action_desk', raise_if_not_found=False)
         users = self.env['res.users'].sudo().search([('share', '=', False)])
         if action and 'action_id' in users._fields:

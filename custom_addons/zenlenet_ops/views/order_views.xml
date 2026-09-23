@@ -8,10 +8,13 @@
         <field name="arch" type="xml">
             <xpath expr="//header" position="replace">
                 <header>
-                    <button name="action_mark_active" type="object" string="在网" class="btn-primary" invisible="zenlenet_stage == 'active'"/>
-                    <button name="action_mark_testing" type="object" string="测试" invisible="zenlenet_stage == 'testing'"/>
-                    <button name="action_mark_terminated" type="object" string="已退租" invisible="zenlenet_stage == 'terminated'"/>
-                    <field name="zenlenet_stage" widget="statusbar" statusbar_visible="testing,active,terminated"/>
+                    <button name="action_print_quote" type="object" string="打印报价单" invisible="state not in ('draft', 'sent')"/>
+                    <button name="action_confirm" type="object" string="确认成订单" class="btn-primary" invisible="state not in ('draft', 'sent')"/>
+                    <button name="action_make_contract" type="object" string="生成合同" invisible="state != 'sale'"/>
+                    <button name="action_mark_active" type="object" string="在网" class="btn-primary" invisible="zenlenet_stage == 'active' or state in ('draft', 'sent')"/>
+                    <button name="action_mark_testing" type="object" string="测试" invisible="zenlenet_stage == 'testing' or state in ('draft', 'sent')"/>
+                    <button name="action_mark_terminated" type="object" string="已退租" invisible="zenlenet_stage == 'terminated' or state in ('draft', 'sent')"/>
+                    <field name="zenlenet_stage" widget="statusbar" statusbar_visible="testing,active,terminated" invisible="state in ('draft', 'sent')"/>
                     <field name="state" invisible="1"/>
                     <field name="locked" invisible="1"/>
                 </header>
@@ -46,7 +49,8 @@
                 <attribute name="optional">hide</attribute>
             </xpath>
             <xpath expr="//field[@name='validity_date']" position="attributes">
-                <attribute name="invisible">1</attribute>
+                <attribute name="invisible">state not in ('draft', 'sent')</attribute>
+                <attribute name="string">报价有效期</attribute>
             </xpath>
             <xpath expr="//button[@name='action_update_prices']" position="attributes">
                 <attribute name="invisible">1</attribute>

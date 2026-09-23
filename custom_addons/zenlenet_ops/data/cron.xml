@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="cron_contract_daily" model="ir.cron">
+        <field name="name">尊领：合同到期检查</field>
+        <field name="model_id" ref="model_zenlenet_contract"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_daily()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active" eval="True"/>
+    </record>
+    <record id="cron_contract_billing" model="ir.cron">
+        <field name="name">尊领：每月出账</field>
+        <field name="model_id" ref="model_zenlenet_contract"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_monthly_billing()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active" eval="True"/>
+    </record>
+    <record id="seq_contract" model="ir.sequence">
+        <field name="name">ZENLENET 合同</field>
+        <field name="code">zenlenet.contract</field>
+        <field name="prefix">HT-%(year)s-</field>
+        <field name="padding">3</field>
+    </record>
+    <record id="seq_ticket" model="ir.sequence">
+        <field name="name">ZENLENET 工单</field>
+        <field name="code">zenlenet.ticket</field>
+        <field name="prefix">GD-</field>
+        <field name="padding">5</field>
+    </record>
+</odoo>

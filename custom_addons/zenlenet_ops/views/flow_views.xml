@@ -8,13 +8,19 @@
                 <field name="team"/>
                 <field name="state"/>
                 <field name="kind"/>
+                <field name="task_progress"/>
                 <templates>
                     <t t-name="card">
-                        <field name="name" class="fw-bold"/>
-                        <field name="state"/>
-                        <field name="kind"/>
-                        <field name="partner_id"/>
-                        <field name="user_id"/>
+                        <div class="d-flex justify-content-between">
+                            <span class="fw-bold"><field name="name"/></span>
+                            <field name="kind" widget="badge" decoration-info="kind == 'test'" decoration-success="kind == 'business'"/>
+                        </div>
+                        <div class="text-truncate"><field name="partner_id"/></div>
+                        <div class="text-muted small"><field name="state"/></div>
+                        <div class="d-flex justify-content-between align-items-center mt-1">
+                            <field name="task_progress" widget="progressbar" class="flex-grow-1 me-2"/>
+                            <field name="user_id" widget="many2one_avatar_user"/>
+                        </div>
                     </t>
                 </templates>
             </kanban>
@@ -50,6 +56,11 @@
                     <field name="state" widget="statusbar" options="{'clickable': false}" statusbar_visible="company,allocate,deliver,accept,done"/>
                 </header>
                 <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_tickets" type="object" class="oe_stat_button" icon="fa-life-ring">
+                            <field name="ticket_count" widget="statinfo" string="工单"/>
+                        </button>
+                    </div>
                     <div class="oe_title">
                         <h1><field name="name" readonly="1"/></h1>
                     </div>
@@ -82,6 +93,24 @@
                                 </list>
                             </field>
                             <field name="resource_note" placeholder="没有具体订单或地址时，写清楚要分配的业务"/>
+                        </page>
+                        <page string="交付任务">
+                            <div class="d-flex align-items-center gap-3 mb-2">
+                                <span class="text-muted">每个阶段的任务勾完，才能推进到下一步。</span>
+                                <field name="task_progress" widget="progressbar" class="flex-grow-1"/>
+                            </div>
+                            <field name="task_ids">
+                                <list editable="bottom" decoration-success="done">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="done" widget="boolean_toggle"/>
+                                    <field name="stage"/>
+                                    <field name="name"/>
+                                    <field name="user_id" widget="many2one_avatar_user"/>
+                                    <field name="due_date"/>
+                                    <field name="note"/>
+                                    <field name="done_at" optional="hide"/>
+                                </list>
+                            </field>
                         </page>
                     </notebook>
                 </sheet>

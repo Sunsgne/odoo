@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_quotation_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <t t-set="o" t-value="doc"/>
+                    <div class="page" style="font-family: 'Noto Sans CJK SC', 'Noto Sans SC', sans-serif;">
+                        <h2 class="mt-3 mb-4">服务报价单</h2>
+                        <div class="row mb-4">
+                            <div class="col-6">
+                                <div class="text-muted small">致</div>
+                                <div class="fw-bold fs-5"><span t-field="doc.partner_id.name"/></div>
+                                <div t-if="doc.partner_id.street"><span t-field="doc.partner_id.street"/></div>
+                                <div t-if="doc.partner_id.email"><span t-field="doc.partner_id.email"/></div>
+                            </div>
+                            <div class="col-6">
+                                <table class="table table-sm table-borderless mb-0">
+                                    <tr><td class="text-muted">报价编号</td><td class="text-end fw-bold"><span t-field="doc.name"/></td></tr>
+                                    <tr><td class="text-muted">报价日期</td><td class="text-end"><span t-field="doc.date_order" t-options='{"widget": "date"}'/></td></tr>
+                                    <tr><td class="text-muted">有效期至</td><td class="text-end">
+                                        <span t-if="doc.validity_date" t-field="doc.validity_date"/>
+                                        <span t-else="">自报价日起 30 天</span>
+                                    </td></tr>
+                                    <tr><td class="text-muted">销售</td><td class="text-end"><span t-field="doc.user_id.name"/></td></tr>
+                                </table>
+                            </div>
+                        </div>
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>业务项目</th>
+                                    <th class="text-end">数量</th>
+                                    <th class="text-end">单价（月）</th>
+                                    <th class="text-end">月费</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="doc.order_line.filtered(lambda l: not l.display_type)" t-as="line">
+                                    <tr>
+                                        <td><span t-field="line.name"/></td>
+                                        <td class="text-end"><span t-field="line.product_uom_qty"/></td>
+                                        <td class="text-end"><span t-field="line.price_unit" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/></td>
+                                        <td class="text-end"><span t-field="line.price_subtotal" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/></td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold">月费合计</td>
+                                    <td class="text-end fw-bold"><span t-field="doc.amount_total" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                        <div class="mt-4 small">
+                            <div class="fw-bold mb-1">说明</div>
+                            <ol class="mb-0 ps-3">
+                                <li>以上价格为月度服务费，币种见金额栏，不含税；一次性接入费、跨境线路及设备另议。</li>
+                                <li>带宽类业务按签约带宽出账，超量部分按实际使用另行结算。</li>
+                                <li>报价在有效期内有效；确认后双方签署服务协议，服务开通日起计费。</li>
+                                <li t-if="doc.note"><span t-field="doc.note"/></li>
+                            </ol>
+                        </div>
+                        <div class="row mt-5">
+                            <div class="col-6">
+                                <div class="text-muted small">服务方</div>
+                                <div class="fw-bold"><span t-field="doc.company_id.name"/></div>
+                                <div t-if="doc.company_id.vat">UEN <span t-field="doc.company_id.vat"/></div>
+                                <div class="mt-4">签署：______________________</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-muted small">客户确认</div>
+                                <div class="fw-bold"><span t-field="doc.partner_id.name"/></div>
+                                <div class="mt-5">签署：______________________</div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+    <record id="report_quotation" model="ir.actions.report">
+        <field name="name">报价单</field>
+        <field name="model">sale.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">zenlenet_ops.report_quotation_document</field>
+        <field name="report_file">zenlenet_ops.report_quotation_document</field>
+        <field name="print_report_name">'报价单-%s' % (object.name)</field>
+        <field name="binding_model_id" ref="sale.model_sale_order"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_contract_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <t t-set="o" t-value="doc"/>
+                    <div class="page" style="font-family: 'Noto Sans CJK SC', 'Noto Sans SC', sans-serif;">
+                        <h2 class="mt-3 mb-1 text-center"><span t-field="doc.title"/></h2>
+                        <div class="text-center text-muted mb-4">合同编号：<span t-field="doc.name"/></div>
+                        <table class="table table-sm table-borderless mb-4">
+                            <tr>
+                                <td class="w-50">
+                                    <div class="text-muted small">甲方（客户）</div>
+                                    <div class="fw-bold"><span t-field="doc.partner_id.name"/></div>
+                                    <div t-if="doc.partner_id.street"><span t-field="doc.partner_id.street"/></div>
+                                </td>
+                                <td class="w-50">
+                                    <div class="text-muted small">乙方（服务方）</div>
+                                    <div class="fw-bold"><span t-field="doc.company_id.name"/></div>
+                                    <div t-if="doc.company_id.vat">UEN <span t-field="doc.company_id.vat"/></div>
+                                    <div t-if="doc.company_id.street"><span t-field="doc.company_id.street"/></div>
+                                </td>
+                            </tr>
+                        </table>
+                        <h5>一、服务内容</h5>
+                        <table class="table table-sm">
+                            <thead>
+                                <tr><th>订单</th><th>业务</th><th class="text-end">数量</th><th class="text-end">月费</th></tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="doc.order_ids" t-as="order">
+                                    <t t-foreach="order.order_line.filtered(lambda l: not l.display_type)" t-as="line">
+                                        <tr>
+                                            <td><span t-field="order.name"/></td>
+                                            <td><span t-field="line.name"/></td>
+                                            <td class="text-end"><span t-field="line.product_uom_qty"/></td>
+                                            <td class="text-end"><span t-field="line.price_subtotal" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/></td>
+                                        </tr>
+                                    </t>
+                                </t>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold">月费合计</td>
+                                    <td class="text-end fw-bold"><span t-field="doc.monthly_amount" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                        <h5>二、服务期限</h5>
+                        <p>
+                            自 <span t-field="doc.start_date"/> 起至 <span t-field="doc.end_date"/> 止，共 <span t-field="doc.term_months"/> 个月。
+                            <t t-if="doc.auto_renew">期满前任一方未书面提出终止，则自动按原条款续期一期。</t>
+                        </p>
+                        <h5>三、费用与结算</h5>
+                        <p>
+                            乙方按 <span t-field="doc.billing_cycle"/> 出具账单，每期金额 <span t-field="doc.cycle_amount" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/>。
+                            甲方应在收到账单后 30 日内付款。带宽超量部分按实际使用另行结算。
+                        </p>
+                        <h5>四、服务保障</h5>
+                        <p>乙方提供 7×24 小时故障受理；计划性割接与维护至少提前 3 个工作日通知甲方；紧急维护在处置后及时说明。</p>
+                        <div t-if="doc.terms">
+                            <h5>五、补充条款</h5>
+                            <div t-field="doc.terms"/>
+                        </div>
+                        <div class="row mt-5">
+                            <div class="col-6">
+                                <div class="text-muted small">甲方</div>
+                                <div class="mt-4">签署：______________________</div>
+                                <div class="mt-2">日期：______________________</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-muted small">乙方</div>
+                                <div class="mt-4">签署：______________________</div>
+                                <div class="mt-2">日期：<span t-if="doc.signed_on" t-field="doc.signed_on"/><t t-else="">______________________</t></div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+    <record id="report_contract" model="ir.actions.report">
+        <field name="name">合同</field>
+        <field name="model">zenlenet.contract</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">zenlenet_ops.report_contract_document</field>
+        <field name="report_file">zenlenet_ops.report_contract_document</field>
+        <field name="print_report_name">'合同-%s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_zenlenet_contract"/>
+        <field name="binding_type">report</field>
+    </record>
+</odoo>
