@@ -218,6 +218,14 @@
     }
 }
 
+// Only one application exists, so the app switcher grid is noise.
+.o_main_navbar .o_navbar_apps_menu {
+    display: none !important;
+}
+.o_main_navbar .o_menu_brand {
+    margin-left: 12px;
+}
+
 // Odoo's chat bubble is not part of this console.
 .o_menu_systray .o-mail-DiscussSystray-class,
 .o_menu_systray .o_mail_systray_item,
