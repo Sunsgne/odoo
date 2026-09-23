@@ -24,6 +24,7 @@ class ZenlenetShell(models.AbstractModel):
         self.env['zenlenet.datacenter'].sudo().migrate_places()
         self.env['zenlenet.prefix'].sudo().link_addresses()
         self.env['zenlenet.prefix'].sudo().relink_hierarchy()
+        self.env['zenlenet.prefix'].sudo().search([])._compute_inherited()
         self.env['res.partner']._zenlenet_migrate_suppliers()
         self.env['zenlenet.flow.resource'].sudo().search([('service_type', '=', 'ip'), ('address_id', '!=', False), ('prefix_id', '=', False)]).write({'service_type': 'ip_single'})
         brand = self.env['ir.config_parameter'].sudo().get_param('zenlenet.brand')

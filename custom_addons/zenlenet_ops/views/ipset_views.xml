@@ -57,6 +57,8 @@
                         <field name="status"/>
                     </group>
                     <group>
+                        <field name="region"/>
+                        <field name="asn"/>
                         <field name="partner_id" options="{'no_create': True}"/>
                         <field name="supplier_id" options="{'no_create': True}"/>
                         <field name="role"/>

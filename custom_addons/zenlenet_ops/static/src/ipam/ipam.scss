@@ -54,6 +54,8 @@ $zl-primary: #714b67;
         &:hover { background: #f1f2f5; }
         &.active { background: rgba($zl-primary, 0.12); color: $zl-primary; font-weight: 600; }
     }
+    .zl-tree-region { color: #344054; }
+    .zl-tree-asn { color: #475467; }
     .zl-tree-toggle { width: 14px; text-align: center; color: #98a2b3; .zl-tree-leaf { font-size: 7px; } }
     .zl-tree-prefix { flex: 0 0 auto; }
     .zl-tree-meta { color: #667085; font-size: 11px; overflow: hidden; text-overflow: ellipsis; }

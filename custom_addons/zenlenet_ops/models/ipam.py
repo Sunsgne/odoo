@@ -25,10 +25,9 @@ class ZenlenetPrefixIpam(models.Model):
         domain = []
         if search:
             domain = ['|', '|', ('prefix', 'ilike', search), ('description', 'ilike', search), ('partner_id.name', 'ilike', search)]
-        rows = self.search_read(domain, [
-            'prefix', 'parent_id', 'status', 'partner_id', 'datacenter_id', 'utilization', 'child_count',
-            'family', 'prefixlen', 'description',
-        ], order='family, prefix')
+        fields_list = ['prefix', 'parent_id', 'status', 'partner_id', 'datacenter_id', 'utilization', 'child_count',
+                       'family', 'prefixlen', 'description', 'region', 'asn']
+        rows = self.search_read(domain, fields_list, order='family, prefix')
         wanted = {row['id'] for row in rows}
         if search:
             # keep ancestors so matches stay attached to their branch
@@ -37,8 +36,7 @@ class ZenlenetPrefixIpam(models.Model):
                 extra = ancestors.filtered(lambda record: record.id not in wanted)
                 if not extra:
                     break
-                rows += extra.read(['prefix', 'parent_id', 'status', 'partner_id', 'datacenter_id', 'utilization',
-                                    'child_count', 'family', 'prefixlen', 'description'])
+                rows += extra.read(fields_list)
                 wanted |= set(extra.ids)
                 ancestors = extra.mapped('parent_id')
         return [{
@@ -53,6 +51,8 @@ class ZenlenetPrefixIpam(models.Model):
             'family': row['family'],
             'prefixlen': row['prefixlen'],
             'description': row['description'] or '',
+            'region': row['region'] or '未分地区',
+            'asn': row['asn'] or 0,
         } for row in rows]
 
     def _ipam_addresses(self, network):
@@ -133,6 +133,10 @@ class ZenlenetPrefixIpam(models.Model):
             'datacenter_id': self.datacenter_id.id,
             'parent': self.parent_id.prefix or '',
             'parent_id': self.parent_id.id,
+            'region': self.region or '',
+            'asn': self.asn or 0,
+            'top': self.top_id.prefix or self.prefix,
+            'top_id': self.top_id.id or self.id,
             'role': self.role or '',
             'vlan': self.vlan or '',
             'description': self.description or '',

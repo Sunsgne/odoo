@@ -41,6 +41,8 @@
                 <field name="sequence" widget="handle"/>
                 <field name="name"/>
                 <field name="kind"/>
+                <field name="region" optional="show"/>
+                <field name="asn" optional="show"/>
                 <field name="city"/>
                 <field name="supplier_id"/>
                 <field name="address_count"/>
@@ -87,6 +89,8 @@
                             <field name="code"/>
                             <field name="facility"/>
                             <field name="kind"/>
+                            <field name="region"/>
+                            <field name="asn"/>
                             <field name="supplier_id" options="{'no_create': True}"/>
                             <field name="usage_percent" widget="progressbar"/>
                         </group>

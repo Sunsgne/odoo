@@ -9,7 +9,10 @@
                     <button name="%(zenlenet_ops.action_prefix_add)d" type="action" string="录入网段" class="btn-primary" display="always" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_manager"/>
                 </header>
                 <field name="prefix" class="font-monospace"/>
-                <field name="parent_id" optional="show"/>
+                <field name="region" optional="show"/>
+                <field name="asn_display" string="AS 号" optional="show"/>
+                <field name="top_id" string="IP 段" optional="show"/>
+                <field name="parent_id" optional="hide"/>
                 <field name="status" widget="badge" decoration-success="status == 'active'" decoration-info="status == 'container'" decoration-warning="status == 'reserved'"/>
                 <field name="datacenter_id"/>
                 <field name="partner_id" string="分配给"/>
@@ -58,6 +61,9 @@
                     </div>
                     <group>
                         <group string="分配">
+                            <field name="region"/>
+                            <field name="asn"/>
+                            <field name="top_id" string="IP 段"/>
                             <field name="partner_id" string="分配给客户" options="{'no_create': True}" domain="[('is_company', '=', True), ('customer_rank', '>', 0)]"/>
                             <field name="datacenter_id"/>
                             <field name="role" placeholder="例如 客户接入 / 互联 / 管理"/>
@@ -120,6 +126,8 @@
                 <filter name="v4" string="IPv4" domain="[('family', '=', '4')]"/>
                 <filter name="v6" string="IPv6" domain="[('family', '=', '6')]"/>
                 <group>
+                    <filter name="group_region" string="地区" context="{'group_by': 'region'}"/>
+                    <filter name="group_asn" string="AS 号" context="{'group_by': 'asn'}"/>
                     <filter name="group_parent" string="上级网段" context="{'group_by': 'parent_id'}"/>
                     <filter name="group_dc" string="数据中心" context="{'group_by': 'datacenter_id'}"/>
                     <filter name="group_partner" string="分配给" context="{'group_by': 'partner_id'}"/>

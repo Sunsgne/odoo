@@ -30,8 +30,30 @@
                     <button class="btn btn-secondary btn-sm" t-on-click="openList" title="列表视图"><i class="fa fa-list"/></button>
                 </div>
                 <ul class="zl-tree">
-                    <t t-foreach="roots" t-as="node" t-key="node.id">
-                        <t t-call="zenlenet_ops.IpamNode"/>
+                    <t t-foreach="regionGroups" t-as="region" t-key="region.name">
+                        <li class="zl-tree-group">
+                            <div class="zl-tree-row zl-tree-region" t-on-click="() => this.toggleGroup(groupKey(region.name))">
+                                <span class="zl-tree-toggle"><i t-attf-class="fa #{isGroupOpen(groupKey(region.name)) ? 'fa-caret-down' : 'fa-caret-right'}"/></span>
+                                <i class="fa fa-globe text-muted"/> <span class="fw-bold" t-esc="region.name"/>
+                                <span class="zl-tree-util" t-esc="region.count + ' 段'"/>
+                            </div>
+                            <ul t-if="isGroupOpen(groupKey(region.name))" class="zl-tree-children">
+                                <t t-foreach="region.asns" t-as="asn" t-key="asn.name">
+                                    <li class="zl-tree-group">
+                                        <div class="zl-tree-row zl-tree-asn" t-on-click="() => this.toggleGroup(groupKey(region.name, asn.name))">
+                                            <span class="zl-tree-toggle"><i t-attf-class="fa #{isGroupOpen(groupKey(region.name, asn.name)) ? 'fa-caret-down' : 'fa-caret-right'}"/></span>
+                                            <i class="fa fa-random text-muted"/> <span class="font-monospace" t-esc="asn.name"/>
+                                            <span class="zl-tree-util" t-esc="asn.nodes.length + ' 段'"/>
+                                        </div>
+                                        <ul t-if="isGroupOpen(groupKey(region.name, asn.name))" class="zl-tree-children">
+                                            <t t-foreach="asn.nodes" t-as="node" t-key="node.id">
+                                                <t t-call="zenlenet_ops.IpamNode"/>
+                                            </t>
+                                        </ul>
+                                    </li>
+                                </t>
+                            </ul>
+                        </li>
                     </t>
                 </ul>
                 <div t-if="!roots.length" class="text-muted small p-3">没有网段。点 + 录入第一个。</div>
@@ -43,6 +65,8 @@
                         <i class="fa fa-sitemap text-primary"/>
                         <span class="font-monospace" t-esc="state.detail.prefix"/>
                         <span t-attf-class="badge zl-badge-#{state.detail.status}" t-esc="state.detail.status_label"/>
+                        <span class="text-muted small" t-if="state.detail.region"><i class="fa fa-globe"/> <t t-esc="state.detail.region"/></span>
+                        <span class="text-muted small font-monospace" t-if="state.detail.asn">AS<t t-esc="state.detail.asn"/></span>
                         <span class="text-muted small" t-if="state.detail.datacenter"><i class="fa fa-building-o"/> <t t-esc="state.detail.datacenter"/></span>
                         <span class="text-muted small" t-if="state.detail.partner"><i class="fa fa-user-o"/> <t t-esc="state.detail.partner"/></span>
                     </div>
@@ -153,6 +177,10 @@
                     <aside class="zl-ipam-facts">
                         <div class="zl-ipam-section-title">基本信息</div>
                         <dl>
+                            <dt>地区</dt><dd t-esc="state.detail.region || '—'"/>
+                            <dt>AS 号</dt><dd class="font-monospace" t-esc="state.detail.asn ? 'AS' + state.detail.asn : '—'"/>
+                            <dt>IP 段</dt><dd><a href="#" class="font-monospace" t-on-click.prevent="() => this.select(state.detail.top_id)" t-esc="state.detail.top"/></dd>
+                            <dt>IP 小段</dt><dd class="font-monospace" t-esc="state.detail.prefix"/>
                             <dt>CIDR</dt><dd class="font-monospace" t-esc="state.detail.prefix"/>
                             <dt>协议</dt><dd t-esc="state.detail.family === '6' ? 'IPv6' : 'IPv4'"/>
                             <dt>容量</dt><dd t-esc="state.detail.size_display"/>

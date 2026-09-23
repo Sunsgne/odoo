@@ -34,6 +34,10 @@ class ZenlenetPrefix(models.Model):
     vlan = fields.Char(string='VLAN')
     description = fields.Char(string='说明')
     is_pool = fields.Boolean(string='地址池', help='整段作为地址池分配，网络地址和广播地址也可用。')
+    region = fields.Char(string='地区', index=True, compute='_compute_inherited', store=True, readonly=False)
+    asn = fields.Integer(string='AS 号', index=True, compute='_compute_inherited', store=True, readonly=False)
+    asn_display = fields.Char(string='AS', compute='_compute_asn_display')
+    top_id = fields.Many2one('zenlenet.prefix', string='IP 段（顶级）', compute='_compute_top', store=True, index=True)
     parent_id = fields.Many2one('zenlenet.prefix', string='上级网段', compute='_compute_parent', store=True, index=True)
     child_ids = fields.One2many('zenlenet.prefix', 'parent_id', string='下级网段')
     child_count = fields.Integer(compute='_compute_children')
@@ -73,6 +77,29 @@ class ZenlenetPrefix(models.Model):
                 usable = max(usable - 2, 0)
             record.size = min(usable, 2_147_483_647)
             record.size_display = f'2^{network.max_prefixlen - network.prefixlen}' if network.version == 6 else f'{usable:,}'
+
+    @api.depends('parent_id', 'parent_id.region', 'parent_id.asn', 'datacenter_id', 'datacenter_id.region', 'datacenter_id.asn')
+    def _compute_inherited(self):
+        for record in self:
+            if not record.region:
+                record.region = record.parent_id.region or record.datacenter_id.region or record.datacenter_id.city or record.datacenter_id.name or False
+            if not record.asn:
+                record.asn = record.parent_id.asn or record.datacenter_id.asn or 0
+
+    @api.depends('asn')
+    def _compute_asn_display(self):
+        for record in self:
+            record.asn_display = f'AS{record.asn}' if record.asn else ''
+
+    @api.depends('parent_id', 'parent_id.top_id')
+    def _compute_top(self):
+        for record in self:
+            node = record
+            seen = set()
+            while node.parent_id and node.id not in seen:
+                seen.add(node.id)
+                node = node.parent_id
+            record.top_id = node if node != record else False
 
     @api.depends('prefix')
     def _compute_parent(self):

@@ -210,6 +210,8 @@ class ZenlenetPrefixAdd(models.TransientModel):
     partner_id = fields.Many2one('res.partner', string='分配给客户', domain=[('is_company', '=', True), ('customer_rank', '>', 0)])
     supplier_id = fields.Many2one('res.partner', string='供应商', domain=[('supplier_rank', '>', 0)])
     status = fields.Selection([('container', '容器'), ('active', '在用'), ('reserved', '预留')], string='状态', default='active', required=True)
+    region = fields.Char(string='地区')
+    asn = fields.Integer(string='AS 号')
     role = fields.Char(string='用途角色')
     description = fields.Char(string='说明')
     pop = fields.Char(string='机房（旧）')
@@ -233,6 +235,8 @@ class ZenlenetPrefixAdd(models.TransientModel):
             'status': self.status,
             'role': self.role or self.parent_id.role,
             'description': self.description or '',
+            'region': self.region or self.parent_id.region or False,
+            'asn': self.asn or self.parent_id.asn or 0,
         })
         try:
             self.env['zenlenet.netbox'].create_prefixes(prefix)

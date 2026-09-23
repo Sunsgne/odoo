@@ -26,6 +26,8 @@ class ZenlenetDatacenter(models.Model):
     netbox_id = fields.Integer(string='NetBox ID', index=True, copy=False)
     netbox_synced = fields.Datetime(string='上次同步')
     facility = fields.Char(string='机房设施', help='运营商机房的正式名称或楼栋编号，对应 NetBox 的 Facility。')
+    region = fields.Char(string='地区', index=True, help='香港 / 新加坡 / 东京 / 洛杉矶……这个机房下的网段默认归到这个地区。')
+    asn = fields.Integer(string='AS 号', help='这个机房默认宣告的 AS，新增网段时带入。')
     supplier_id = fields.Many2one('res.partner', string='机房供应商', domain=[('supplier_rank', '>', 0)], index=True)
     prefix_ids = fields.One2many('zenlenet.prefix', 'datacenter_id', string='地址段')
     prefix_count = fields.Integer(string='地址段数', compute='_compute_counts')

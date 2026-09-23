@@ -77,6 +77,35 @@ export class ZenlenetIpam extends Component {
         return this.state.byParent[0] || [];
     }
 
+    /** 地区 → AS → 顶级 IP 段 → IP 小段 */
+    get regionGroups() {
+        const groups = {};
+        for (const node of this.roots) {
+            const region = node.region || "未分地区";
+            const asn = node.asn ? `AS${node.asn}` : "未填 AS";
+            groups[region] = groups[region] || { name: region, asns: {}, count: 0 };
+            const bucket = groups[region];
+            bucket.asns[asn] = bucket.asns[asn] || { name: asn, nodes: [] };
+            bucket.asns[asn].nodes.push(node);
+            bucket.count += 1;
+        }
+        return Object.values(groups)
+            .sort((a, b) => a.name.localeCompare(b.name, "zh"))
+            .map((group) => ({ ...group, asns: Object.values(group.asns).sort((a, b) => a.name.localeCompare(b.name)) }));
+    }
+
+    groupKey(...parts) {
+        return "g:" + parts.join("/");
+    }
+
+    isGroupOpen(key) {
+        return this.state.expanded[key] !== false;
+    }
+
+    toggleGroup(key) {
+        this.state.expanded[key] = !this.isGroupOpen(key);
+    }
+
     children(node) {
         return this.state.byParent[node.id] || [];
     }
