@@ -14,6 +14,7 @@ from odoo.addons.zenlenet_ops.billing import (
     period_bounds,
     period_label,
     period_ref,
+    state_for_month,
 )
 
 from .settings import param_int
@@ -231,13 +232,15 @@ class ZenlenetContract(models.Model):
 
     def _create_period_invoice(self, day, force=False):
         self.ensure_one()
-        if self.state not in ('active', 'expiring'):
-            return self.env['account.move']
-        ref = period_ref(self.partner_id.id, day)
         Move = self.env['account.move']
+        first, last = period_bounds(day)
+        # Bill the natural month, not "whatever state the contract happens to be in today".
+        # A contract that has since expired still bills a month that started before it ended.
+        if state_for_month(self.state, self.end_date, first) != 'active':
+            return Move
+        ref = period_ref(self.partner_id.id, day)
         if Move.search_count([('ref', '=', ref), ('zenlenet_contract_id', '=', self.id), ('state', '!=', 'cancel')]):
             return Move
-        first, last = period_bounds(day)
         footer = self.env['ir.config_parameter'].sudo().get_param('zenlenet.invoice_footer', '')
         lines = []
         Usage = self.env['zenlenet.usage']
@@ -245,7 +248,9 @@ class ZenlenetContract(models.Model):
         billed_one_time = self.env['zenlenet.contract.item']
         for item in self.item_ids.sorted('sequence'):
             if item.kind == 'one_time':
-                if item.billed or (item.start_date and item.start_date > day):
+                # The whole natural month counts: a fee that starts on the 15th
+                # still belongs on the bill dated the 1st.
+                if item.billed or (item.start_date and item.start_date > last):
                     continue
                 lines.append((0, 0, {
                     'product_id': item.product_id.id,

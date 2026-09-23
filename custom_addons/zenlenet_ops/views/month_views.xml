@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_month" model="ir.actions.client">
+        <field name="name">出账</field>
+        <field name="tag">zenlenet_month</field>
+    </record>
+</odoo>

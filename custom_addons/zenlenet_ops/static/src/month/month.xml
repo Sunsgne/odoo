@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="zenlenet_ops.Month">
+        <div class="o_action zl-mo">
+            <header class="zl-mo-bar">
+                <div class="zl-mo-nav">
+                    <button type="button" class="btn btn-light btn-sm" t-on-click="() => this.shift(-1)" t-att-disabled="state.loading">上个月</button>
+                    <div>
+                        <div class="zl-mo-title" t-out="state.title or '出账'"/>
+                        <div class="zl-mo-sub">一家客户一行。币种、月结季结年结、一次性、95 值各算各的，不同币种不加在一起。</div>
+                    </div>
+                    <button type="button" class="btn btn-light btn-sm" t-on-click="() => this.shift(1)" t-att-disabled="state.loading">下个月</button>
+                    <button type="button" class="btn btn-link btn-sm" t-if="!isCurrent" t-on-click="() => this.load(false, 0)">回到本月</button>
+                </div>
+                <div class="zl-mo-totals" t-if="state.totals.length">
+                    <div class="zl-mo-total" t-foreach="state.totals" t-as="total" t-key="total.currency">
+                        <b t-out="total.currency"/>
+                        <span>应出 <t t-out="total.due_label"/></span>
+                        <span>已出 <t t-out="total.invoiced_label"/></span>
+                        <span>未收 <t t-out="total.residual_label"/></span>
+                    </div>
+                </div>
+                <div class="zl-mo-actions">
+                    <button type="button" class="btn btn-primary btn-sm" t-if="state.canBill" t-att-disabled="state.busy" t-on-click="() => this.bill(false)">这个月全部出账</button>
+                    <button type="button" class="btn btn-light btn-sm" t-if="state.canQuote" t-on-click="() => this.newQuote()">新建报价</button>
+                </div>
+            </header>
+            <div class="zl-mo-notice" t-if="state.notice" t-out="state.notice"/>
+
+            <div class="zl-mo-body">
+                <section class="zl-mo-list">
+                    <div class="zl-mo-filters">
+                        <input type="search" class="form-control form-control-sm" placeholder="搜客户、客户经理、币种" t-att-value="state.search" t-on-input="onSearch"/>
+                        <button type="button" t-foreach="filters" t-as="chip" t-key="chip.id"
+                            t-att-class="'btn btn-sm ' + (state.filter === chip.id ? 'btn-primary' : 'btn-light')"
+                            t-on-click="() => this.setFilter(chip.id)">
+                            <t t-out="chip.label"/> <t t-out="countOf(chip.id)"/>
+                        </button>
+                        <span class="text-muted" t-if="!state.loading"><t t-out="visible.length"/> 家</span>
+                    </div>
+                    <div class="zl-mo-scroll">
+                        <table class="table table-sm zl-mo-table" t-if="visible.length">
+                            <thead>
+                                <tr>
+                                    <th>客户</th>
+                                    <th>这个月</th>
+                                    <th>应出</th>
+                                    <th>账单</th>
+                                    <th>资源</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="visible" t-as="row" t-key="row.id"
+                                    t-att-class="state.selectedId === row.id ? 'active' : ''"
+                                    t-on-click="() => this.select(row.id)">
+                                    <td>
+                                        <b t-out="row.name"/>
+                                        <div class="zl-mo-meta">
+                                            <t t-if="row.sales"><t t-out="row.sales"/> · </t>
+                                            <t t-out="row.currency"/> · <t t-out="row.rhythm"/>
+                                            <t t-if="row.quotes"> · 报价 <t t-out="row.quotes"/></t>
+                                        </div>
+                                    </td>
+                                    <td><span t-attf-class="zl-mo-tag zl-mo-#{row.status}" t-out="row.status_label"/></td>
+                                    <td>
+                                        <div t-out="row.due_label"/>
+                                        <div class="zl-mo-meta" t-if="row.extra_label" t-out="row.extra_label"/>
+                                        <div class="zl-mo-gap" t-foreach="row.gaps" t-as="gap" t-key="gap_index" t-out="gap"/>
+                                    </td>
+                                    <td t-out="row.bill_label"/>
+                                    <td class="zl-mo-meta" t-out="row.resource_label"/>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="zl-mo-empty" t-if="!state.loading &amp;&amp; !visible.length">这个月没有对得上的客户。</div>
+                        <div class="zl-mo-empty" t-if="state.loading">正在读取这个月…</div>
+                    </div>
+                </section>
+
+                <aside class="zl-mo-side">
+                    <t t-if="!state.detail">
+                        <h3>点一个客户</h3>
+                        <p class="zl-mo-legend">右边按这个顺序看：报价、合同、这个月的账单、现在名下的资源。不用再去四个菜单里对。</p>
+                    </t>
+                    <t t-else="">
+                        <div class="zl-mo-side-head">
+                            <h3 t-out="state.detail.name"/>
+                            <span t-attf-class="zl-mo-tag zl-mo-#{state.detail.status}" t-out="state.detail.status_label"/>
+                        </div>
+                        <p class="zl-mo-meta">
+                            <t t-if="state.detail.sales"><t t-out="state.detail.sales"/> · </t>
+                            <t t-out="state.detail.currency"/> · <t t-out="state.detail.rhythm"/>
+                        </p>
+                        <p class="zl-mo-hint" t-out="state.detail.hint"/>
+                        <p class="zl-mo-legend" t-out="state.detail.legend"/>
+
+                        <section class="zl-mo-step">
+                            <h4><span>1</span> 报价</h4>
+                            <p class="zl-mo-meta" t-if="!state.detail.quotes.length">没有待确认的报价。</p>
+                            <ul>
+                                <li t-foreach="state.detail.quotes" t-as="quote" t-key="quote.id">
+                                    <div>
+                                        <b t-out="quote.name"/>
+                                        <span class="zl-mo-meta"> <t t-out="quote.state_label"/> · <t t-out="quote.date"/> · <t t-out="quote.user"/></span>
+                                        <div class="zl-mo-meta">月费 <t t-out="quote.monthly_label"/> · 一次性 <t t-out="quote.setup_label"/></div>
+                                    </div>
+                                    <button type="button" class="btn btn-link btn-sm" t-if="state.canQuote" t-on-click="() => this.openRecord('quote', quote.id)">打开</button>
+                                </li>
+                            </ul>
+                            <button type="button" class="btn btn-light btn-sm" t-if="state.canQuote" t-on-click="() => this.newQuote()">给这个客户报价</button>
+                        </section>
+
+                        <section class="zl-mo-step">
+                            <h4><span>2</span> 合同</h4>
+                            <p class="zl-mo-meta" t-if="!state.detail.contracts.length">没有覆盖这个月的合同。</p>
+                            <article t-foreach="state.detail.contracts" t-as="contract" t-key="contract.id">
+                                <header>
+                                    <div>
+                                        <b t-out="contract.name"/>
+                                        <span class="zl-mo-meta"> <t t-out="contract.state_label"/> · <t t-out="contract.cycle_label"/></span>
+                                        <div class="zl-mo-meta"><t t-out="contract.start"/> 至 <t t-out="contract.end"/> · 本月 <t t-out="contract.due_label"/></div>
+                                        <div class="zl-mo-meta" t-if="contract.title" t-out="contract.title"/>
+                                        <div class="zl-mo-gap" t-if="contract.aside" t-out="contract.aside"/>
+                                    </div>
+                                    <button type="button" class="btn btn-link btn-sm" t-on-click="() => this.openRecord('contract', contract.id)">打开</button>
+                                </header>
+                                <ul>
+                                    <li t-foreach="contract.orders" t-as="order" t-key="order.id">
+                                        <span class="zl-mo-meta">订单 <t t-out="order.name"/> · <t t-out="order.stage_label"/> · 月费 <t t-out="order.amount_label"/></span>
+                                        <button type="button" class="btn btn-link btn-sm" t-if="state.canQuote" t-on-click="() => this.openRecord('order', order.id)">打开</button>
+                                    </li>
+                                    <li t-foreach="contract.items" t-as="item" t-key="item_index">
+                                        <div>
+                                            <span t-att-class="item.due ? 'zl-mo-tag zl-mo-paid' : 'zl-mo-tag zl-mo-skip'" t-out="item.due ? '本月出' : '本月不出'"/>
+                                            <b t-out="item.name"/>
+                                            <span t-out="item.amount_label"/>
+                                            <div class="zl-mo-meta" t-out="item.note"/>
+                                        </div>
+                                    </li>
+                                </ul>
+                                <p class="zl-mo-meta" t-if="!contract.items.length">没有费用条款，出不了账。</p>
+                            </article>
+                        </section>
+
+                        <section class="zl-mo-step">
+                            <h4><span>3</span> 本月账单</h4>
+                            <p class="zl-mo-meta" t-if="!state.detail.invoices.length">这个月还没有账单。</p>
+                            <ul>
+                                <li t-foreach="state.detail.invoices" t-as="invoice" t-key="invoice.id">
+                                    <div>
+                                        <b t-out="invoice.kind"/> <t t-out="invoice.name"/>
+                                        <span class="zl-mo-meta"> <t t-out="invoice.date"/> · <t t-out="invoice.payment"/></span>
+                                        <div class="zl-mo-meta">
+                                            <t t-out="invoice.amount_label"/>
+                                            <t t-if="invoice.state === 'posted'"> · 未收 <t t-out="invoice.residual_label"/></t>
+                                            <t t-if="invoice.contract"> · <t t-out="invoice.contract"/></t>
+                                        </div>
+                                    </div>
+                                    <span>
+                                        <button type="button" class="btn btn-link btn-sm" t-if="state.canBill and invoice.state === 'draft'" t-att-disabled="state.busy" t-on-click="() => this.post(invoice.id)">确认</button>
+                                        <button type="button" class="btn btn-link btn-sm" t-if="state.canBill" t-on-click="() => this.openRecord('invoice', invoice.id)">打开</button>
+                                    </span>
+                                </li>
+                            </ul>
+                            <button type="button" class="btn btn-primary btn-sm" t-if="state.canBill" t-att-disabled="state.busy" t-on-click="() => this.bill(state.detail.id)">出这个客户的账单</button>
+                        </section>
+
+                        <section class="zl-mo-step">
+                            <h4><span>4</span> 名下资源</h4>
+                            <p class="zl-mo-legend" t-out="state.detail.resources.note"/>
+                            <p class="zl-mo-meta" t-out="state.detail.resource_label"/>
+                            <ul>
+                                <li t-foreach="state.detail.resources.addresses" t-as="address" t-key="address.label">
+                                    <span t-out="address.label"/> <b t-out="address.count"/>
+                                </li>
+                                <li t-foreach="state.detail.resources.prefixes" t-as="prefix" t-key="prefix.id">
+                                    <span class="font-monospace" t-out="prefix.name"/>
+                                    <span class="zl-mo-meta"><t t-if="prefix.dc"><t t-out="prefix.dc"/> · </t><t t-out="prefix.status_label"/></span>
+                                </li>
+                                <li t-foreach="state.detail.resources.lines" t-as="line" t-key="line.id">
+                                    <span t-out="line.name"/>
+                                    <span class="zl-mo-meta">
+                                        <t t-if="line.bandwidth"><t t-out="line.bandwidth"/> · </t>
+                                        <t t-if="line.dc"><t t-out="line.dc"/> · </t>
+                                        <t t-out="line.status_label"/>
+                                    </span>
+                                </li>
+                            </ul>
+                            <p class="zl-mo-meta" t-if="state.detail.resources.prefix_more">还有 <t t-out="state.detail.resources.prefix_more"/> 个地址段没列在这里。</p>
+                            <p class="zl-mo-meta" t-if="state.detail.resources.line_more">还有 <t t-out="state.detail.resources.line_more"/> 条线路没列在这里。</p>
+                        </section>
+                    </t>
+                </aside>
+            </div>
+        </div>
+    </t>
+
+</templates>

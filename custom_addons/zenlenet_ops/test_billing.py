@@ -4,17 +4,28 @@ from datetime import date
 from billing import (
     add_months,
     bandwidth_lines,
+    billing_anchor,
     bills_this_period,
     clean_label,
     contract_end,
     credit_amount,
+    customer_month_status,
+    fee_due,
+    fee_note,
+    next_due_month,
     outage_hours,
+    parse_period,
+    period_title,
     contract_status,
     cycle_amount,
     period_bounds,
     period_label,
     period_ref,
     p95_billable,
+    refine_month_status,
+    shift_month,
+    state_for_month,
+    worst_status,
 )
 
 
@@ -78,6 +89,41 @@ class BillingTests(unittest.TestCase):
         self.assertFalse(bills_this_period('quarterly', date(2026, 5, 1), start))
         self.assertTrue(bills_this_period('yearly', date(2027, 1, 1), start))
         self.assertFalse(bills_this_period('yearly', date(2026, 7, 1), start))
+
+    def test_natural_month_is_the_billing_window(self):
+        september = date(2026, 9, 1)
+        self.assertEqual(parse_period('2026-09', date(2026, 1, 2)), date(2026, 9, 1))
+        self.assertEqual(parse_period('nope', date(2026, 9, 23)), date(2026, 9, 1))
+        self.assertEqual(shift_month(date(2026, 9, 15), -1), date(2026, 8, 1))
+        self.assertEqual(period_title(september), '2026年9月')
+        self.assertEqual(billing_anchor(september, 5, date(2026, 9, 2)), date(2026, 9, 2))
+        self.assertEqual(billing_anchor(date(2026, 8, 1), 5, date(2026, 9, 2)), date(2026, 8, 5))
+        self.assertTrue(fee_due('one_time', 'monthly', september, date(2026, 9, 15), None, False))
+        self.assertFalse(fee_due('one_time', 'monthly', september, date(2026, 10, 1), None, False))
+        self.assertFalse(fee_due('one_time', 'monthly', september, date(2026, 9, 1), None, True))
+        self.assertFalse(fee_due('recurring', 'quarterly', september, date(2026, 1, 1), None, False))
+        self.assertTrue(fee_due('recurring', 'quarterly', date(2026, 4, 1), date(2026, 1, 1), None, False))
+        self.assertEqual(next_due_month('quarterly', date(2026, 1, 1), september), '2026-10')
+        self.assertIn('2026-10', fee_note('active', 'recurring', 'quarterly', september, date(2026, 1, 1), None, False, False))
+        self.assertEqual(state_for_month('expired', date(2026, 9, 15), date(2026, 9, 1)), 'active')
+        self.assertEqual(state_for_month('expired', date(2026, 9, 15), date(2026, 10, 1)), 'expired')
+        self.assertEqual(state_for_month('draft', date(2026, 12, 31), september), 'draft')
+        self.assertEqual(state_for_month('terminated', date(2026, 12, 31), september), 'terminated')
+
+    def test_each_customer_month_has_one_status(self):
+        self.assertEqual(customer_month_status(100, 0, 0, 0, 0), ('missing', 0.0))
+        self.assertEqual(customer_month_status(-20, 0, 0, 0, 0), ('missing', 0.0))
+        self.assertEqual(customer_month_status(100, 80, 80, 0, 1), ('unpaid', 20.0))
+        self.assertEqual(customer_month_status(100, 100, 40, 0, 1), ('partial', 0.0))
+        self.assertEqual(customer_month_status(100, 100, 0, 0, 1), ('paid', 0.0))
+        self.assertEqual(customer_month_status(100, 100, 100, 1, 0), ('draft', 0.0))
+        self.assertEqual(customer_month_status(100, 100, 50, 1, 1), ('mixed', 0.0))
+        self.assertEqual(customer_month_status(0, 0, 0, 0, 0, quote_only=True), ('quote', 0.0))
+        self.assertEqual(refine_month_status('skip', False, 1, False, 0), 'draft_contract')
+        self.assertEqual(refine_month_status('quote', False, 0, True, 0), 'naked')
+        self.assertEqual(refine_month_status('skip', True, 0, True, 0), 'no_items')
+        self.assertEqual(refine_month_status('skip', True, 0, True, 2), 'skip')
+        self.assertEqual(worst_status(['paid', 'missing']), 'missing')
 
 
 if __name__ == '__main__':
