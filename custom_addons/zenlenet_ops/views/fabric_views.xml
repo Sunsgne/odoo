@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_device_form" model="ir.ui.view">
+        <field name="name">zenlenet.device.form</field>
+        <field name="model">zenlenet.device</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group string="物理机">
+                            <field name="name"/>
+                            <field name="datacenter_id"/>
+                            <field name="role"/>
+                            <field name="status"/>
+                            <field name="serial"/>
+                        </group>
+                        <group string="NetBox" invisible="not netbox_id">
+                            <field name="netbox_id"/>
+                            <field name="netbox_synced"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="上面的云主机">
+                            <field name="vm_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="address_id"/>
+                                    <field name="bandwidth_mbps"/>
+                                    <field name="partner_id"/>
+                                    <field name="status"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_vm_form" model="ir.ui.view">
+        <field name="name">zenlenet.vm.form</field>
+        <field name="model">zenlenet.vm</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group string="挂在哪">
+                            <field name="name"/>
+                            <field name="datacenter_id"/>
+                            <field name="device_id"/>
+                            <field name="status"/>
+                        </group>
+                        <group string="卖什么">
+                            <field name="address_id" options="{'no_create': True}"/>
+                            <field name="ip_text" readonly="1" invisible="address_id"/>
+                            <field name="bandwidth_mbps"/>
+                            <field name="partner_id" options="{'no_create': True}"/>
+                            <field name="vcpus"/>
+                            <field name="memory"/>
+                        </group>
+                    </group>
+                    <group string="NetBox" invisible="not netbox_id">
+                        <field name="netbox_id"/>
+                        <field name="netbox_synced"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

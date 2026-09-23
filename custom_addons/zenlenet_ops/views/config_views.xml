@@ -182,7 +182,7 @@
                                 <button name="action_open_products" type="object" string="维护业务与价目" icon="oi-arrow-right" class="btn-link"/>
                             </div>
                         </setting>
-                        <setting id="zenlenet_datacenter_setting" string="数据中心" help="机房、POP 点、公有云。IP、线路、设备都挂在数据中心下。">
+                        <setting id="zenlenet_datacenter_setting" string="数据中心" help="机房一页看完：专线绑两端设备、端口、VLAN；SD-WAN 绑地区和带宽；云主机绑物理机、IP 和带宽。">
                             <span class="fa fa-lg fa-building me-2"/>
                             <field name="zenlenet_datacenter_count" class="w-auto fw-bold"/>
                             <span class="o_form_label">个数据中心</span>

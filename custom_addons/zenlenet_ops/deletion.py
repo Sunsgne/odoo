@@ -68,6 +68,18 @@ def _address(snap):
     return None
 
 
+def _device(snap):
+    if snap.get('vm_count'):
+        return '这台物理机上还有云主机，先把云主机挪走再删。'
+    return None
+
+
+def _vm(snap):
+    if snap.get('partner') and snap.get('status') == 'active':
+        return '这台云主机还在客户名下，请先走资源工单收回，不要删除。'
+    return None
+
+
 def _line(snap):
     if snap.get('status') in ('provisioning', 'active', 'deprovisioning'):
         return '线路在用或正在开通 / 拆除，请先改为「已终止」。'
@@ -119,6 +131,8 @@ RULES = {
     'zenlenet.prefix': _prefix,
     'zenlenet.address': _address,
     'zenlenet.line': _line,
+    'zenlenet.device': _device,
+    'zenlenet.vm': _vm,
     'zenlenet.datacenter': _datacenter,
     'zenlenet.purchase': _purchase,
     'zenlenet.asset': _asset,

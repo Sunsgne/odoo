@@ -39,8 +39,6 @@
                             <field name="kind"/>
                             <field name="datacenter_id"/>
                             <field name="commit_rate"/>
-                            <field name="a_end"/>
-                            <field name="z_end"/>
                             <field name="bandwidth"/>
                             <field name="stopped" invisible="1"/>
                         </group>
@@ -54,6 +52,27 @@
                             <field name="end_date"/>
                             <field name="purpose"/>
                         </group>
+                    </group>
+                    <group string="SD-WAN" invisible="kind != 'sdwan'">
+                        <field name="region" placeholder="例如：亚太"/>
+                    </group>
+                    <group string="两端" invisible="kind == 'sdwan'">
+                        <group string="A 端">
+                            <field name="a_site_id"/>
+                            <field name="a_device_id" domain="[('datacenter_id', '=', a_site_id)]"/>
+                            <field name="a_port"/>
+                            <field name="a_vlan"/>
+                        </group>
+                        <group string="Z 端">
+                            <field name="z_site_id"/>
+                            <field name="z_device_id" domain="[('datacenter_id', '=', z_site_id)]"/>
+                            <field name="z_port"/>
+                            <field name="z_vlan"/>
+                        </group>
+                    </group>
+                    <group string="导入时的文字" invisible="not a_end and not z_end">
+                        <field name="a_end" readonly="1"/>
+                        <field name="z_end" readonly="1"/>
                     </group>
                     <notebook>
                         <page string="交付记录">
@@ -87,6 +106,8 @@
                 <field name="partner_name"/>
                 <field name="partner_id"/>
                 <field name="datacenter_id"/>
+                <filter name="pl" string="专线" domain="[('kind','=','pl')]"/>
+                <filter name="sdwan" string="SD-WAN" domain="[('kind','=','sdwan')]"/>
                 <filter name="private" string="供应商专线" domain="[('kind','=','private')]"/>
                 <filter name="vxlan" string="VXLAN" domain="[('kind','=','vxlan')]"/>
                 <filter name="running" string="在用" domain="[('status','=','active')]"/>

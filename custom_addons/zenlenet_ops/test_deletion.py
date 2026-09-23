@@ -48,6 +48,12 @@ class DeletePolicyTests(unittest.TestCase):
         for status in ('allocated', 'reserved', 'internal', 'testing', 'returning'):
             self.assertIsNotNone(blocked_reason('zenlenet.address', {'status': status}), status)
 
+    def test_device_and_vm(self):
+        self.assertIsNone(blocked_reason('zenlenet.device', {'vm_count': 0}))
+        self.assertIn('云主机', blocked_reason('zenlenet.device', {'vm_count': 2}))
+        self.assertIsNone(blocked_reason('zenlenet.vm', {'status': 'offline', 'partner': True}))
+        self.assertIn('客户', blocked_reason('zenlenet.vm', {'status': 'active', 'partner': True}))
+
     def test_line_and_datacenter(self):
         self.assertIsNone(blocked_reason('zenlenet.line', {'status': 'decommissioned', 'partner': True}))
         self.assertIsNone(blocked_reason('zenlenet.line', {'status': 'planned', 'partner': False}))

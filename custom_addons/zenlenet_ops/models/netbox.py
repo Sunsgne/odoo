@@ -13,6 +13,8 @@ import requests
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
+from odoo.addons.zenlenet_ops.resource_bindings import circuit_kind, end_facts, kbps, vlan_vid
+
 _logger = logging.getLogger(__name__)
 
 SITE_STATUS = {'active': 'active', 'planned': 'planning', 'staging': 'planning',
@@ -23,8 +25,13 @@ IP_STATUS_OUT = {
     'allocated': 'active', 'testing': 'active', 'internal': 'active', 'free': 'active',
     'reserved': 'reserved', 'transferring': 'reserved', 'returning': 'deprecated',
 }
-CIRCUIT_TYPE = {'vxlan': 'vxlan'}
 PAGE = 500
+DEVICE_STATUS_IN = {'active': 'active', 'planned': 'planned', 'staged': 'planned', 'offline': 'offline',
+                    'failed': 'offline', 'decommissioning': 'decommissioning', 'inventory': 'planned'}
+DEVICE_STATUS_OUT = {'active': 'active', 'planned': 'planned', 'offline': 'offline', 'decommissioning': 'decommissioning'}
+VM_STATUS_IN = {'active': 'active', 'planned': 'planned', 'staged': 'planned', 'offline': 'offline',
+                'failed': 'offline', 'decommissioning': 'offline'}
+VM_STATUS_OUT = {'active': 'active', 'planned': 'planned', 'offline': 'offline'}
 
 
 class ZenlenetNetbox(models.AbstractModel):
@@ -104,7 +111,7 @@ class ZenlenetNetbox(models.AbstractModel):
             'tag': 'display_notification',
             'params': {
                 'title': 'NetBox 同步完成',
-                'message': '数据中心 {sites}，地址段 {prefixes}，IP {ips}，线路 {circuits}。'.format(**stats),
+                'message': '数据中心 {sites}，物理机 {devices}，地址段 {prefixes}，IP {ips}，线路 {circuits}，云主机 {vms}。'.format(**stats),
                 'type': 'success',
                 'sticky': False,
             },
@@ -143,13 +150,18 @@ class ZenlenetNetbox(models.AbstractModel):
         session, base = self._session()
         stats = {
             'sites': self._sync_sites(session, base),
+            'devices': self._sync_devices(session, base),
             'prefixes': self._sync_prefixes(session, base),
             'ips': self._sync_ips(session, base),
             'circuits': self._sync_circuits(session, base),
+            'vms': self._sync_vms(session, base),
         }
         icp = self.env['ir.config_parameter'].sudo()
         icp.set_param('zenlenet.netbox_last_sync', fields.Datetime.to_string(fields.Datetime.now()))
-        icp.set_param('zenlenet.netbox_last_stats', '数据中心 {sites} · 地址段 {prefixes} · IP {ips} · 线路 {circuits}'.format(**stats))
+        icp.set_param(
+            'zenlenet.netbox_last_stats',
+            '数据中心 {sites} · 物理机 {devices} · 地址段 {prefixes} · IP {ips} · 线路 {circuits} · 云主机 {vms}'.format(**stats),
+        )
         _logger.info('zenlenet netbox sync %s', stats)
         return stats
 
@@ -284,38 +296,105 @@ class ZenlenetNetbox(models.AbstractModel):
             return str(ipaddress.ip_network(f'{network.network_address}/24', strict=False)) if network.prefixlen > 24 else str(network)
         return str(ipaddress.ip_network(f'{network.network_address}/64', strict=False)) if network.prefixlen > 64 else str(network)
 
+    def _sync_devices(self, session, base):
+        Device = self.env['zenlenet.device'].sudo()
+        sites = {record.netbox_id: record.id for record in self.env['zenlenet.datacenter'].sudo().search([('netbox_id', '!=', 0)])}
+        existing = {record.netbox_id: record for record in Device.search([('netbox_id', '!=', 0)])}
+        count = 0
+        for item in self._iterate(session, base, '/dcim/devices/'):
+            status = (item.get('status') or {}).get('value') or 'active'
+            values = {
+                'netbox_id': item['id'],
+                'name': item['name'],
+                'datacenter_id': sites.get((item.get('site') or {}).get('id')) or False,
+                'role': (item.get('role') or {}).get('name') or '',
+                'status': DEVICE_STATUS_IN.get(status, 'active'),
+                'serial': item.get('serial') or '',
+                'netbox_synced': fields.Datetime.now(),
+            }
+            record = existing.get(item['id'])
+            if record:
+                record.with_context(netbox_skip_push=True).write(values)
+            else:
+                existing[item['id']] = Device.with_context(netbox_skip_push=True).create(values)
+            count += 1
+        return count
+
+    def _sync_vms(self, session, base):
+        Vm = self.env['zenlenet.vm'].sudo()
+        sites = {record.netbox_id: record.id for record in self.env['zenlenet.datacenter'].sudo().search([('netbox_id', '!=', 0)])}
+        devices = {record.netbox_id: record.id for record in self.env['zenlenet.device'].sudo().search([('netbox_id', '!=', 0)])}
+        addresses = {record.address: record.id for record in self.env['zenlenet.address'].sudo().search([])}
+        existing = {record.netbox_id: record for record in Vm.search([('netbox_id', '!=', 0)])}
+        count = 0
+        for item in self._iterate(session, base, '/virtualization/virtual-machines/'):
+            status = (item.get('status') or {}).get('value') or 'active'
+            primary = item.get('primary_ip4') or item.get('primary_ip') or {}
+            ip_text = primary.get('address') or ''
+            custom = item.get('custom_fields') or {}
+            bandwidth = custom.get('bandwidth_mbps') or 0
+            if isinstance(bandwidth, dict):
+                bandwidth = bandwidth.get('value') or 0
+            values = {
+                'netbox_id': item['id'],
+                'name': item['name'],
+                'datacenter_id': sites.get((item.get('site') or {}).get('id')) or False,
+                'device_id': devices.get((item.get('device') or {}).get('id')) or False,
+                'address_id': addresses.get(ip_text) or False,
+                'ip_text': ip_text,
+                'bandwidth_mbps': int(bandwidth or 0),
+                'status': VM_STATUS_IN.get(status, 'active'),
+                'vcpus': item.get('vcpus') or 0,
+                'memory': item.get('memory') or 0,
+                'partner_id': self._partner_by_tenant(item.get('tenant')),
+                'netbox_synced': fields.Datetime.now(),
+            }
+            if not values['datacenter_id']:
+                continue
+            record = existing.get(item['id'])
+            if record:
+                record.with_context(netbox_skip_push=True).write(values)
+            else:
+                existing[item['id']] = Vm.with_context(netbox_skip_push=True).create(values)
+            count += 1
+        return count
+
     def _sync_circuits(self, session, base):
         Line = self.env['zenlenet.line'].sudo()
         DC = self.env['zenlenet.datacenter'].sudo()
+        Device = self.env['zenlenet.device'].sudo()
         sites = {record.netbox_id: record for record in DC.search([('netbox_id', '!=', 0)])}
+        devices = {record.netbox_id: record for record in Device.search([('netbox_id', '!=', 0)])}
+        ends = {}
+        for term in self._iterate(session, base, '/circuits/circuit-terminations/'):
+            circuit = term.get('circuit') or {}
+            side = (term.get('term_side') or '').upper()
+            if circuit.get('id') and side in ('A', 'Z'):
+                ends.setdefault(circuit['id'], {})[side] = self._termination_with_vlan(session, base, term)
         existing = {record.name: record for record in Line.search([])}
         count = 0
         for item in self._iterate(session, base, '/circuits/circuits/'):
-            kind_name = ((item.get('type') or {}).get('name') or '').lower()
-            a_end = self._termination_label(item.get('termination_a'))
-            z_end = self._termination_label(item.get('termination_z'))
-            a_site = self._termination_site(item.get('termination_a'), sites)
+            kind_name = (item.get('type') or {}).get('name') or ''
             rate = item.get('commit_rate') or 0
             values = {
                 'netbox_id': item['id'],
                 'name': item['cid'],
-                'kind': CIRCUIT_TYPE.get(kind_name, 'private'),
+                'kind': circuit_kind(kind_name),
                 'status': (item.get('status') or {}).get('value') or 'active',
                 'supplier': (item.get('provider') or {}).get('name') or '',
                 'supplier_id': self.env['res.partner'].zenlenet_supplier_by_name((item.get('provider') or {}).get('name'), 'carrier').id or False,
-                'commit_rate': int(rate / 1000) if rate else 0,
                 'start_date': item.get('install_date') or False,
                 'end_date': item.get('termination_date') or False,
                 'purpose': item.get('description') or '',
                 'partner_id': self._partner_by_tenant(item.get('tenant')),
                 'netbox_synced': fields.Datetime.now(),
             }
-            if a_end:
-                values['a_end'] = a_end
-            if z_end:
-                values['z_end'] = z_end
-            if a_site:
-                values['datacenter_id'] = a_site.id
+            self._apply_end(values, 'a', ends.get(item['id'], {}).get('A'), sites, devices)
+            self._apply_end(values, 'z', ends.get(item['id'], {}).get('Z'), sites, devices)
+            if values.get('a_site_id') and not values.get('datacenter_id'):
+                values['datacenter_id'] = values['a_site_id']
+            if rate:
+                values['commit_rate'] = int(rate / 1000)
             if rate and not (existing.get(item['cid']) and existing[item['cid']].bandwidth):
                 values['bandwidth'] = f'{int(rate / 1000)}M' if rate >= 1000 else f'{rate}K'
             record = existing.get(item['cid'])
@@ -325,6 +404,54 @@ class ZenlenetNetbox(models.AbstractModel):
                 existing[item['cid']] = Line.with_context(netbox_skip_push=True).create(values)
             count += 1
         return count
+
+    def _termination_with_vlan(self, session, base, term):
+        """Brief cable peers omit the VLAN. Read the interface when a port is cabled."""
+        peers = term.get('link_peers') or []
+        if peers and peers[0].get('id') and not (peers[0].get('untagged_vlan') or {}).get('vid'):
+            response = session.get(f"{base}/api/dcim/interfaces/{peers[0]['id']}/", timeout=60)
+            if response.status_code == 200:
+                term = dict(term, link_peers=[response.json()])
+        return term
+
+    def _apply_end(self, values, side, term, sites, devices):
+        facts = end_facts(term)
+        if not facts:
+            label = self._termination_label(term)
+            if label:
+                values[f'{side}_end'] = label
+            return
+        if facts.get('term_netbox_id'):
+            values[f'{side}_term_netbox_id'] = facts['term_netbox_id']
+        site = sites.get(facts.get('site_netbox_id'))
+        if site:
+            values[f'{side}_site_id'] = site.id
+            if side == 'a':
+                values['datacenter_id'] = site.id
+        if facts.get('region'):
+            values['region'] = facts['region']
+            values['region_netbox_id'] = facts.get('region_netbox_id') or 0
+        device = devices.get(facts.get('device_netbox_id'))
+        if device:
+            values[f'{side}_device_id'] = device.id
+        elif facts.get('device_netbox_id') and facts.get('device_name') and site:
+            created = self.env['zenlenet.device'].sudo().with_context(netbox_skip_push=True).create({
+                'name': facts['device_name'],
+                'netbox_id': facts['device_netbox_id'],
+                'datacenter_id': site.id,
+                'netbox_synced': fields.Datetime.now(),
+            })
+            devices[facts['device_netbox_id']] = created
+            values[f'{side}_device_id'] = created.id
+        if facts.get('port'):
+            values[f'{side}_port'] = facts['port']
+        if facts.get('vlan'):
+            values[f'{side}_vlan'] = facts['vlan']
+        if facts.get('iface_netbox_id'):
+            values[f'{side}_iface_netbox_id'] = facts['iface_netbox_id']
+        label = ' '.join(bit for bit in (facts.get('site_name'), facts.get('device_name'), facts.get('port')) if bit)
+        if label:
+            values[f'{side}_end'] = label
 
     @staticmethod
     def _termination_label(termination):
@@ -442,6 +569,263 @@ class ZenlenetNetbox(models.AbstractModel):
             response = session.delete(f'{base}/api{path}{netbox_id}/', timeout=60)
             if response.status_code >= 300 and response.status_code != 404:
                 raise UserError(f'NetBox 删除失败 {response.status_code}：{response.text[:300]}。控制台的删除已撤销。')
+
+    def _slug(self, text, fallback):
+        slug = re.sub(r'[^a-z0-9]+', '-', (text or '').lower()).strip('-')
+        return (slug or fallback)[:50]
+
+    def _first(self, session, base, path, params):
+        found = list(self._iterate(session, base, path, params))
+        return found[0] if found else None
+
+    def _generic_role(self, session, base):
+        icp = self.env['ir.config_parameter'].sudo()
+        cached = icp.get_param('zenlenet.netbox_device_role_id')
+        if cached:
+            return int(cached)
+        found = self._first(session, base, '/dcim/device-roles/', {'slug': 'zenlenet-host'})
+        role_id = found['id'] if found else self._write(session, base, 'POST', '/dcim/device-roles/', {
+            'name': '主机', 'slug': 'zenlenet-host', 'color': '607d8b',
+        })['id']
+        icp.set_param('zenlenet.netbox_device_role_id', str(role_id))
+        return role_id
+
+    def _generic_type(self, session, base):
+        icp = self.env['ir.config_parameter'].sudo()
+        cached = icp.get_param('zenlenet.netbox_device_type_id')
+        if cached:
+            return int(cached)
+        maker = self._first(session, base, '/dcim/manufacturers/', {'slug': 'zenlenet'})
+        maker_id = maker['id'] if maker else self._write(session, base, 'POST', '/dcim/manufacturers/', {
+            'name': 'ZENLENET', 'slug': 'zenlenet',
+        })['id']
+        found = self._first(session, base, '/dcim/device-types/', {'slug': 'zenlenet-host'})
+        type_id = found['id'] if found else self._write(session, base, 'POST', '/dcim/device-types/', {
+            'manufacturer': maker_id, 'model': '主机', 'slug': 'zenlenet-host',
+        })['id']
+        icp.set_param('zenlenet.netbox_device_type_id', str(type_id))
+        return type_id
+
+    def _circuit_type_id(self, session, base, kind):
+        names = {'pl': '专线', 'sdwan': 'SD-WAN', 'vxlan': 'VXLAN', 'private': '供应商专线'}
+        name = names.get(kind, '专线')
+        slug = {'pl': 'pl', 'sdwan': 'sd-wan', 'vxlan': 'vxlan', 'private': 'private'}[kind if kind in names else 'pl']
+        found = self._first(session, base, '/circuits/circuit-types/', {'slug': slug})
+        if found:
+            return found['id']
+        return self._write(session, base, 'POST', '/circuits/circuit-types/', {'name': name, 'slug': slug})['id']
+
+    @api.model
+    def push_device(self, device):
+        cfg = self._params()
+        if not cfg['enabled'] or not self.is_configured() or not device.datacenter_id.netbox_id:
+            return
+        session, base = self._session()
+        payload = {
+            'name': device.name,
+            'site': device.datacenter_id.netbox_id,
+            'role': self._generic_role(session, base),
+            'device_type': self._generic_type(session, base),
+            'status': DEVICE_STATUS_OUT.get(device.status, 'active'),
+            'serial': device.serial or '',
+        }
+        if device.netbox_id:
+            self._write(session, base, 'PATCH', f'/dcim/devices/{device.netbox_id}/', payload)
+        else:
+            created = self._write(session, base, 'POST', '/dcim/devices/', payload)
+            device.with_context(netbox_skip_push=True).write({
+                'netbox_id': created.get('id'), 'netbox_synced': fields.Datetime.now(),
+            })
+
+    @api.model
+    def push_vm(self, vm):
+        cfg = self._params()
+        if not cfg['enabled'] or not self.is_configured() or not vm.datacenter_id.netbox_id:
+            return
+        session, base = self._session()
+        self._ensure_bandwidth_field(session, base)
+        if vm.device_id and not vm.device_id.netbox_id:
+            self.push_device(vm.device_id)
+        payload = {
+            'name': vm.name,
+            'site': vm.datacenter_id.netbox_id,
+            'status': VM_STATUS_OUT.get(vm.status, 'active'),
+            'custom_fields': {'bandwidth_mbps': vm.bandwidth_mbps or None},
+        }
+        if vm.vcpus:
+            payload['vcpus'] = vm.vcpus
+        if vm.memory:
+            payload['memory'] = vm.memory
+        if vm.device_id.netbox_id:
+            payload['device'] = vm.device_id.netbox_id
+        if vm.partner_id:
+            payload['tenant'] = self._tenant_for(session, base, vm.partner_id)
+        if vm.netbox_id:
+            self._write(session, base, 'PATCH', f'/virtualization/virtual-machines/{vm.netbox_id}/', payload)
+        else:
+            created = self._write(session, base, 'POST', '/virtualization/virtual-machines/', payload)
+            vm.with_context(netbox_skip_push=True).write({
+                'netbox_id': created.get('id'), 'netbox_synced': fields.Datetime.now(),
+            })
+        if vm.address_id.netbox_id:
+            self._bind_vm_ip(session, base, vm)
+
+    def _ensure_bandwidth_field(self, session, base):
+        icp = self.env['ir.config_parameter'].sudo()
+        if icp.get_param('zenlenet.netbox_vm_bandwidth_field') == '1':
+            return
+        found = self._first(session, base, '/extras/custom-fields/', {'name': 'bandwidth_mbps'})
+        if not found:
+            self._write(session, base, 'POST', '/extras/custom-fields/', {
+                'name': 'bandwidth_mbps',
+                'label': '带宽 (Mbps)',
+                'type': 'integer',
+                'object_types': ['virtualization.virtualmachine'],
+            })
+        else:
+            types = list(found.get('object_types') or [])
+            if 'virtualization.virtualmachine' not in types:
+                types.append('virtualization.virtualmachine')
+                self._write(session, base, 'PATCH', f"/extras/custom-fields/{found['id']}/", {'object_types': types})
+        icp.set_param('zenlenet.netbox_vm_bandwidth_field', '1')
+
+    def _bind_vm_ip(self, session, base, vm):
+        """Primary IP has to sit on an interface of this VM before NetBox will accept it."""
+        iface_id = vm.iface_netbox_id
+        if not iface_id:
+            found = self._first(session, base, '/virtualization/interfaces/', {
+                'virtual_machine_id': vm.netbox_id, 'name': 'eth0',
+            })
+            iface_id = found['id'] if found else self._write(session, base, 'POST', '/virtualization/interfaces/', {
+                'virtual_machine': vm.netbox_id, 'name': 'eth0',
+            })['id']
+            vm.with_context(netbox_skip_push=True).write({'iface_netbox_id': iface_id})
+        self._write(session, base, 'PATCH', f'/ipam/ip-addresses/{vm.address_id.netbox_id}/', {
+            'assigned_object_type': 'virtualization.vminterface',
+            'assigned_object_id': iface_id,
+        })
+        address = vm.address_id.address or vm.ip_text or ''
+        primary = 'primary_ip6' if ':' in address else 'primary_ip4'
+        self._write(session, base, 'PATCH', f'/virtualization/virtual-machines/{vm.netbox_id}/', {
+            primary: vm.address_id.netbox_id,
+        })
+
+    @api.model
+    def push_line(self, line):
+        cfg = self._params()
+        if not cfg['enabled'] or not self.is_configured():
+            return
+        session, base = self._session()
+        if not line.netbox_id:
+            self._create_remote_line(session, base, line)
+        if not line.netbox_id:
+            return
+        rate = kbps(line.commit_rate)
+        if rate:
+            self._write(session, base, 'PATCH', f'/circuits/circuits/{line.netbox_id}/', {'commit_rate': rate})
+        if line.kind == 'sdwan' and line.region:
+            self._push_region_end(session, base, line)
+            return
+        if line.kind in ('pl', 'vxlan', 'private'):
+            self._push_device_end(session, base, line, 'a')
+            self._push_device_end(session, base, line, 'z')
+
+    def _create_remote_line(self, session, base, line):
+        provider_name = line.supplier_id.name or line.supplier or ''
+        if not provider_name:
+            return
+        provider = self._first(session, base, '/circuits/providers/', {'name': provider_name})
+        if not provider:
+            return
+        created = self._write(session, base, 'POST', '/circuits/circuits/', {
+            'cid': line.name,
+            'provider': provider['id'],
+            'type': self._circuit_type_id(session, base, line.kind),
+            'status': 'active',
+            'commit_rate': kbps(line.commit_rate),
+            'description': (line.purpose or '')[:200],
+        })
+        line.with_context(netbox_skip_push=True).write({
+            'netbox_id': created.get('id'), 'netbox_synced': fields.Datetime.now(),
+        })
+
+    def _push_region_end(self, session, base, line):
+        slug = self._slug(line.region, f'region-{line.id}')
+        found = self._first(session, base, '/dcim/regions/', {'name': line.region})
+        region_id = found['id'] if found else self._write(session, base, 'POST', '/dcim/regions/', {
+            'name': line.region, 'slug': slug,
+        })['id']
+        line.with_context(netbox_skip_push=True).write({'region_netbox_id': region_id})
+        self._upsert_termination(session, base, line, 'A', 'dcim.region', region_id, line.a_term_netbox_id, 'a_term_netbox_id')
+
+    def _push_device_end(self, session, base, line, side):
+        site = line[f'{side}_site_id']
+        device = line[f'{side}_device_id']
+        port = (line[f'{side}_port'] or '').strip()
+        if not (site and site.netbox_id and device and port):
+            return
+        if not device.netbox_id:
+            self.push_device(device)
+        if not device.netbox_id:
+            return
+        vid = vlan_vid(line[f'{side}_vlan'])
+        vlan_id = self._ensure_vlan(session, base, site.netbox_id, vid) if vid else None
+        iface_id = self._ensure_interface(session, base, device.netbox_id, port, vlan_id)
+        line.with_context(netbox_skip_push=True).write({f'{side}_iface_netbox_id': iface_id})
+        term_id = self._upsert_termination(
+            session, base, line, side.upper(), 'dcim.site', site.netbox_id,
+            line[f'{side}_term_netbox_id'], f'{side}_term_netbox_id',
+        )
+        self._cable_end(session, base, term_id, iface_id)
+
+    def _ensure_vlan(self, session, base, site_id, vid):
+        found = self._first(session, base, '/ipam/vlans/', {'vid': vid, 'site_id': site_id})
+        if found:
+            return found['id']
+        return self._write(session, base, 'POST', '/ipam/vlans/', {
+            'vid': vid, 'name': f'VLAN{vid}', 'site': site_id, 'status': 'active',
+        })['id']
+
+    def _ensure_interface(self, session, base, device_id, port, vlan_id):
+        found = self._first(session, base, '/dcim/interfaces/', {'device_id': device_id, 'name': port})
+        payload = {'mode': 'access'}
+        if vlan_id:
+            payload['untagged_vlan'] = vlan_id
+        if found:
+            if vlan_id:
+                self._write(session, base, 'PATCH', f"/dcim/interfaces/{found['id']}/", payload)
+            return found['id']
+        payload.update({'device': device_id, 'name': port, 'type': 'other'})
+        return self._write(session, base, 'POST', '/dcim/interfaces/', payload)['id']
+
+    def _upsert_termination(self, session, base, line, side, termination_type, termination_id, current_id, store_field):
+        payload = {
+            'termination_type': termination_type,
+            'termination_id': termination_id,
+            'port_speed': kbps(line.commit_rate),
+        }
+        if current_id:
+            self._write(session, base, 'PATCH', f'/circuits/circuit-terminations/{current_id}/', payload)
+            return current_id
+        found = self._first(session, base, '/circuits/circuit-terminations/', {
+            'circuit_id': line.netbox_id, 'term_side': side,
+        })
+        if found:
+            self._write(session, base, 'PATCH', f"/circuits/circuit-terminations/{found['id']}/", payload)
+            line.with_context(netbox_skip_push=True).write({store_field: found['id']})
+            return found['id']
+        created = self._write(session, base, 'POST', '/circuits/circuit-terminations/', dict(payload, circuit=line.netbox_id, term_side=side))
+        line.with_context(netbox_skip_push=True).write({store_field: created['id']})
+        return created['id']
+
+    def _cable_end(self, session, base, term_id, iface_id):
+        response = session.get(f'{base}/api/circuits/circuit-terminations/{term_id}/', timeout=60)
+        if response.status_code != 200 or response.json().get('cable'):
+            return
+        self._write(session, base, 'POST', '/dcim/cables/', {
+            'a_terminations': [{'object_type': 'circuits.circuittermination', 'object_id': term_id}],
+            'b_terminations': [{'object_type': 'dcim.interface', 'object_id': iface_id}],
+        })
 
     @api.model
     def push_site(self, datacenter):

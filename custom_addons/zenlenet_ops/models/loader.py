@@ -343,7 +343,7 @@ class ZenlenetLoader(models.AbstractModel):
                 'stopped': '回收' in (row['stopped'] or '') or '终止' in (row['stopped'] or ''),
             })
         if batch:
-            Line.create(batch)
+            Line.with_context(zenlenet_import=True).create(batch)
 
     def _returns(self, connection):
         Return = self.env['zenlenet.supplier.return'].sudo()

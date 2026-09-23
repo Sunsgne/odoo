@@ -8,7 +8,7 @@
                     <input type="search" class="form-control form-control-sm" placeholder="搜地区 / 机房" t-att-value="state.search" t-on-input="onSearch"/>
                     <button class="btn btn-primary btn-sm" t-on-click="() => this.editSite(false)" title="新机房"><i class="fa fa-plus"/></button>
                 </div>
-                <div class="zl-dc-hint">按地区选机房。右边就是这个机房还能卖的东西。</div>
+                <div class="zl-dc-hint">按地区选机房。专线、SD-WAN、云主机都在右边这一页。</div>
                 <ul class="zl-dc-regions">
                     <li t-foreach="regions" t-as="region" t-key="region.name">
                         <div class="zl-dc-region"><i class="fa fa-globe"/> <t t-out="region.name"/> <span t-out="region.sites.length"/></div>
@@ -16,7 +16,7 @@
                             <li t-foreach="region.sites" t-as="site" t-key="site.id" t-att-class="state.selectedId === site.id ? 'active' : ''" t-on-click="() => this.select(site.id)">
                                 <span t-attf-class="zl-dc-dot zl-dc-dot-#{site.state}"/>
                                 <span class="zl-dc-name" t-out="site.name"/>
-                                <span class="zl-dc-free" t-if="site.sellable_prefixes or site.sellable_lines">可售 <t t-out="site.sellable_prefixes"/> 段 · <t t-out="site.sellable_lines"/> 线</span>
+                                <span class="zl-dc-free" t-if="site.sellable_prefixes or site.sellable_lines or site.sellable_vms">可售 <t t-out="site.sellable_prefixes"/> 段 · <t t-out="site.sellable_lines"/> 线 · <t t-out="site.sellable_vms"/> 机</span>
                             </li>
                         </ul>
                     </li>
@@ -36,7 +36,7 @@
                             <t t-if="state.detail.facility"> · <t t-out="state.detail.facility"/></t>
                             <t t-if="state.detail.asn"> · AS<t t-out="state.detail.asn"/></t>
                         </div>
-                        <div class="zl-dc-summary">可售地址段 <b t-out="state.detail.sellable_prefixes"/> · 可售线路 <b t-out="state.detail.sellable_lines"/></div>
+                        <div class="zl-dc-summary">可售地址段 <b t-out="state.detail.sellable_prefixes"/> · 可售线路 <b t-out="state.detail.sellable_lines"/> · 可售云主机 <b t-out="state.detail.sellable_vms"/></div>
                     </div>
                     <div class="zl-dc-actions" t-if="state.detail.can_write">
                         <button class="btn btn-primary btn-sm" t-on-click="() => this.openTicket('in')">资源进库</button>
@@ -54,8 +54,123 @@
                             <button t-att-class="state.filter === 'free' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline-secondary'" t-on-click="() => this.setFilter('free')">可售</button>
                             <button t-att-class="state.filter === 'sold' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline-secondary'" t-on-click="() => this.setFilter('sold')">已卖出</button>
                             <button t-att-class="state.filter === 'all' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline-secondary'" t-on-click="() => this.setFilter('all')">全部</button>
-                            <span class="text-muted small">点一行，右边看留给谁、还剩多少。</span>
+                            <span class="text-muted small">地址段按这个筛。专线、SD-WAN、云主机始终列出绑定。</span>
                         </div>
+
+                        <div class="zl-dc-legend">
+                            <div><b>专线</b>A 端设备、端口、VLAN · Z 端设备、端口、VLAN · 带宽</div>
+                            <div><b>SD-WAN</b>地区 · 带宽</div>
+                            <div><b>云主机</b>机房 · 物理机 · IP · 带宽</div>
+                        </div>
+
+                        <div class="zl-dc-section-row">
+                            <div class="zl-dc-section">专线</div>
+                            <button t-if="state.detail.can_write" class="btn btn-link btn-sm" t-on-click="() => this.addLine('pl')">加一条专线</button>
+                        </div>
+                        <div class="zl-dc-note">A 端、Z 端各绑设备、端口和 VLAN，再加上带宽。设备和端口空着时，先在这里补上，保存后写回 NetBox。</div>
+                        <table class="table table-sm zl-dc-table" t-if="privateLines.length">
+                            <thead><tr><th>专线</th><th>带宽</th><th>A 端</th><th>Z 端</th><th>客户</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="privateLines" t-as="row" t-key="row.id" t-att-class="isPicked('line', row.id) ? 'active' : ''" t-on-click="() => this.pick('line', row)">
+                                    <td t-out="row.name"/>
+                                    <td t-out="row.bandwidth || '—'"/>
+                                    <td t-out="row.a_end || '—'"/>
+                                    <td t-out="row.z_end || '—'"/>
+                                    <td><t t-if="row.partner" t-out="row.partner"/><span t-else="" class="text-success">可售</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div t-else="" class="text-muted small mb-3">这个机房没有专线。</div>
+
+                        <div class="zl-dc-section-row">
+                            <div class="zl-dc-section">SD-WAN</div>
+                            <button t-if="state.detail.can_write" class="btn btn-link btn-sm" t-on-click="() => this.addLine('sdwan')">加一条 SD-WAN</button>
+                        </div>
+                        <div class="zl-dc-note">SD-WAN 绑地区和带宽，不绑端口。</div>
+                        <table class="table table-sm zl-dc-table" t-if="sdwanLines.length">
+                            <thead><tr><th>接入</th><th>地区</th><th>带宽</th><th>客户</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="sdwanLines" t-as="row" t-key="row.id" t-att-class="isPicked('line', row.id) ? 'active' : ''" t-on-click="() => this.pick('line', row)">
+                                    <td t-out="row.name"/>
+                                    <td t-out="row.region || '—'"/>
+                                    <td t-out="row.bandwidth || '—'"/>
+                                    <td><t t-if="row.partner" t-out="row.partner"/><span t-else="" class="text-success">可售</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div t-else="" class="text-muted small mb-3">这个机房还没有 SD-WAN。加一条时写上地区和带宽。</div>
+
+                        <div class="zl-dc-section-row">
+                            <div class="zl-dc-section">VXLAN</div>
+                            <button t-if="state.detail.can_write" class="btn btn-link btn-sm" t-on-click="() => this.addLine('vxlan')">加一条 VXLAN</button>
+                        </div>
+                        <div class="zl-dc-note">和专线一样，两端绑设备、端口和 VLAN。</div>
+                        <table class="table table-sm zl-dc-table" t-if="vxlanLines.length">
+                            <thead><tr><th>链路</th><th>带宽</th><th>A 端</th><th>Z 端</th><th>客户</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="vxlanLines" t-as="row" t-key="row.id" t-att-class="isPicked('line', row.id) ? 'active' : ''" t-on-click="() => this.pick('line', row)">
+                                    <td t-out="row.name"/>
+                                    <td t-out="row.bandwidth || '—'"/>
+                                    <td t-out="row.a_end || '—'"/>
+                                    <td t-out="row.z_end || '—'"/>
+                                    <td><t t-if="row.partner" t-out="row.partner"/><span t-else="" class="text-success">可售</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div t-else="" class="text-muted small mb-3">这个机房没有 VXLAN。</div>
+
+                        <t t-if="otherLines.length">
+                            <div class="zl-dc-section">其他线路</div>
+                            <table class="table table-sm zl-dc-table">
+                                <thead><tr><th>线路</th><th>带宽</th><th>A 端</th><th>Z 端</th><th>客户</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="otherLines" t-as="row" t-key="row.id" t-att-class="isPicked('line', row.id) ? 'active' : ''" t-on-click="() => this.pick('line', row)">
+                                        <td t-out="row.name"/>
+                                        <td t-out="row.bandwidth || '—'"/>
+                                        <td t-out="row.a_end || '—'"/>
+                                        <td t-out="row.z_end || '—'"/>
+                                        <td><t t-if="row.partner" t-out="row.partner"/><span t-else="" class="text-success">可售</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+
+                        <div class="zl-dc-section-row">
+                            <div class="zl-dc-section">物理机</div>
+                            <button t-if="state.detail.can_write" class="btn btn-link btn-sm" t-on-click="() => this.openRecord('zenlenet.device', false, '物理机', {default_datacenter_id: this.state.selectedId})">加一台物理机</button>
+                        </div>
+                        <div class="zl-dc-note">物理机属于这个机房。云主机要选其中一台来跑。</div>
+                        <table class="table table-sm zl-dc-table" t-if="devices.length">
+                            <thead><tr><th>设备</th><th>角色</th><th>状态</th><th class="text-end">云主机</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="devices" t-as="row" t-key="row.id" t-att-class="isPicked('device', row.id) ? 'active' : ''" t-on-click="() => this.pick('device', row)">
+                                    <td t-out="row.name"/>
+                                    <td t-out="row.role || '—'"/>
+                                    <td t-out="row.status_label"/>
+                                    <td class="text-end" t-out="row.vms"/>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div t-else="" class="text-muted small mb-3">这个机房还没有物理机。</div>
+
+                        <div class="zl-dc-section-row">
+                            <div class="zl-dc-section">云主机</div>
+                            <button t-if="state.detail.can_write" class="btn btn-link btn-sm" t-on-click="() => this.openRecord('zenlenet.vm', false, '云主机', {default_datacenter_id: this.state.selectedId})">加一台云主机</button>
+                        </div>
+                        <div class="zl-dc-note">云主机绑这个机房、一台物理机、一个 IP 和带宽。</div>
+                        <table class="table table-sm zl-dc-table" t-if="vms.length">
+                            <thead><tr><th>云主机</th><th>物理机</th><th>IP</th><th>带宽</th><th>客户</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="vms" t-as="row" t-key="row.id" t-att-class="isPicked('vm', row.id) ? 'active' : ''" t-on-click="() => this.pick('vm', row)">
+                                    <td t-out="row.name"/>
+                                    <td t-out="row.device || '—'"/>
+                                    <td class="font-monospace" t-out="row.ip || '—'"/>
+                                    <td t-out="row.bandwidth || '—'"/>
+                                    <td><t t-if="row.partner" t-out="row.partner"/><span t-else="" class="text-success">可售</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div t-else="" class="text-muted small mb-3">这个机房还没有云主机。</div>
 
                         <div class="zl-dc-section">地址段</div>
                         <table class="table table-sm zl-dc-table" t-if="prefixes.length">
@@ -72,20 +187,6 @@
                         </table>
                         <div t-else="" class="text-muted small mb-3">这个筛选下没有地址段。</div>
 
-                        <div class="zl-dc-section">线路</div>
-                        <table class="table table-sm zl-dc-table" t-if="lines.length">
-                            <thead><tr><th>线路</th><th>类型</th><th>带宽</th><th>客户</th><th>状态</th></tr></thead>
-                            <tbody>
-                                <tr t-foreach="lines" t-as="row" t-key="row.id" t-att-class="isPicked('line', row.id) ? 'active' : ''" t-on-click="() => this.pick('line', row)">
-                                    <td t-out="row.name"/>
-                                    <td t-out="row.kind"/>
-                                    <td t-out="row.bandwidth"/>
-                                    <td><t t-if="row.partner" t-out="row.partner"/><span t-else="" class="text-success">可售</span></td>
-                                    <td t-out="row.status_label"/>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <div t-else="" class="text-muted small">这个筛选下没有线路。</div>
                     </div>
 
                     <aside class="zl-dc-facts">
@@ -111,19 +212,54 @@
                             </ul>
                         </t>
                         <t t-elif="pickedLine">
-                            <div class="zl-dc-section">这条线路</div>
+                            <div class="zl-dc-section" t-out="pickedLine.kind_label || '这条线路'"/>
                             <div class="fw-bold mb-2" t-out="pickedLine.name"/>
                             <dl>
-                                <dt>类型</dt><dd t-out="pickedLine.kind"/>
                                 <dt>状态</dt><dd t-out="pickedLine.status_label"/>
                                 <dt>客户</dt><dd><t t-if="pickedLine.partner" t-out="pickedLine.partner"/><span t-else="">可售</span></dd>
-                                <dt>带宽</dt><dd t-out="pickedLine.bandwidth || '—'"/>
-                                <dt>A 端</dt><dd t-out="pickedLine.a_end || '—'"/>
-                                <dt>Z 端</dt><dd t-out="pickedLine.z_end || '—'"/>
+                                <dt>带宽</dt><dd t-out="pickedLine.bandwidth || '—'"/></dl>
+                            <dl t-if="pickedLine.kind === 'sdwan'">
+                                <dt>地区</dt><dd t-out="pickedLine.region || '—'"/>
+                            </dl>
+                            <dl t-else="">
+                                <dt>A 端机房</dt><dd t-out="pickedLine.a_site || '—'"/>
+                                <dt>A 端设备</dt><dd t-out="pickedLine.a_device || '—'"/>
+                                <dt>A 端端口</dt><dd t-out="pickedLine.a_port || '—'"/>
+                                <dt>A 端 VLAN</dt><dd t-out="pickedLine.a_vlan || '—'"/>
+                                <dt>Z 端机房</dt><dd t-out="pickedLine.z_site || '—'"/>
+                                <dt>Z 端设备</dt><dd t-out="pickedLine.z_device || '—'"/>
+                                <dt>Z 端端口</dt><dd t-out="pickedLine.z_port || '—'"/>
+                                <dt>Z 端 VLAN</dt><dd t-out="pickedLine.z_vlan || '—'"/>
+                            </dl>
+                            <dl>
                                 <dt>供应商</dt><dd t-out="pickedLine.supplier || '—'"/>
                                 <dt>用途</dt><dd t-out="pickedLine.purpose || '—'"/>
                             </dl>
-                            <button class="btn btn-secondary btn-sm mt-2" t-on-click="() => this.editLine(pickedLine.id)">改这条线路</button>
+                            <button class="btn btn-secondary btn-sm mt-2" t-on-click="() => this.editLine(pickedLine.id)">改绑定</button>
+                        </t>
+                        <t t-elif="pickedVm">
+                            <div class="zl-dc-section">这台云主机</div>
+                            <div class="fw-bold mb-2" t-out="pickedVm.name"/>
+                            <dl>
+                                <dt>机房</dt><dd t-out="state.detail.name"/>
+                                <dt>物理机</dt><dd t-out="pickedVm.device || '—'"/>
+                                <dt>IP</dt><dd class="font-monospace" t-out="pickedVm.ip || '—'"/>
+                                <dt>带宽</dt><dd t-out="pickedVm.bandwidth || '—'"/>
+                                <dt>状态</dt><dd t-out="pickedVm.status_label"/>
+                                <dt>客户</dt><dd><t t-if="pickedVm.partner" t-out="pickedVm.partner"/><span t-else="">可售</span></dd>
+                            </dl>
+                            <button class="btn btn-secondary btn-sm mt-2" t-on-click="() => this.openRecord('zenlenet.vm', pickedVm.id, '云主机')">改绑定</button>
+                        </t>
+                        <t t-elif="pickedDevice">
+                            <div class="zl-dc-section">这台物理机</div>
+                            <div class="fw-bold mb-2" t-out="pickedDevice.name"/>
+                            <dl>
+                                <dt>机房</dt><dd t-out="state.detail.name"/>
+                                <dt>角色</dt><dd t-out="pickedDevice.role || '—'"/>
+                                <dt>状态</dt><dd t-out="pickedDevice.status_label"/>
+                                <dt>云主机</dt><dd t-out="pickedDevice.vms"/>
+                            </dl>
+                            <button class="btn btn-secondary btn-sm mt-2" t-on-click="() => this.openRecord('zenlenet.device', pickedDevice.id, '物理机')">改这台物理机</button>
                         </t>
                         <t t-else="">
                             <div class="zl-dc-section">机房</div>

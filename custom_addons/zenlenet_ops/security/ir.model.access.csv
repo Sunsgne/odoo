@@ -24,6 +24,14 @@ access_zenlenet_ipset_delivery,zenlenet.ipset.delivery,model_zenlenet_ipset,zenl
 access_zenlenet_line_user,zenlenet.line.user,model_zenlenet_line,base.group_user,1,0,0,0
 access_zenlenet_line_delivery,zenlenet.line.delivery,model_zenlenet_line,zenlenet_ops.group_delivery,1,1,1,0
 access_zenlenet_line_manager,zenlenet.line.manager,model_zenlenet_line,zenlenet_ops.group_manager,1,1,1,1
+access_zenlenet_device_user,zenlenet.device.user,model_zenlenet_device,base.group_user,1,0,0,0
+access_zenlenet_device_delivery,zenlenet.device.delivery,model_zenlenet_device,zenlenet_ops.group_delivery,1,1,1,0
+access_zenlenet_device_allocator,zenlenet.device.allocator,model_zenlenet_device,zenlenet_ops.group_allocator,1,1,1,0
+access_zenlenet_device_manager,zenlenet.device.manager,model_zenlenet_device,zenlenet_ops.group_manager,1,1,1,1
+access_zenlenet_vm_user,zenlenet.vm.user,model_zenlenet_vm,base.group_user,1,0,0,0
+access_zenlenet_vm_delivery,zenlenet.vm.delivery,model_zenlenet_vm,zenlenet_ops.group_delivery,1,1,1,0
+access_zenlenet_vm_allocator,zenlenet.vm.allocator,model_zenlenet_vm,zenlenet_ops.group_allocator,1,1,1,0
+access_zenlenet_vm_manager,zenlenet.vm.manager,model_zenlenet_vm,zenlenet_ops.group_manager,1,1,1,1
 access_zenlenet_return_user,zenlenet.supplier.return.user,model_zenlenet_supplier_return,base.group_user,1,0,0,0
 access_zenlenet_return_delivery,zenlenet.supplier.return.delivery,model_zenlenet_supplier_return,zenlenet_ops.group_delivery,1,1,1,0
 access_zenlenet_return_procurement,zenlenet.supplier.return.procurement,model_zenlenet_supplier_return,zenlenet_ops.group_procurement,1,1,1,0

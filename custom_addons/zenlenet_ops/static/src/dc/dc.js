@@ -73,8 +73,32 @@ export class ZenlenetDatacenter extends Component {
         return this._visible(this.state.detail?.prefixes || []);
     }
 
-    get lines() {
-        return this._visible(this.state.detail?.lines || []);
+    linesOf(kind) {
+        return (this.state.detail?.lines || []).filter((row) => row.kind === kind);
+    }
+
+    get privateLines() {
+        return this.linesOf("pl");
+    }
+
+    get sdwanLines() {
+        return this.linesOf("sdwan");
+    }
+
+    get vxlanLines() {
+        return this.linesOf("vxlan");
+    }
+
+    get otherLines() {
+        return this.linesOf("private");
+    }
+
+    get devices() {
+        return this.state.detail?.devices || [];
+    }
+
+    get vms() {
+        return this.state.detail?.vms || [];
     }
 
     _visible(rows) {
@@ -113,6 +137,20 @@ export class ZenlenetDatacenter extends Component {
         return (this.state.detail?.lines || []).find((row) => row.id === this.state.pick.id) || null;
     }
 
+    get pickedDevice() {
+        if (this.state.pick?.kind !== "device") {
+            return null;
+        }
+        return (this.state.detail?.devices || []).find((row) => row.id === this.state.pick.id) || null;
+    }
+
+    get pickedVm() {
+        if (this.state.pick?.kind !== "vm") {
+            return null;
+        }
+        return (this.state.detail?.vms || []).find((row) => row.id === this.state.pick.id) || null;
+    }
+
     childrenOf(id) {
         return (this.state.detail?.prefixes || []).filter((row) => row.parent_id === id);
     }
@@ -127,6 +165,45 @@ export class ZenlenetDatacenter extends Component {
 
     async openTicket(move) {
         const action = await this.orm.call("zenlenet.datacenter", "dc_open_ticket", [[this.state.selectedId], move]);
+        await this.action.doAction(action, { onClose: () => this.select(this.state.selectedId) });
+    }
+
+    async addLine(kind) {
+        const context = {
+            default_kind: kind,
+            default_datacenter_id: this.state.selectedId,
+            default_status: "planned",
+        };
+        if (kind === "sdwan") {
+            context.default_region = this.state.detail?.region_name || false;
+        } else {
+            context.default_a_site_id = this.state.selectedId;
+        }
+        await this.action.doAction(
+            {
+                type: "ir.actions.act_window",
+                res_model: "zenlenet.line",
+                views: [[false, "form"]],
+                target: "new",
+                name: kind === "sdwan" ? "SD-WAN" : "专线",
+                context,
+            },
+            { onClose: () => this.select(this.state.selectedId) },
+        );
+    }
+
+    async openRecord(model, id, name, context) {
+        const action = {
+            type: "ir.actions.act_window",
+            res_model: model,
+            views: [[false, "form"]],
+            target: "new",
+            name,
+            context: context || {},
+        };
+        if (id) {
+            action.res_id = id;
+        }
         await this.action.doAction(action, { onClose: () => this.select(this.state.selectedId) });
     }
 

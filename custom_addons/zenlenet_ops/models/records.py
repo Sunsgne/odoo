@@ -166,11 +166,13 @@ class ZenlenetLine(models.Model):
     snapshot_key = fields.Char(index=True, copy=False)
     name = fields.Char(string='编号', required=True)
     kind = fields.Selection([
-        ('private', '供应商专线'),
+        ('pl', '专线'),
+        ('sdwan', 'SD-WAN'),
         ('vxlan', 'VXLAN'),
+        ('private', '供应商专线'),
     ], string='类型', required=True, index=True)
-    a_end = fields.Char(string='A端')
-    z_end = fields.Char(string='Z端')
+    a_end = fields.Char(string='A端（导入）')
+    z_end = fields.Char(string='Z端（导入）')
     bandwidth = fields.Char(string='带宽')
     partner_name = fields.Char(string='客户（导入名）')
     allocation_ids = fields.One2many('zenlenet.flow.resource', 'line_id', string='交付记录')

@@ -3,7 +3,14 @@ import logging
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
+from odoo.addons.zenlenet_ops.resource_bindings import binding_text, mbps_of, site_line_domain, split_end
+
 from .records import DC_TYPES
+
+LINE_PUSH_FIELDS = {
+    'kind', 'region', 'commit_rate', 'bandwidth', 'datacenter_id',
+    'a_site_id', 'z_site_id', 'a_device_id', 'z_device_id', 'a_port', 'z_port', 'a_vlan', 'z_vlan',
+}
 
 _logger = logging.getLogger(__name__)
 
@@ -118,6 +125,14 @@ class ZenlenetDatacenter(models.Model):
                 ['datacenter_id'], ['__count'],
             )
         }
+        Vm = self.env['zenlenet.vm']
+        sellable_vm = {
+            record.id: count
+            for record, count in Vm._read_group(
+                [('datacenter_id', 'in', sites.ids), ('partner_id', '=', False), ('status', '=', 'active')],
+                ['datacenter_id'], ['__count'],
+            )
+        }
         return [{
             'id': site.id,
             'name': site.name,
@@ -126,6 +141,7 @@ class ZenlenetDatacenter(models.Model):
             'facility': site.facility or '',
             'sellable_prefixes': sellable_prefix.get(site.id, 0),
             'sellable_lines': sellable_line.get(site.id, 0),
+            'sellable_vms': sellable_vm.get(site.id, 0),
         } for site in sites]
 
     def dc_site(self):
@@ -157,22 +173,59 @@ class ZenlenetDatacenter(models.Model):
             })
         kind_label = dict(self.env['zenlenet.line']._fields['kind'].selection)
         status_label = dict(LINE_STATUSES)
+        domain = site_line_domain(self.id, self.region)
         lines = []
-        for line in self.line_ids.sorted('name'):
+        for line in self.env['zenlenet.line'].search(domain, order='kind, name'):
             partner = line.partner_id.name or ''
+            rate = mbps_of(line.bandwidth, line.commit_rate)
             lines.append({
                 'id': line.id,
                 'name': line.name,
-                'kind': kind_label.get(line.kind, line.kind or ''),
+                'kind': line.kind,
+                'kind_label': kind_label.get(line.kind, line.kind or ''),
                 'status': line.status,
                 'status_label': status_label.get(line.status, ''),
                 'partner': partner,
-                'bandwidth': line.bandwidth or '',
-                'a_end': line.a_end or '',
-                'z_end': line.z_end or '',
+                'bandwidth': f'{rate}M' if rate else (line.bandwidth or ''),
+                'region': line.region or '',
+                'a_end': binding_text(line.a_site_id.name, line.a_device_id.name, line.a_port, line.a_vlan) or line.a_end or '',
+                'z_end': binding_text(line.z_site_id.name, line.z_device_id.name, line.z_port, line.z_vlan) or line.z_end or '',
+                'a_site': line.a_site_id.name or '',
+                'z_site': line.z_site_id.name or '',
+                'a_device': line.a_device_id.name or '',
+                'z_device': line.z_device_id.name or '',
+                'a_port': line.a_port or '',
+                'z_port': line.z_port or '',
+                'a_vlan': line.a_vlan or '',
+                'z_vlan': line.z_vlan or '',
                 'supplier': line.supplier_id.name or '',
                 'purpose': line.purpose or '',
                 'sellable': not partner and line.status in ('planned', 'provisioning', 'active'),
+            })
+        device_status = dict(self.env['zenlenet.device']._fields['status'].selection)
+        devices = [{
+            'id': device.id,
+            'name': device.name,
+            'role': device.role or '',
+            'status': device.status,
+            'status_label': device_status.get(device.status, ''),
+            'vms': len(device.vm_ids),
+        } for device in self.env['zenlenet.device'].search([('datacenter_id', '=', self.id)], order='name')]
+        vm_status = dict(self.env['zenlenet.vm']._fields['status'].selection)
+        vms = []
+        for vm in self.env['zenlenet.vm'].search([('datacenter_id', '=', self.id)], order='name'):
+            partner = vm.partner_id.name or ''
+            vms.append({
+                'id': vm.id,
+                'name': vm.name,
+                'device': vm.device_id.name or '',
+                'device_id': vm.device_id.id or False,
+                'ip': vm.address_id.address or vm.ip_text or '',
+                'bandwidth': f'{vm.bandwidth_mbps}M' if vm.bandwidth_mbps else '',
+                'partner': partner,
+                'status': vm.status,
+                'status_label': vm_status.get(vm.status, ''),
+                'sellable': not partner and vm.status == 'active',
             })
         return {
             'id': self.id,
@@ -180,6 +233,7 @@ class ZenlenetDatacenter(models.Model):
             'state': self.state,
             'state_label': dict(self._fields['state'].selection).get(self.state, ''),
             'region': self.region or self.city or '',
+            'region_name': self.region or '',
             'facility': self.facility or '',
             'asn': self.asn or 0,
             'city': self.city or '',
@@ -194,8 +248,11 @@ class ZenlenetDatacenter(models.Model):
             'can_write': self.has_access('write'),
             'prefixes': prefixes,
             'lines': lines,
+            'devices': devices,
+            'vms': vms,
             'sellable_prefixes': sum(1 for row in prefixes if row['sellable']),
             'sellable_lines': sum(1 for row in lines if row['sellable']),
+            'sellable_vms': sum(1 for row in vms if row['sellable']),
         }
 
     def dc_open_ticket(self, move='in'):
@@ -388,7 +445,21 @@ class ZenlenetLine(models.Model):
     netbox_id = fields.Integer(string='NetBox ID', index=True, copy=False)
     netbox_synced = fields.Datetime(string='上次同步')
     status = fields.Selection(LINE_STATUSES, string='状态', default='active', required=True, index=True)
-    commit_rate = fields.Integer(string='签约速率 (Mbps)')
+    commit_rate = fields.Integer(string='带宽 (Mbps)')
+    region = fields.Char(string='地区', index=True, help='SD-WAN 挂在这个地区上，对应 NetBox 的 Region。')
+    region_netbox_id = fields.Integer(string='NetBox 地区', copy=False)
+    a_site_id = fields.Many2one('zenlenet.datacenter', string='A 端机房', index=True, ondelete='set null')
+    z_site_id = fields.Many2one('zenlenet.datacenter', string='Z 端机房', index=True, ondelete='set null')
+    a_device_id = fields.Many2one('zenlenet.device', string='A 端设备', index=True, ondelete='set null')
+    z_device_id = fields.Many2one('zenlenet.device', string='Z 端设备', index=True, ondelete='set null')
+    a_port = fields.Char(string='A 端端口')
+    z_port = fields.Char(string='Z 端端口')
+    a_vlan = fields.Char(string='A 端 VLAN')
+    z_vlan = fields.Char(string='Z 端 VLAN')
+    a_term_netbox_id = fields.Integer(copy=False)
+    z_term_netbox_id = fields.Integer(copy=False)
+    a_iface_netbox_id = fields.Integer(copy=False)
+    z_iface_netbox_id = fields.Integer(copy=False)
     partner_id = fields.Many2one('res.partner', string='客户', index=True, domain=[('is_company', '=', True)])
     supplier = fields.Char(string='供应商（旧）')
     supplier_id = fields.Many2one('res.partner', string='供应商', domain=[('supplier_rank', '>', 0)], index=True)
@@ -413,7 +484,14 @@ class ZenlenetLine(models.Model):
                 vals['status'] = 'decommissioned'
             if vals.get('status') in ('decommissioned', 'deprovisioning', 'offline'):
                 vals['stopped'] = True
-        return super().create(vals_list)
+        records = super().create(vals_list)
+        if not any(self.env.context.get(key) for key in ('zenlenet_flow_apply', 'netbox_skip_push', 'zenlenet_import')):
+            for record in records:
+                try:
+                    self.env['zenlenet.netbox'].push_line(record)
+                except Exception as error:
+                    _logger.warning('NetBox line push skipped for %s: %s', record.id, type(error).__name__)
+        return records
 
     def write(self, vals):
         if 'status' in vals and 'stopped' not in vals:
@@ -429,7 +507,41 @@ class ZenlenetLine(models.Model):
                 new_status = vals.get('status', record.status)
                 if 'status' in vals and record.status == 'active' and new_status in ('deprovisioning', 'decommissioned', 'offline'):
                     raise UserError('线路拆除或退回要走资源工单。')
-        return super().write(vals)
+        result = super().write(vals)
+        if not skipped and LINE_PUSH_FIELDS & set(vals):
+            for record in self:
+                try:
+                    self.env['zenlenet.netbox'].push_line(record)
+                except Exception as error:
+                    _logger.warning('NetBox line push skipped for %s: %s', record.id, type(error).__name__)
+        return result
+
+    @api.model
+    def _backfill_bindings(self):
+        """Turn imported 'place vlan' text into the site and VLAN a private line actually has."""
+        sites = {record.name: record.id for record in self.env['zenlenet.datacenter'].sudo().search([])}
+        for line in self.sudo().search([]):
+            vals = {}
+            if line.kind == 'private' and (line.snapshot_key or '').startswith('c'):
+                vals['kind'] = 'pl'
+            if not line.commit_rate:
+                rate = mbps_of(line.bandwidth, 0)
+                if rate:
+                    vals['commit_rate'] = rate
+            for side in ('a', 'z'):
+                if line[f'{side}_vlan'] or line[f'{side}_site_id']:
+                    continue
+                place, vid = split_end(line[f'{side}_end'])
+                if vid:
+                    vals[f'{side}_vlan'] = str(vid)
+                site_id = sites.get(place) or sites.get((place or '').split(' ')[0])
+                if site_id:
+                    vals[f'{side}_site_id'] = site_id
+            if not line.a_site_id and not vals.get('a_site_id') and line.datacenter_id:
+                vals['a_site_id'] = line.datacenter_id.id
+            if vals:
+                line.with_context(netbox_skip_push=True, zenlenet_import=True).write(vals)
+        return True
 
     def action_open_netbox(self):
         self.ensure_one()
