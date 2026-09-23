@@ -15,17 +15,17 @@ class ResUsers(models.Model):
         domain=lambda self: [('privilege_id', '=', self.env.ref('zenlenet_ops.privilege_zenlenet').id)],
         help='岗位决定能看什么菜单、能改什么数据。一个人可以有多个岗位。',
     )
-    zenlenet_role_names = fields.Char(string='岗位', compute='_compute_roles')
+    zenlenet_role_names = fields.Char(string='岗位名称', compute='_compute_roles')
 
     def _zenlenet_role_groups(self):
         privilege = self.env.ref('zenlenet_ops.privilege_zenlenet', raise_if_not_found=False)
         return self.env['res.groups'].sudo().search([('privilege_id', '=', privilege.id)]) if privilege else self.env['res.groups']
 
-    @api.depends('group_ids')
+    @api.depends('group_ids', 'all_group_ids')
     def _compute_roles(self):
         roles = self._zenlenet_role_groups()
         for user in self:
-            mine = user.group_ids & roles
+            mine = user.all_group_ids & roles
             user.zenlenet_role_ids = mine
             user.zenlenet_role_names = '、'.join(mine.sorted('sequence').mapped('name'))
 
