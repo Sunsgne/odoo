@@ -29,7 +29,7 @@
         </field>
     </record>
     <record id="action_returns" model="ir.actions.act_window">
-        <field name="name">供应商退回</field>
+        <field name="name">退回记录</field>
         <field name="res_model">zenlenet.supplier.return</field>
         <field name="view_mode">list,form</field>
     </record>

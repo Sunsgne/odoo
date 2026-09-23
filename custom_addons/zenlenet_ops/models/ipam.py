@@ -206,7 +206,9 @@ class ZenlenetPrefixIpam(models.Model):
     @api.model
     def ipam_pending_flows(self):
         """Delivery tickets waiting for resources, for the grid's assign panel."""
-        flows = self.env['zenlenet.flow'].search([('state', '=', 'allocate')], order='id desc', limit=50)
+        flows = self.env['zenlenet.flow'].search([
+            ('state', '=', 'allocate'), ('move', '=', 'out'),
+        ], order='id desc', limit=50)
         return [{
             'id': flow.id, 'name': flow.name, 'partner_id': flow.partner_id.id, 'partner': flow.partner_id.name or '',
             'datacenter': flow.datacenter_id.name or '', 'pending': flow.pending_count,
@@ -214,30 +216,37 @@ class ZenlenetPrefixIpam(models.Model):
         } for flow in flows]
 
     def ipam_bulk_assign(self, ips, partner_id=None, flow_id=None, usage=''):
-        """Allocate the selected hosts to a customer, optionally through a delivery ticket."""
+        """Hang the selected hosts on an open 开通 ticket. The ticket marks them allocated."""
         self.ensure_one()
-        flow = self.env['zenlenet.flow'].browse(flow_id) if flow_id else self.env['zenlenet.flow']
-        if flow and not partner_id:
-            partner_id = flow.partner_id.id
-        if not partner_id:
-            raise UserError('请选择客户或交付工单。')
+        flow = self.env['zenlenet.flow'].browse(flow_id).exists() if flow_id else self.env['zenlenet.flow']
+        if not flow or flow.move != 'out' or flow.state != 'allocate':
+            raise UserError('分配给客户要挂在一张处于「分配资源」的开通工单上。没有的话先开一张。')
+        if not ips:
+            raise UserError('请先选地址。')
+        Address = self.env['zenlenet.address']
         Resource = self.env['zenlenet.flow.resource']
-        records = self.env['zenlenet.address']
+        have = set(flow.resource_ids.mapped('address_id').ids)
+        count = 0
         for ip in ips:
-            info = self.ipam_set_address(ip, {'status': 'allocated', 'partner_id': partner_id, 'usage': usage or (f'交付工单 {flow.name}' if flow else '')})
-            records |= records.browse(info['id'])
-        if flow:
-            have = set(flow.resource_ids.mapped('address_id').ids)
-            for address in records:
-                if address.id in have:
-                    continue
-                Resource.create({
-                    'flow_id': flow.id,
-                    'service_type': 'ip_single',
-                    'resource_ref': f'zenlenet.address,{address.id}',
-                    'spec': f'{address.address} 由地址管理分配',
+            existing = Address.search([('address', '=like', f'{ip}/%')], limit=1)
+            if not existing:
+                existing = Address.with_context(zenlenet_flow_apply=True).create({
+                    'address': f'{ip}/32',
+                    'prefix_id': self.id,
+                    'block': self.prefix,
+                    'datacenter_id': self.datacenter_id.id,
+                    'status': 'free',
                 })
-        return {'count': len(records), 'flow': flow.name if flow else ''}
+            if existing.id in have:
+                continue
+            Resource.create({
+                'flow_id': flow.id,
+                'service_type': 'ip_single',
+                'address_id': existing.id,
+                'spec': usage or f'{ip} 由地址管理分配',
+            })
+            count += 1
+        return {'count': count, 'flow': flow.name}
 
     def ipam_bulk_reserve(self, ips, partner_id):
         """Hold the selected hosts for a customer. No delivery ticket."""
@@ -271,23 +280,65 @@ class ZenlenetPrefixIpam(models.Model):
             raise UserError('状态不对。')
         if status == 'reserved':
             raise UserError('预分配要指定客户。')
+        if status in ('allocated', 'testing', 'returning', 'transferring'):
+            raise UserError('分配、测试、出库和调库要走资源工单。')
+        Address = self.env['zenlenet.address']
         for ip in ips:
+            existing = Address.search([('address', '=like', f'{ip}/%')], limit=1)
+            if status == 'free' and existing and existing.status in ('allocated', 'testing', 'returning', 'transferring'):
+                raise UserError(f'{ip} 已在用，退回请开「退：退回」工单。')
             values = {'status': status}
             if status in ('free', 'internal'):
                 values['partner_id'] = False
-            elif status in ('allocated', 'testing') and self.partner_id:
-                values['partner_id'] = self.partner_id.id
             self.ipam_set_address(ip, values)
         return True
 
+    def ipam_open_ticket(self, ips, move):
+        """Start a resource ticket for the selected hosts and open it here."""
+        self.ensure_one()
+        if move not in ('out', 'in', 'back', 'cutover'):
+            raise UserError('工单类型不对。')
+        if not ips:
+            raise UserError('请先选地址。')
+        Address = self.env['zenlenet.address']
+        addresses = Address
+        for ip in ips:
+            found = Address.search([('address', '=like', f'{ip}/%')], limit=1)
+            if not found:
+                raise UserError(f'{ip} 还没登记，不能开工单。')
+            addresses |= found
+        partners = addresses.mapped('partner_id')
+        flow = self.env['zenlenet.flow'].create({
+            'move': move,
+            'kind': 'business',
+            'partner_id': partners.id if len(partners) == 1 and move in ('out', 'back', 'cutover') else False,
+            'datacenter_id': self.datacenter_id.id,
+            'return_to': 'stock' if move == 'back' else False,
+        })
+        Resource = self.env['zenlenet.flow.resource']
+        for address in addresses:
+            values = {'flow_id': flow.id, 'service_type': 'ip_single', 'spec': address.address}
+            if move == 'cutover':
+                values['from_address_id'] = address.id
+            else:
+                values['address_id'] = address.id
+            Resource.create(values)
+        return {
+            'type': 'ir.actions.act_window',
+            'name': flow.name,
+            'res_model': 'zenlenet.flow',
+            'res_id': flow.id,
+            'view_mode': 'form',
+            'target': 'new',
+        }
+
+    def ipam_open_prefix_ticket(self, move):
+        self.ensure_one()
+        return self._open_move(move)
+
     def ipam_assign(self, partner_id):
         self.ensure_one()
-        self.partner_id = partner_id or False
-        if partner_id:
-            self.action_allocate()
-        else:
-            self.action_release()
-        return True
+        return self._open_move('out' if partner_id else 'back')
 
     @api.model
     def ipam_customers(self, search=''):

@@ -73,16 +73,9 @@
                     <div class="zl-ipam-actions" t-if="state.detail.can_write">
                         <button class="btn btn-primary btn-sm" t-on-click="() => this.addPrefix(state.detail)"><i class="fa fa-plus"/> 添加网段</button>
                         <button class="btn btn-secondary btn-sm" t-on-click="split"><i class="fa fa-scissors"/> 切割</button>
-                        <div class="zl-assign">
-                            <button class="btn btn-secondary btn-sm" t-on-click="openAssign"><i class="fa fa-user-plus"/> <t t-out="state.detail.partner ? '改分配' : '分配给客户'"/></button>
-                            <div t-if="state.assignOpen" class="zl-assign-pop">
-                                <input type="text" class="form-control form-control-sm" placeholder="搜客户" t-att-value="state.assignQuery" t-on-input="(ev) => this.searchCustomers(ev, 'assign')"/>
-                                <ul>
-                                    <li t-foreach="state.assignChoices" t-as="customer" t-key="customer.id" t-on-click="() => this.assign(customer)" t-out="customer.name"/>
-                                </ul>
-                                <button t-if="state.detail.partner" class="btn btn-link btn-sm text-danger" t-on-click="() => this.assign(null)">整段回收</button>
-                            </div>
-                        </div>
+                        <button class="btn btn-secondary btn-sm" t-on-click="() => this.openPrefixTicket('out')"><i class="fa fa-user-plus"/> 整段开通</button>
+                        <button class="btn btn-secondary btn-sm" t-on-click="() => this.openPrefixTicket('back')">整段退回</button>
+                        <button class="btn btn-secondary btn-sm" t-on-click="() => this.openPrefixTicket('cutover')">整段割接</button>
                         <button class="btn btn-secondary btn-sm" t-on-click="openForm"><i class="fa fa-pencil"/> 修改信息</button>
                         <button t-if="state.detail.netbox_url" class="btn btn-link btn-sm" t-on-click="openNetbox"><i class="fa fa-external-link"/> NetBox</button>
                     </div>
@@ -101,13 +94,13 @@
                         </div>
                         <div t-if="state.selection.length" class="zl-bulk">
                             <span>已选 <b t-out="state.selection.length"/> 个地址：</span>
-                            <button class="btn btn-sm btn-primary" t-on-click="openBulkAssign"><i class="fa fa-user-plus"/> 分配给客户 / 交付工单</button>
-                            <span class="text-muted small">｜ 不走交付的：</span>
+                            <button class="btn btn-sm btn-primary" t-on-click="openBulkAssign"><i class="fa fa-user-plus"/> 挂到开通工单</button>
+                            <button class="btn btn-sm btn-outline-primary" t-on-click="() => this.openTicket('back')">退回工单</button>
+                            <button class="btn btn-sm btn-outline-primary" t-on-click="() => this.openTicket('cutover')">割接工单</button>
+                            <span class="text-muted small">｜ 不走工单的：</span>
                             <button class="btn btn-sm btn-outline-secondary" t-on-click="openBulkReserve">预分配</button>
                             <button class="btn btn-sm btn-outline-secondary" t-on-click="() => this.bulkStatus('internal')">自用</button>
-                            <button class="btn btn-sm btn-outline-secondary" t-on-click="() => this.bulkStatus('testing')">测试</button>
-                            <button class="btn btn-sm btn-outline-secondary" t-on-click="() => this.bulkStatus('returning')">出库中</button>
-                            <button class="btn btn-sm btn-outline-secondary" t-on-click="() => this.bulkStatus('free')">释放为未分配</button>
+                            <button class="btn btn-sm btn-outline-secondary" t-on-click="() => this.bulkStatus('free')">取消预留</button>
                             <button class="btn btn-sm btn-link" t-on-click="clearSelection">取消选择</button>
                         </div>
                         <div t-if="state.bulkReserve" class="zl-bulk-assign">
@@ -131,29 +124,19 @@
                                 <b>把 <t t-out="state.selection.length"/> 个地址分配出去</b>
                                 <button class="btn btn-sm btn-link" t-on-click="closeBulkAssign"><i class="fa fa-times"/></button>
                             </div>
-                            <div class="row g-3">
-                                <div class="col-6">
-                                    <div class="small text-muted mb-1">正常流程：报价客户同意 → 选待分配的交付工单，地址会挂到工单上</div>
-                                    <ul class="zl-flow-list">
-                                        <li t-foreach="state.pendingFlows" t-as="flow" t-key="flow.id" t-attf-class="#{state.bulkAssign.flow_id === flow.id ? 'active' : ''}" t-on-click="() => this.pickFlow(flow)">
-                                            <span class="font-monospace fw-bold" t-out="flow.name"/> <span t-out="flow.partner"/>
-                                            <span class="text-muted small"> · <t t-out="flow.order"/> <t t-if="flow.datacenter">· <t t-out="flow.datacenter"/></t> · 待分配 <t t-out="flow.pending"/></span>
-                                        </li>
-                                        <li t-if="!state.pendingFlows.length" class="text-muted">没有处于「分配资源」阶段的交付工单</li>
-                                    </ul>
-                                </div>
-                                <div class="col-6">
-                                    <div class="small text-muted mb-1">或直接选客户（补录、历史迁移）</div>
-                                    <input type="text" class="form-control form-control-sm" placeholder="搜客户" t-att-value="state.bulkAssign.partner_name" t-on-input="searchBulkCustomers"/>
-                                    <ul t-if="state.bulkCustomers.length" class="zl-choices">
-                                        <li t-foreach="state.bulkCustomers" t-as="customer" t-key="customer.id" t-on-click="() => this.pickBulkCustomer(customer)" t-out="customer.name"/>
-                                    </ul>
-                                    <input type="text" class="form-control form-control-sm mt-2" placeholder="用途（可选）" t-model="state.bulkAssign.usage"/>
-                                    <div class="d-flex justify-content-end gap-2 mt-2">
-                                        <button class="btn btn-sm btn-secondary" t-on-click="closeBulkAssign">取消</button>
-                                        <button class="btn btn-sm btn-primary" t-on-click="confirmBulkAssign"><i class="fa fa-check"/> 确认分配</button>
-                                    </div>
-                                </div>
+                            <div class="small text-muted mb-2">选一张已经到「分配资源」的开通工单。没有的话先开一张，地址先挂上，推进之后才会标成已分配。</div>
+                            <ul class="zl-flow-list">
+                                <li t-foreach="state.pendingFlows" t-as="flow" t-key="flow.id" t-attf-class="#{state.bulkAssign.flow_id === flow.id ? 'active' : ''}" t-on-click="() => this.pickFlow(flow)">
+                                    <span class="font-monospace fw-bold" t-out="flow.name"/> <span t-out="flow.partner"/>
+                                    <span class="text-muted small"> · <t t-out="flow.order"/> <t t-if="flow.datacenter">· <t t-out="flow.datacenter"/></t> · 待分配 <t t-out="flow.pending"/></span>
+                                </li>
+                                <li t-if="!state.pendingFlows.length" class="text-muted">没有处于「分配资源」的开通工单</li>
+                            </ul>
+                            <input type="text" class="form-control form-control-sm mt-2" placeholder="用途（可选）" t-model="state.bulkAssign.usage"/>
+                            <div class="d-flex justify-content-end gap-2 mt-2">
+                                <button class="btn btn-sm btn-secondary" t-on-click="() => this.openTicket('out')">先开一张开通工单</button>
+                                <button class="btn btn-sm btn-secondary" t-on-click="closeBulkAssign">取消</button>
+                                <button class="btn btn-sm btn-primary" t-on-click="confirmBulkAssign"><i class="fa fa-check"/> 挂到这张工单</button>
                             </div>
                         </div>
                         <t t-if="state.detail.blocks.length">
@@ -236,8 +219,11 @@
                         <button class="btn btn-sm btn-link" t-on-click="closeCell"><i class="fa fa-times"/></button>
                     </div>
                     <label>状态</label>
-                    <select class="form-select form-select-sm" t-model="state.cellForm.status">
-                        <option t-foreach="statuses" t-as="status" t-key="status[0]" t-att-value="status[0]" t-out="status[1]"/>
+                    <div t-if="ticketLocked" class="small mb-1">这个地址在用。换客户、退回、割接都要开工单，这里只能改用途。</div>
+                    <select t-else="" class="form-select form-select-sm" t-model="state.cellForm.status">
+                        <option value="free">未分配</option>
+                        <option value="reserved">预分配</option>
+                        <option value="internal">自用</option>
                     </select>
                     <label><t t-if="state.cellForm.status === 'reserved'">预分配给</t><t t-else="">分配给</t></label>
                     <div t-if="state.cellForm.status === 'reserved'" class="small text-muted">必填。从下面的名单里点选，不能只打字。</div>

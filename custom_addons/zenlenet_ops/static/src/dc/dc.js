@@ -125,6 +125,11 @@ export class ZenlenetDatacenter extends Component {
         return PREFIX_STATUS[status] || status;
     }
 
+    async openTicket(move) {
+        const action = await this.orm.call("zenlenet.datacenter", "dc_open_ticket", [[this.state.selectedId], move]);
+        await this.action.doAction(action, { onClose: () => this.select(this.state.selectedId) });
+    }
+
     async editSite(id) {
         const action = {
             type: "ir.actions.act_window",

@@ -308,8 +308,8 @@ export class ZenlenetIpam extends Component {
 
     async confirmBulkAssign() {
         const form = this.state.bulkAssign;
-        if (!form.partner_id && !form.flow_id) {
-            this.notification.add("请选一张待分配的交付工单，或直接选客户。", { type: "warning" });
+        if (!form.flow_id) {
+            this.notification.add("请选一张处于「分配资源」的开通工单。没有的话先开一张。", { type: "warning" });
             return;
         }
         try {
@@ -372,15 +372,42 @@ export class ZenlenetIpam extends Component {
         this.state.customers = [];
     }
 
+    get ticketLocked() {
+        return ["allocated", "testing", "returning", "transferring"].includes(this.state.cell?.status);
+    }
+
+    async openTicket(move) {
+        try {
+            const action = await this.orm.call("zenlenet.prefix", "ipam_open_ticket", [[this.state.selectedId], this.state.selection, move]);
+            this.state.bulkAssign = null;
+            this.state.selection = [];
+            await this.action.doAction(action, { onClose: () => this.select(this.state.selectedId) });
+        } catch (error) {
+            this.notification.add(error.data?.message || String(error), { type: "danger" });
+        }
+    }
+
+    async openPrefixTicket(move) {
+        try {
+            const action = await this.orm.call("zenlenet.prefix", "ipam_open_prefix_ticket", [[this.state.selectedId], move]);
+            await this.action.doAction(action, { onClose: () => this.select(this.state.selectedId) });
+        } catch (error) {
+            this.notification.add(error.data?.message || String(error), { type: "danger" });
+        }
+    }
+
     async saveCell() {
         const form = this.state.cellForm;
         if (form.status === "reserved" && !form.partner_id) {
             this.notification.add("预分配要先从列表里点选客户。", { type: "warning" });
             return;
         }
-        const values = { status: form.status, usage: form.usage };
-        if (form.status === "reserved" || form.partner_id || !form.partner_name) {
-            values.partner_id = form.partner_id || false;
+        const values = { usage: form.usage };
+        if (!this.ticketLocked) {
+            values.status = form.status;
+            if (form.status === "reserved" || form.partner_id || !form.partner_name) {
+                values.partner_id = form.partner_id || false;
+            }
         }
         try {
             await this.orm.call("zenlenet.prefix", "ipam_set_address", [[this.state.selectedId], this.state.cell.ip, values]);

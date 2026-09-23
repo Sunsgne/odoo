@@ -15,7 +15,8 @@
                     <t t-name="card">
                         <div class="d-flex justify-content-between">
                             <span class="fw-bold"><field name="name"/></span>
-                            <field name="kind" widget="badge" decoration-info="kind == 'test'" decoration-success="kind == 'business'"/>
+                            <field name="move" widget="badge"/>
+                            <field name="kind" widget="badge" decoration-info="kind == 'test'" decoration-success="kind == 'business'" invisible="move != 'out'"/>
                         </div>
                         <div class="text-truncate"><field name="partner_id"/></div>
                         <div class="text-muted small d-flex justify-content-between">
@@ -37,7 +38,8 @@
         <field name="arch" type="xml">
             <list>
                 <field name="name"/>
-                <field name="kind"/>
+                <field name="move"/>
+                <field name="kind" optional="hide"/>
                 <field name="team"/>
                 <field name="state"/>
                 <field name="partner_id"/>
@@ -60,13 +62,26 @@
             <form>
                 <header>
                     <button name="action_prev" type="object" string="退回" invisible="state in ('company', 'done', 'cancel')"/>
-                    <button name="action_next" type="object" string="推进" class="btn-primary" invisible="state in ('done', 'cancel') or (kind == 'test' and state in ('accept', 'decide'))"/>
-                    <button name="action_reclaim" type="object" string="回收" invisible="kind != 'test' or state not in ('accept', 'decide')"/>
-                    <button name="action_to_business" type="object" string="转商务" class="btn-primary" invisible="kind != 'test' or state not in ('accept', 'decide', 'reclaim')"/>
-                    <button name="action_print_delivery" type="object" string="打印验收单" invisible="state in ('company', 'cancel')"/>
+                    <button name="action_next" type="object" string="推进" class="btn-primary" invisible="move != 'out' or state in ('done', 'cancel') or (kind == 'test' and state in ('accept', 'decide'))"/>
+                    <button name="action_next" type="object" string="核对资源" class="btn-primary" invisible="move != 'in' or state != 'company'"/>
+                    <button name="action_next" type="object" string="确认入库" class="btn-primary" invisible="move != 'in' or state != 'allocate'"/>
+                    <button name="action_next" type="object" string="完成入库" class="btn-primary" invisible="move != 'in' or state != 'deliver'"/>
+                    <button name="action_next" type="object" string="开始回收" class="btn-primary" invisible="move != 'back' or state != 'company'"/>
+                    <button name="action_next" type="object" string="确认退回" class="btn-primary" invisible="move != 'back' or state != 'reclaim'"/>
+                    <button name="action_next" type="object" string="通知客户" class="btn-primary" invisible="move != 'cutover' or state != 'company'"/>
+                    <button name="action_next" type="object" string="更换资源" class="btn-primary" invisible="move != 'cutover' or state != 'deliver'"/>
+                    <button name="action_next" type="object" string="业务验证" class="btn-primary" invisible="move != 'cutover' or state != 'allocate'"/>
+                    <button name="action_next" type="object" string="完成割接" class="btn-primary" invisible="move != 'cutover' or state != 'accept'"/>
+                    <button name="action_fill_notice" type="object" string="生成割接通知" invisible="move != 'cutover' or state in ('company', 'cancel')"/>
+                    <button name="action_reclaim" type="object" string="回收" invisible="move != 'out' or kind != 'test' or state not in ('accept', 'decide')"/>
+                    <button name="action_to_business" type="object" string="转商务" class="btn-primary" invisible="move != 'out' or kind != 'test' or state not in ('accept', 'decide', 'reclaim')"/>
+                    <button name="action_print_delivery" type="object" string="打印验收单" invisible="move != 'out' or state in ('company', 'cancel')"/>
                     <button name="action_cancel" type="object" string="取消" invisible="state in ('done', 'cancel')"/>
-                    <field name="state" widget="statusbar" options="{'clickable': false}" statusbar_visible="company,allocate,deliver,accept,done" invisible="kind == 'test'"/>
-                    <field name="state" widget="statusbar" options="{'clickable': false}" statusbar_visible="company,allocate,deliver,accept,reclaim,done" invisible="kind != 'test'"/>
+                    <field name="state" widget="statusbar" options="{'clickable': false}" statusbar_visible="company,allocate,deliver,accept,done" invisible="move != 'out' or kind == 'test'"/>
+                    <field name="state" widget="statusbar" options="{'clickable': false}" statusbar_visible="company,allocate,deliver,accept,reclaim,done" invisible="move != 'out' or kind != 'test'"/>
+                    <field name="state" widget="statusbar" options="{'clickable': false}" statusbar_visible="company,allocate,deliver,done" invisible="move != 'in'"/>
+                    <field name="state" widget="statusbar" options="{'clickable': false}" statusbar_visible="company,reclaim,done" invisible="move != 'back'"/>
+                    <field name="state" widget="statusbar" options="{'clickable': false}" statusbar_visible="company,deliver,allocate,accept,done" invisible="move != 'cutover'"/>
                 </header>
                 <sheet>
                     <div class="o_zl_chain">
@@ -80,16 +95,25 @@
                     <div class="oe_title">
                         <h1><field name="name" readonly="1"/></h1>
                     </div>
-                    <div class="text-muted mb-2" invisible="kind != 'test'">测试单验收之后只有两条路：回收（地址回到未分配后完成），或转商务继续交付。</div>
-                    <div class="text-muted mb-2" invisible="kind != 'business'">商务单验收之后进入完成。</div>
-                    <div class="text-muted mb-2">客户 → 服务订单 → 合同（出账）→ 本工单（交付）。下面每一行是订单里的一项业务，只挂一种资源：网段、单个 IP 或线路。</div>
+                    <div class="alert alert-info py-2" invisible="state in ('done', 'cancel')">这一步：<field name="step_name" readonly="1" class="fw-bold"/></div>
+                    <div class="text-muted mb-2" invisible="move != 'out' or kind != 'test'">测试开通：验收之后只有回收或转商务。客户退租不要用这张单，另开「退：退回」。</div>
+                    <div class="text-muted mb-2" invisible="move != 'out' or kind != 'business'">出：开通给客户。销售录入，交付分配，售后验收。验收后完成。</div>
+                    <div class="text-muted mb-2" invisible="move != 'in'">进：供应商资源入库。登记来源，核对网段或线路，确认后进入库存，不挂客户。</div>
+                    <div class="text-muted mb-2" invisible="move != 'back'">退：客户退租回到库存，或整段退回供应商。确认之后地址、网段、线路才释放。</div>
+                    <div class="text-muted mb-2" invisible="move != 'cutover'">割接：先写方案和窗口，通知客户，再把原资源换成新资源，验证后完成。通知在本页生成，不用另开维护单。</div>
                     <field name="contract_id" invisible="1"/>
                     <group>
                         <group>
-                            <field name="kind" readonly="state != 'company'"/>
-                            <field name="partner_id" context="{'default_is_company': True, 'default_company_type': 'company', 'default_customer_rank': 1, 'form_view_ref': 'zenlenet_ops.view_partner_form_simple', 'list_view_ref': 'zenlenet_ops.view_partner_list'}"/>
-                            <label for="order_id"/>
-                            <div class="d-flex gap-2 align-items-center">
+                            <field name="move" readonly="state != 'company'"/>
+                            <field name="kind" readonly="state != 'company'" invisible="move != 'out'"/>
+                            <field name="partner_id" invisible="move == 'in'" context="{'default_is_company': True, 'default_company_type': 'company', 'default_customer_rank': 1, 'form_view_ref': 'zenlenet_ops.view_partner_form_simple', 'list_view_ref': 'zenlenet_ops.view_partner_list'}"/>
+                            <field name="supplier_id" invisible="move not in ('in', 'back')"/>
+                            <field name="return_to" invisible="move != 'back'"/>
+                            <field name="place" invisible="move != 'cutover'"/>
+                            <field name="window_start" invisible="move != 'cutover'"/>
+                            <field name="window_end" invisible="move != 'cutover'"/>
+                            <label for="order_id" invisible="move != 'out'"/>
+                            <div class="d-flex gap-2 align-items-center" invisible="move != 'out'">
                                 <field name="order_id" options="{'no_create': True}" context="{'list_view_ref': 'zenlenet_ops.view_order_list'}" class="flex-grow-1"/>
                                 <button name="action_load_order" type="object" string="从订单带入" class="btn btn-secondary btn-sm" invisible="not order_id or state not in ('company', 'allocate')"/>
                             </div>
@@ -128,20 +152,35 @@
                             </field>
                         </page>
                         <page string="资源">
-                            <div class="text-muted mb-2">先选服务订单，点「从订单带入」。IPT / IP 段填「网段」，单个 IP 填「IP」，专线 / SD-WAN 填「线路」。另外两列留空。</div>
+                            <div class="text-muted mb-2" invisible="move != 'out'">先选服务订单，点「从订单带入」。IPT / IP 段填「网段」，单个 IP 填「IP」，专线 / SD-WAN 填「线路」。</div>
+                            <div class="text-muted mb-2" invisible="move != 'in'">填要入库的网段、IP 或线路。确认入库后它们不挂客户，可以再卖。</div>
+                            <div class="text-muted mb-2" invisible="move != 'back'">填要退的资源。确认退回后才会从客户名下拿掉。</div>
+                            <div class="text-muted mb-2" invisible="move != 'cutover'">每一行写原资源，以及换成的新资源。点「更换资源」之后才对调。</div>
                             <field name="resource_ids">
                                 <list editable="bottom">
                                     <field name="service_type" string="业务"/>
+                                    <field name="flow_move" column_invisible="1"/>
                                     <field name="order_line_id" column_invisible="1"/>
                                     <field name="order_id" string="订单" optional="hide"/>
                                     <field name="spec" string="规格 / 说明"/>
-                                    <field name="prefix_id" string="网段" options="{'no_create': True}" domain="[('partner_id', '=', False), ('child_ids', '=', False), ('status', 'in', ('active', 'reserved'))]" invisible="service_type not in ('ipt', 'ip')"/>
-                                    <field name="address_id" string="IP" options="{'no_create': True}" domain="[('status', '=', 'free')]" invisible="service_type != 'ip_single'"/>
-                                    <field name="line_id" string="线路" options="{'no_create': True}" domain="[('partner_id', '=', False), ('status', 'in', ('planned', 'provisioning', 'active'))]" invisible="service_type not in ('pl', 'sdwan', 'line')"/>
+                                    <field name="from_prefix_id" string="原网段" options="{'no_create': True}" column_invisible="parent.move != 'cutover'" invisible="service_type not in ('ipt', 'ip')"/>
+                                    <field name="from_address_id" string="原 IP" options="{'no_create': True}" column_invisible="parent.move != 'cutover'" invisible="service_type != 'ip_single'"/>
+                                    <field name="from_line_id" string="原线路" options="{'no_create': True}" column_invisible="parent.move != 'cutover'" invisible="service_type not in ('pl', 'sdwan', 'line')"/>
+                                    <field name="prefix_id" string="网段" options="{'no_create': True}" invisible="service_type not in ('ipt', 'ip')"/>
+                                    <field name="address_id" string="IP" options="{'no_create': True}" invisible="service_type != 'ip_single'"/>
+                                    <field name="line_id" string="线路" options="{'no_create': True}" invisible="service_type not in ('pl', 'sdwan', 'line')"/>
                                     <field name="resource_ref" column_invisible="1"/>
                                 </list>
                             </field>
-                            <field name="resource_note" placeholder="整单说明，例如测试用途、期望割接窗口"/>
+                            <field name="resource_note" placeholder="整单说明"/>
+                        </page>
+                        <page string="割接通知" invisible="move != 'cutover'">
+                            <group>
+                                <field name="reason"/>
+                                <field name="impact"/>
+                                <field name="notice_subject"/>
+                                <field name="notice_body"/>
+                            </group>
                         </page>
                         <page string="交付任务">
                             <div class="d-flex align-items-center gap-3 mb-2">
@@ -191,6 +230,10 @@
                 <filter name="sales" string="销售" domain="[('team', '=', 'sales')]"/>
                 <filter name="delivery" string="交付" domain="[('team', '=', 'delivery')]"/>
                 <filter name="service" string="售后" domain="[('team', '=', 'service')]"/>
+                <filter name="move_out" string="出：开通" domain="[('move', '=', 'out')]"/>
+                <filter name="move_in" string="进：入库" domain="[('move', '=', 'in')]"/>
+                <filter name="move_back" string="退：退回" domain="[('move', '=', 'back')]"/>
+                <filter name="move_cutover" string="割接" domain="[('move', '=', 'cutover')]"/>
                 <filter name="test" string="测试" domain="[('kind', '=', 'test')]"/>
                 <filter name="business" string="商务" domain="[('kind', '=', 'business')]"/>
                 <filter name="open" string="未完成" domain="[('state', 'not in', ('done', 'cancel'))]"/>
@@ -206,7 +249,7 @@
             <list editable="bottom" create="0" decoration-success="resource_ref" decoration-warning="not resource_ref">
                 <header>
                     <button name="action_suggest" type="object" string="自动推荐" class="btn-secondary"/>
-                    <button name="action_finish_allocation" type="object" string="分配完成，转交付" class="btn-primary"/>
+                    <button name="action_finish_allocation" type="object" string="这一步完成，推进工单" class="btn-primary"/>
                 </header>
                 <field name="flow_id" readonly="1" string="交付工单"/>
                 <field name="partner_id" readonly="1" string="客户"/>
@@ -380,7 +423,7 @@
         </field>
     </record>
     <record id="action_flow" model="ir.actions.act_window">
-        <field name="name">交付工单</field>
+        <field name="name">资源工单</field>
         <field name="res_model">zenlenet.flow</field>
         <field name="view_mode">kanban,list,form</field>
         <field name="search_view_id" ref="view_flow_search"/>

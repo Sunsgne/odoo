@@ -1,6 +1,7 @@
 import logging
 
 from odoo import api, fields, models
+from odoo.exceptions import UserError
 
 from .records import DC_TYPES
 
@@ -197,6 +198,27 @@ class ZenlenetDatacenter(models.Model):
             'sellable_lines': sum(1 for row in lines if row['sellable']),
         }
 
+    def dc_open_ticket(self, move='in'):
+        """Open an inbound, return or cutover ticket for this site, on the same page."""
+        self.ensure_one()
+        if move not in ('in', 'back', 'cutover', 'out'):
+            raise UserError('工单类型不对。')
+        flow = self.env['zenlenet.flow'].create({
+            'move': move,
+            'kind': 'business',
+            'datacenter_id': self.id,
+            'place': self.name,
+            'supplier_id': self.supplier_id.id if move == 'in' else False,
+        })
+        return {
+            'type': 'ir.actions.act_window',
+            'name': flow.name,
+            'res_model': 'zenlenet.flow',
+            'res_id': flow.id,
+            'view_mode': 'form',
+            'target': 'new',
+        }
+
     def write(self, vals):
         result = super().write(vals)
         if not self.env.context.get('netbox_skip_push') and {'name', 'state', 'address', 'facility', 'note'} & set(vals):
@@ -305,7 +327,7 @@ class ZenlenetDatacenter(models.Model):
         for line in Line.search([('partner_id', '=', False), ('partner_name', '!=', False)]):
             partner_id = partners.get((line.partner_name or '').strip())
             if partner_id:
-                line.partner_id = partner_id
+                line.with_context(zenlenet_import=True).partner_id = partner_id
 
 
 class ZenlenetAddress(models.Model):
@@ -398,6 +420,15 @@ class ZenlenetLine(models.Model):
             vals['stopped'] = vals['status'] in ('decommissioned', 'deprovisioning', 'offline')
         elif 'stopped' in vals and 'status' not in vals and vals['stopped']:
             vals['status'] = 'decommissioned'
+        skipped = any(self.env.context.get(key) for key in ('zenlenet_flow_apply', 'netbox_skip_push', 'zenlenet_import'))
+        if not skipped and ({'partner_id', 'status'} & set(vals)):
+            for record in self:
+                new_partner = vals.get('partner_id', record.partner_id.id) or False
+                if 'partner_id' in vals and new_partner != (record.partner_id.id or False):
+                    raise UserError('线路交给客户或收回，要走资源工单。')
+                new_status = vals.get('status', record.status)
+                if 'status' in vals and record.status == 'active' and new_status in ('deprovisioning', 'decommissioned', 'offline'):
+                    raise UserError('线路拆除或退回要走资源工单。')
         return super().write(vals)
 
     def action_open_netbox(self):

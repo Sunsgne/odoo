@@ -54,7 +54,7 @@
                         </div>
                         <div class="o_zl_group">
                             <div class="o_zl_group_title"><i class="fa fa-cogs" title="工单"/> 工单</div>
-                            <button type="action" name="%(zenlenet_ops.action_flow)d" class="o_zl_tile"><i class="fa fa-random" title="开通交付"/><span><b>交付工单</b><small>销售录入 → 交付分配资源 → 售后验收</small></span></button>
+                            <button type="action" name="%(zenlenet_ops.action_flow)d" class="o_zl_tile"><i class="fa fa-random" title="资源工单"/><span><b>资源工单</b><small>出开通、进入库、退回、割接，都在这一张单上走完</small></span></button>
                             <button type="action" name="%(zenlenet_ops.action_tickets)d" class="o_zl_tile"><i class="fa fa-life-ring" title="工单"/><span><b>服务工单</b><small>故障、变更、咨询、投诉，按 SLA 倒计时</small></span></button>
                             <button type="action" name="%(zenlenet_ops.action_maintenance)d" class="o_zl_tile"><i class="fa fa-wrench" title="割接与维护"/><span><b>维护通告</b><small>方案评审、通知客户、执行、验证</small></span></button>
                         </div>

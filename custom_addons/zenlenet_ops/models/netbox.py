@@ -320,9 +320,9 @@ class ZenlenetNetbox(models.AbstractModel):
                 values['bandwidth'] = f'{int(rate / 1000)}M' if rate >= 1000 else f'{rate}K'
             record = existing.get(item['cid'])
             if record:
-                record.write(values)
+                record.with_context(netbox_skip_push=True).write(values)
             else:
-                existing[item['cid']] = Line.create(values)
+                existing[item['cid']] = Line.with_context(netbox_skip_push=True).create(values)
             count += 1
         return count
 

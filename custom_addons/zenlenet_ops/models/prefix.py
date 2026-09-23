@@ -226,22 +226,48 @@ class ZenlenetPrefix(models.Model):
             record.utilization = round(record.allocated_count * 100.0 / base, 1) if base else 0.0
 
     def write(self, vals):
+        if (
+            'partner_id' in vals
+            and not any(self.env.context.get(key) for key in ('zenlenet_flow_apply', 'netbox_skip_push', 'zenlenet_import'))
+        ):
+            for record in self:
+                if (vals.get('partner_id') or False) != (record.partner_id.id or False):
+                    raise UserError(f'{record.prefix} 整段分给客户或收回，要走资源工单。')
         if not self.env.context.get('netbox_skip_push') and {'partner_id', 'status', 'description'} & set(vals):
             vals = dict(vals, netbox_pending=True)
         return super().write(vals)
 
+    def _open_move(self, move):
+        self.ensure_one()
+        flow = self.env['zenlenet.flow'].create({
+            'move': move,
+            'kind': 'business',
+            'partner_id': self.partner_id.id if move in ('out', 'back', 'cutover') else False,
+            'datacenter_id': self.datacenter_id.id,
+            'return_to': 'stock',
+        })
+        values = {'flow_id': flow.id, 'service_type': 'ip', 'spec': self.prefix}
+        if move == 'cutover':
+            values['from_prefix_id'] = self.id
+        else:
+            values['prefix_id'] = self.id
+        self.env['zenlenet.flow.resource'].create(values)
+        return {
+            'type': 'ir.actions.act_window',
+            'name': flow.name,
+            'res_model': 'zenlenet.flow',
+            'res_id': flow.id,
+            'view_mode': 'form',
+            'target': 'new',
+        }
+
     def action_allocate(self):
-        """Mark the whole block and every address in it as allocated to the block's customer."""
-        for record in self:
-            if not record.partner_id:
-                raise UserError('请先选择客户，再整段分配。')
-            record.address_ids.write({'status': 'allocated', 'partner_id': record.partner_id.id})
-            record.status = 'active'
+        self.ensure_one()
+        return self._open_move('out')
 
     def action_release(self):
-        for record in self:
-            record.address_ids.write({'status': 'free', 'partner_id': False})
-            record.write({'partner_id': False, 'status': 'active'})
+        self.ensure_one()
+        return self._open_move('back')
 
     def action_open_addresses(self):
         self.ensure_one()

@@ -66,13 +66,38 @@ class ZenlenetAddress(models.Model):
         if missing:
             raise UserError(f'{missing[0].address} 标成了预分配，但没有写留给哪家客户。')
 
+    def _movement_guard_skipped(self):
+        return any(self.env.context.get(key) for key in ('zenlenet_flow_apply', 'netbox_skip_push', 'zenlenet_import'))
+
+    def _reject_direct_movement(self, vals, creating=False):
+        """分配、测试、出库、调库只能由资源工单写入。预分配和自用仍可直接改。"""
+        if self._movement_guard_skipped():
+            return
+        gated = {'allocated', 'testing', 'returning', 'transferring'}
+        if creating:
+            for vals in vals if isinstance(vals, list) else [vals]:
+                if vals.get('status') in gated:
+                    raise UserError('新地址要标成已分配、测试、出库或调库，请先开资源工单。预分配和自用可以直接写。')
+            return
+        for record in self:
+            new_status = vals.get('status', record.status)
+            status_changed = 'status' in vals and vals['status'] != record.status
+            partner_changed = 'partner_id' in vals and (vals.get('partner_id') or False) != (record.partner_id.id or False)
+            if status_changed and (new_status in gated or record.status in gated):
+                raise UserError(f'{record.address} 的进出退要走资源工单。预分配和自用可以直接改。')
+            if partner_changed and (record.status in gated or new_status in gated):
+                raise UserError(f'{record.address} 已经在用，换客户或收回要走资源工单。')
+
     @api.model_create_multi
     def create(self, vals_list):
+        self._reject_direct_movement(vals_list, creating=True)
         records = super().create(vals_list)
         records._reject_anonymous_reservation()
         return records
 
     def write(self, vals):
+        if {'status', 'partner_id'} & set(vals):
+            self._reject_direct_movement(vals)
         result = super().write(vals)
         if {'status', 'partner_id'} & set(vals):
             self._reject_anonymous_reservation()

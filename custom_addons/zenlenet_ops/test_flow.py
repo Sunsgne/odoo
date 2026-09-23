@@ -2,7 +2,7 @@ import unittest
 
 from flow import (
     can_convert, can_reclaim, next_state, normalize_assignment, prev_state,
-    resource_reference, resource_slot, team_for, transition_allowed,
+    resource_reference, resource_slot, step_label, team_for, team_for_move, transition_allowed,
 )
 
 
@@ -78,6 +78,29 @@ class FlowTests(unittest.TestCase):
         for state in ('accept', 'decide', 'reclaim', 'done'):
             self.assertEqual(team_for(state), 'service')
         self.assertIsNone(team_for('cancel'))
+
+    def test_inbound_return_and_cutover_have_their_own_path(self):
+        self.assertEqual(
+            [next_state('business', state, 'in') for state in ('company', 'allocate', 'deliver', 'done')],
+            ['allocate', 'deliver', 'done', None],
+        )
+        self.assertEqual(next_state('business', 'company', 'back'), 'reclaim')
+        self.assertEqual(next_state('business', 'reclaim', 'back'), 'done')
+        self.assertEqual(
+            [next_state('business', state, 'cutover') for state in ('company', 'deliver', 'allocate', 'accept')],
+            ['deliver', 'allocate', 'accept', 'done'],
+        )
+        self.assertFalse(transition_allowed('business', 'company', 'business', 'done', 'back'))
+        self.assertFalse(transition_allowed('business', 'company', 'business', 'allocate', 'cutover'))
+        self.assertTrue(transition_allowed('business', 'deliver', 'business', 'allocate', 'cutover'))
+        self.assertTrue(transition_allowed('business', 'company', 'business', 'company', 'out', 'cutover'))
+        self.assertFalse(transition_allowed('business', 'allocate', 'business', 'allocate', 'out', 'in'))
+        self.assertFalse(can_reclaim('business', 'accept', 'back'))
+        self.assertEqual(step_label('in', 'allocate'), '核对资源')
+        self.assertEqual(step_label('cutover', 'deliver'), '通知客户')
+        self.assertEqual(team_for_move('in', 'company'), 'delivery')
+        self.assertEqual(team_for_move('back', 'reclaim'), 'delivery')
+        self.assertEqual(team_for_move('cutover', 'deliver'), 'service')
 
 
 if __name__ == '__main__':

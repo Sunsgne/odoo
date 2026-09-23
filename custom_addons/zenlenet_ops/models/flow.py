@@ -12,8 +12,9 @@ from odoo.addons.zenlenet_ops.flow import (
     prev_state,
     resource_reference,
     resource_slot,
-    state_label,
+    step_label,
     team_for,
+    team_for_move,
     transition_allowed,
 )
 
@@ -57,6 +58,27 @@ class ZenlenetFlow(models.Model):
         ('test', '测试'),
         ('business', '商务'),
     ], string='类型', required=True, default='business', tracking=True)
+    move = fields.Selection([
+        ('out', '出：开通'),
+        ('in', '进：入库'),
+        ('back', '退：退回'),
+        ('cutover', '割接'),
+    ], string='流转', required=True, default='out', tracking=True)
+    supplier_id = fields.Many2one(
+        'res.partner', string='供应商', domain=[('supplier_rank', '>', 0)], tracking=True,
+    )
+    return_to = fields.Selection([
+        ('stock', '退回库存，还能再卖'),
+        ('supplier', '退回供应商'),
+    ], string='退到哪里', default='stock', tracking=True)
+    place = fields.Char(string='割接地点', tracking=True)
+    reason = fields.Char(string='事由')
+    impact = fields.Text(string='影响范围')
+    window_start = fields.Datetime(string='开始（北京时间）')
+    window_end = fields.Datetime(string='结束（北京时间）')
+    notice_subject = fields.Char(string='通知主题')
+    notice_body = fields.Text(string='通知正文')
+    step_name = fields.Char(string='这一步', compute='_compute_step_name')
     state = fields.Selection(
         STATES, string='阶段', default='company', required=True, tracking=True, copy=False,
         group_expand='_group_expand_states',
@@ -118,10 +140,22 @@ class ZenlenetFlow(models.Model):
             values['state'] = 'company'
         return values
 
-    @api.depends('state')
+    def init(self):
+        self.env.cr.execute(
+            "SELECT 1 FROM information_schema.columns WHERE table_name = 'zenlenet_flow' AND column_name = 'move'"
+        )
+        if self.env.cr.fetchone():
+            self.env.cr.execute("UPDATE zenlenet_flow SET move = 'out' WHERE move IS NULL")
+
+    @api.depends('state', 'move')
+    def _compute_step_name(self):
+        for record in self:
+            record.step_name = step_label(record.move, record.state)
+
+    @api.depends('state', 'move')
     def _compute_team(self):
         for record in self:
-            record.team = team_for(record.state) or False
+            record.team = team_for_move(record.move, record.state) or False
 
     @api.depends('resource_ids.resource_ref', 'resource_ids.spec', 'resource_ids.service_type')
     def _compute_pending(self):
@@ -232,7 +266,7 @@ class ZenlenetFlow(models.Model):
             vals['state'] = 'company'
         records = super().create(vals_list)
         records._sync_assignee()
-        records._ensure_default_tasks()
+        records.filtered(lambda record: (record.move or 'out') == 'out')._ensure_default_tasks()
         return records
 
     def _ensure_default_tasks(self, service_types=None):
@@ -266,22 +300,23 @@ class ZenlenetFlow(models.Model):
                 have.add((stage, name))
 
     def write(self, vals):
-        if 'state' in vals or 'kind' in vals:
+        if {'state', 'kind', 'move'} & set(vals):
             for record in self:
                 new_state = vals.get('state', record.state)
                 new_kind = vals.get('kind', record.kind)
-                if not transition_allowed(record.kind, record.state, new_kind, new_state):
+                new_move = vals.get('move', record.move)
+                if not transition_allowed(record.kind, record.state, new_kind, new_state, record.move, new_move):
                     raise UserError('请按顺序推进，不能跳步。')
         result = super().write(vals)
-        if {'state', 'sales_user_id', 'delivery_user_id', 'service_user_id'} & set(vals):
+        if {'state', 'move', 'sales_user_id', 'delivery_user_id', 'service_user_id'} & set(vals):
             self._sync_assignee()
-        if {'state', 'kind', 'address_ids', 'partner_id', 'resource_ids'} & set(vals):
+        if {'state', 'kind', 'move', 'address_ids', 'partner_id', 'resource_ids', 'return_to'} & set(vals):
             self._apply_resources()
         return result
 
     def _person_for(self, state):
         self.ensure_one()
-        team = team_for(state)
+        team = team_for_move(self.move, state)
         return {
             'sales': self.sales_user_id,
             'delivery': self.delivery_user_id,
@@ -336,7 +371,7 @@ class ZenlenetFlow(models.Model):
     }
 
     def _ensure_role(self, state):
-        team = team_for(state)
+        team = team_for_move(self.move, state)
         role = self.ROLE_BY_TEAM.get(team)
         if not role:
             return
@@ -345,13 +380,53 @@ class ZenlenetFlow(models.Model):
             return
         if state == 'allocate' and user.has_group('zenlenet_ops.group_allocator'):
             return
+        if (self.move or 'out') == 'in' and user.has_group('zenlenet_ops.group_procurement'):
+            return
         if user.has_group('zenlenet_ops.group_pm') and (self.pm_user_id == user or not self.pm_user_id):
             return
-        raise UserError(f'这一步（{state_label(state)}）由{role[1]}岗位操作，你的岗位没有权限。')
+        raise UserError(f'这一步（{step_label(self.move, state)}）由{role[1]}岗位操作，你的岗位没有权限。')
 
     def _check_exit(self):
         self.ensure_one()
         self._ensure_role(self.state)
+        move = self.move or 'out'
+        if move == 'in':
+            if self.state == 'company' and not self.supplier_id:
+                raise UserError('入库要先写供应商。')
+            if self.state == 'company' and not self.datacenter_id:
+                raise UserError('入库要先写进哪个数据中心。')
+            if self.state == 'allocate' and not self._has_allocation():
+                raise UserError('请先写上要入库的网段、IP 或线路。')
+            if self.state == 'allocate':
+                busy = self.resource_ids.mapped('prefix_id').filtered('partner_id')
+                busy_ip = self.resource_ids.mapped('address_id').filtered(
+                    lambda address: address.status in ('allocated', 'testing', 'reserved', 'returning', 'transferring')
+                )
+                busy_line = self.resource_ids.mapped('line_id').filtered('partner_id')
+                taken = (busy[:1].mapped('prefix') or busy_ip[:1].mapped('address') or busy_line[:1].mapped('name'))
+                if taken:
+                    raise UserError(f'{taken[0]} 已经分给客户或预留了，不能再入库。入库只收还没分出去的资源。')
+            return
+        if move == 'back':
+            if self.state == 'company' and not self._has_allocation():
+                raise UserError('请先写上要退的网段、IP 或线路。')
+            if self.state == 'company' and self.return_to == 'supplier' and not self.supplier_id:
+                raise UserError('退回供应商要先选供应商。')
+            if self.state == 'company' and self.return_to != 'supplier' and not self.partner_id:
+                raise UserError('退回库存要先写是哪家客户退的。')
+            return
+        if move == 'cutover':
+            if self.state == 'company' and not self.partner_id:
+                raise UserError('割接要先写客户。')
+            if self.state == 'company' and not (self.place or self.datacenter_id):
+                raise UserError('割接要先写地点或数据中心。')
+            if self.state == 'company' and not self.window_start:
+                raise UserError('割接要先写开始时间。')
+            if self.state == 'allocate':
+                missing = self.resource_ids.filtered(lambda item: item.needs_resource and not item._cutover_ready())
+                if missing:
+                    raise UserError('割接每一行都要写原资源，以及换成的另一条资源，不能是同一条。')
+            return
         if self.state == 'company':
             if not self.partner_id:
                 raise UserError('请先录入客户，再进入下一步。')
@@ -372,17 +447,63 @@ class ZenlenetFlow(models.Model):
             raise UserError(f'还有任务没完成：{names}。勾掉之后再推进。')
 
     def _apply_resources(self):
-        for record in self:
+        for record in self.with_context(zenlenet_flow_apply=True):
+            move = record.move or 'out'
             addresses = record._linked_addresses()
             blocks = record.resource_ids.mapped('prefix_id')
-            if not addresses and not blocks:
-                continue
+            lines = record.resource_ids.mapped('line_id')
             partner = record.partner_id.id or False
+            if move == 'in':
+                if record.state in ('deliver', 'done'):
+                    held = ('allocated', 'testing', 'reserved', 'returning', 'transferring')
+                    clear_blocks = blocks.filtered(
+                        lambda item: not item.partner_id and not item.address_ids.filtered(lambda address: address.status in held)
+                    )
+                    clear_addresses = addresses.filtered(lambda address: address.status not in held)
+                    clear_lines = lines.filtered(lambda item: not item.partner_id)
+                    if clear_blocks:
+                        clear_blocks.write({'status': 'active'})
+                    if clear_addresses:
+                        clear_addresses.write({'status': 'free', 'partner_id': False})
+                    if clear_lines:
+                        clear_lines.write({'status': 'active'})
+                continue
+            if move == 'back':
+                if record.state == 'reclaim':
+                    if blocks:
+                        blocks.write({'partner_id': False})
+                    if addresses:
+                        addresses.write({'status': 'returning', 'partner_id': False})
+                    if lines:
+                        lines.write({'partner_id': False, 'status': 'deprovisioning'})
+                elif record.state == 'done':
+                    supplier = record.return_to == 'supplier'
+                    if blocks:
+                        blocks.write({'partner_id': False, 'status': 'deprecated' if supplier else 'active'})
+                    if addresses:
+                        payload = {'status': 'returning' if supplier else 'free', 'partner_id': False}
+                        if supplier:
+                            payload['usage'] = '已退供应商'
+                        addresses.write(payload)
+                    if lines:
+                        lines.write({'partner_id': False, 'status': 'decommissioned' if supplier else 'active'})
+                    if supplier:
+                        record._log_supplier_return()
+                continue
+            if move == 'cutover':
+                if record.state in ('allocate', 'accept', 'done'):
+                    record._apply_cutover(partner)
+                continue
             if blocks:
                 if record.kind == 'test' and record.state in ('reclaim', 'done'):
                     blocks.write({'partner_id': False})
                 elif record.state in ('allocate', 'deliver', 'accept', 'decide', 'done'):
                     blocks.write({'partner_id': partner})
+            if lines:
+                if record.kind == 'test' and record.state in ('reclaim', 'done'):
+                    lines.write({'partner_id': False, 'status': 'active'})
+                elif record.state in ('allocate', 'deliver', 'accept', 'decide', 'done'):
+                    lines.write({'partner_id': partner, 'status': 'active'})
             if not addresses:
                 continue
             if record.kind == 'test' and record.state == 'reclaim':
@@ -394,6 +515,39 @@ class ZenlenetFlow(models.Model):
             elif record.kind == 'business' and record.state in ('allocate', 'deliver', 'accept', 'done'):
                 addresses.write({'status': 'allocated', 'partner_id': partner})
 
+    def _apply_cutover(self, partner):
+        self.ensure_one()
+        for item in self.resource_ids:
+            if item.prefix_id:
+                item.prefix_id.write({'partner_id': partner, 'status': 'active'})
+            if item.address_id:
+                item.address_id.write({'partner_id': partner, 'status': 'allocated'})
+            if item.line_id:
+                item.line_id.write({'partner_id': partner, 'status': 'active'})
+            if item.from_prefix_id and item.from_prefix_id != item.prefix_id:
+                item.from_prefix_id.write({'partner_id': False, 'status': 'active'})
+            if item.from_address_id and item.from_address_id != item.address_id:
+                item.from_address_id.write({'partner_id': False, 'status': 'free'})
+            if item.from_line_id and item.from_line_id != item.line_id:
+                item.from_line_id.write({'partner_id': False, 'status': 'active'})
+
+    def _log_supplier_return(self):
+        self.ensure_one()
+        Return = self.env['zenlenet.supplier.return']
+        today = fields.Date.to_string(fields.Date.context_today(self))
+        note = f'工单 {self.name}'
+        for item in self.resource_ids:
+            label = item.prefix_id.prefix or item.address_id.address or item.line_id.name or item.spec
+            if not label or Return.search_count([('resource', '=', label), ('note', '=', note)]):
+                continue
+            Return.create({
+                'supplier_id': self.supplier_id.id,
+                'supplier': self.supplier_id.name or '',
+                'resource': label,
+                'when_text': today,
+                'note': note,
+            })
+
     def _post(self, text):
         for record in self:
             who = record.user_id.name or ''
@@ -401,39 +555,60 @@ class ZenlenetFlow(models.Model):
 
     def action_next(self):
         for record in self:
-            nxt = next_state(record.kind, record.state)
+            nxt = next_state(record.kind, record.state, record.move)
             if not nxt:
-                if record.kind == 'test' and record.state == 'decide':
+                if (record.move or 'out') == 'out' and record.kind == 'test' and record.state == 'decide':
                     raise UserError('测试单请选择回收或转商务。')
                 continue
             record._check_exit()
             record.state = nxt
-            record._post(f'进入{state_label(nxt)}')
+            if record.move == 'cutover' and nxt == 'deliver' and not record.notice_body:
+                record._fill_cutover_notice()
+            record._post(f'进入{step_label(record.move, nxt)}')
             if nxt == 'done':
                 record.actual_date = fields.Date.context_today(self)
-            if nxt == 'done' and record.kind == 'business' and record.order_id:
+            if nxt == 'done' and (record.move or 'out') == 'out' and record.kind == 'business' and record.order_id:
                 record.order_id.action_mark_active()
+
+    def _fill_cutover_notice(self):
+        self.ensure_one()
+        notice = self.env['zenlenet.maintenance'].new({
+            'kind': 'cutover',
+            'place': self.place or self.datacenter_id.name or '',
+            'impact': self.impact or '',
+            'reason': self.reason or '',
+            'window_start': self.window_start,
+            'window_end': self.window_end,
+        })
+        subject, body = notice._render_notice()
+        self.write({'notice_subject': subject, 'notice_body': body})
+
+    def action_fill_notice(self):
+        for record in self:
+            if record.move != 'cutover':
+                raise UserError('只有割接工单生成割接通知。')
+            record._fill_cutover_notice()
 
     def action_prev(self):
         for record in self:
-            previous = prev_state(record.kind, record.state)
+            previous = prev_state(record.kind, record.state, record.move)
             if not previous or record.state in ('done', 'cancel'):
                 continue
             record.state = previous
-            record._post(f'退回{state_label(record.state)}')
+            record._post(f'退回{step_label(record.move, record.state)}')
 
     def action_reclaim(self):
         for record in self:
             record._ensure_role('accept')
-            if not can_reclaim(record.kind, record.state):
-                raise UserError('只有测试单可以回收。')
+            if not can_reclaim(record.kind, record.state, record.move):
+                raise UserError('只有测试单可以回收。客户退租请另开「退：退回」工单。')
             record.state = 'reclaim'
             record._post('进入回收')
 
     def action_to_business(self):
         for record in self:
             record._ensure_role('accept')
-            if not can_convert(record.kind, record.state):
+            if not can_convert(record.kind, record.state, record.move):
                 raise UserError('只有测试单在验收、测试结论或回收时可以转商务。')
             record.write({'kind': 'business', 'state': 'deliver'})
             record._post('转商务，进入交付')
@@ -581,10 +756,25 @@ class ZenlenetFlowResource(models.Model):
     prefix_id = fields.Many2one('zenlenet.prefix', string='网段', index=True)
     address_id = fields.Many2one('zenlenet.address', string='IP', index=True)
     line_id = fields.Many2one('zenlenet.line', string='线路', index=True)
+    from_prefix_id = fields.Many2one('zenlenet.prefix', string='原网段', index=True)
+    from_address_id = fields.Many2one('zenlenet.address', string='原 IP', index=True)
+    from_line_id = fields.Many2one('zenlenet.line', string='原线路', index=True)
+    flow_move = fields.Selection(related='flow_id.move', string='流转')
     spec = fields.Char(string='规格 / 说明')
 
     def _delete_snapshot(self):
         return {'assigned': bool(self.resource_ref), 'flow_state': self.flow_id.state}
+
+    def _cutover_ready(self):
+        self.ensure_one()
+        slot = resource_slot(self.service_type)
+        pairs = {
+            'prefix': (self.prefix_id, self.from_prefix_id),
+            'address': (self.address_id, self.from_address_id),
+            'line': (self.line_id, self.from_line_id),
+        }
+        new, old = pairs.get(slot, (False, False))
+        return bool(new and old and new != old)
 
     @api.depends('service_type')
     def _compute_needs_resource(self):
@@ -669,31 +859,49 @@ class ZenlenetFlowResource(models.Model):
         return vals
 
     def _check_single_holder(self):
-        """One network resource belongs to one open delivery ticket."""
+        """One network resource belongs to one open ticket. Finished tickets do not block a return or cutover."""
+        slots = (
+            ('prefix_id', 'from_prefix_id', '网段'),
+            ('address_id', 'from_address_id', 'IP'),
+            ('line_id', 'from_line_id', '线路'),
+        )
         for record in self:
-            for field, label in (('prefix_id', '网段'), ('address_id', 'IP'), ('line_id', '线路')):
-                target = record[field]
-                if not target:
-                    continue
-                clash = self.search([
-                    (field, '=', target.id), ('id', '!=', record.id), ('flow_state', 'not in', ('cancel',)),
-                ], limit=1)
-                if clash:
-                    raise UserError(f'{target.display_name} 已经挂在交付工单 {clash.flow_id.name}（{clash.partner_id.name or "未填客户"}）。一个{label}只属于一张工单。')
+            for field, other, label in slots:
+                for target in (record[field], record[other]):
+                    if not target:
+                        continue
+                    clash = self.search([
+                        ('id', '!=', record.id),
+                        ('flow_state', 'not in', ('done', 'cancel')),
+                        '|', (field, '=', target.id), (other, '=', target.id),
+                    ], limit=1)
+                    if clash:
+                        raise UserError(f'{target.display_name} 已经挂在工单 {clash.flow_id.name}。一个{label}同时只走一张未完成的工单。')
+            if (record.flow_id.move or 'out') != 'out':
+                continue
+            for target in (record.prefix_id, record.address_id, record.line_id):
+                partner = target.partner_id if target else False
+                if partner and partner != record.flow_id.partner_id:
+                    raise UserError(f'{target.display_name} 还在 {partner.name} 名下。换客户要先走退回或割接。')
 
     def _release_dropped(self, before):
-        """Clear the customer on a resource that this row no longer holds and nobody else does."""
-        for record_id, (old_prefix, old_address, old_line) in before.items():
+        """Clear a customer only when an 开通 ticket drops the resource. 退 and 割接 release on their own steps."""
+        for record_id, (old_prefix, old_address, old_line, move) in before.items():
+            if (move or 'out') != 'out':
+                continue
             current = self.browse(record_id).exists()
-            if old_prefix and old_prefix != (current.prefix_id if current else old_prefix.browse()) and not self.search_count([('prefix_id', '=', old_prefix.id)]):
-                old_prefix.partner_id = False
-            if old_address and old_address != (current.address_id if current else old_address.browse()) and not self.search_count([('address_id', '=', old_address.id)]):
-                old_address.write({'partner_id': False, 'status': 'free'})
-            if old_line and old_line != (current.line_id if current else old_line.browse()) and not self.search_count([('line_id', '=', old_line.id)]):
-                old_line.partner_id = False
+            if old_prefix and old_prefix != (current.prefix_id if current else old_prefix.browse()) and not self.search_count([('prefix_id', '=', old_prefix.id), ('flow_state', 'not in', ('cancel',))]):
+                old_prefix.with_context(zenlenet_flow_apply=True).write({'partner_id': False})
+            if old_address and old_address != (current.address_id if current else old_address.browse()) and not self.search_count([('address_id', '=', old_address.id), ('flow_state', 'not in', ('cancel',))]):
+                old_address.with_context(zenlenet_flow_apply=True).write({'partner_id': False, 'status': 'free'})
+            if old_line and old_line != (current.line_id if current else old_line.browse()) and not self.search_count([('line_id', '=', old_line.id), ('flow_state', 'not in', ('cancel',))]):
+                old_line.with_context(zenlenet_flow_apply=True).write({'partner_id': False})
 
     def unlink(self):
-        before = {record.id: (record.prefix_id, record.address_id, record.line_id) for record in self}
+        before = {
+            record.id: (record.prefix_id, record.address_id, record.line_id, record.flow_id.move or 'out')
+            for record in self
+        }
         flows = self.flow_id
         result = super().unlink()
         self._release_dropped(before)
@@ -712,7 +920,10 @@ class ZenlenetFlowResource(models.Model):
         keys = {'prefix_id', 'address_id', 'line_id', 'resource_ref', 'service_type'}
         before = {}
         if keys & set(vals):
-            before = {record.id: (record.prefix_id, record.address_id, record.line_id) for record in self}
+            before = {
+                record.id: (record.prefix_id, record.address_id, record.line_id, record.flow_id.move or 'out')
+                for record in self
+            }
             if len(self) == 1:
                 vals = self._assignment_vals(vals, self)
             else:

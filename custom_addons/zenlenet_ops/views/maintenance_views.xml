@@ -46,6 +46,7 @@
                     <div class="oe_title">
                         <h1><field name="name" readonly="1"/></h1>
                     </div>
+                    <div class="text-muted mb-2">这里只写通知。资源要换、要退、要入库，去「资源工单」选割接、退回或入库，通知会在那张工单上生成。</div>
                     <group>
                         <group>
                             <field name="kind"/>

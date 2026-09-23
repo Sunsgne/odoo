@@ -39,6 +39,9 @@
                         <div class="zl-dc-summary">可售地址段 <b t-out="state.detail.sellable_prefixes"/> · 可售线路 <b t-out="state.detail.sellable_lines"/></div>
                     </div>
                     <div class="zl-dc-actions" t-if="state.detail.can_write">
+                        <button class="btn btn-primary btn-sm" t-on-click="() => this.openTicket('in')">资源进库</button>
+                        <button class="btn btn-secondary btn-sm" t-on-click="() => this.openTicket('back')">退回</button>
+                        <button class="btn btn-secondary btn-sm" t-on-click="() => this.openTicket('cutover')">割接</button>
                         <button class="btn btn-secondary btn-sm" t-on-click="() => this.editSite(state.detail.id)"><i class="fa fa-pencil"/> 改机房资料</button>
                         <button t-if="state.detail.netbox_url" class="btn btn-link btn-sm" t-on-click="openNetbox">NetBox</button>
                     </div>
