@@ -6,13 +6,14 @@
         <field name="arch" type="xml">
             <list>
                 <header>
-                    <button name="action_export_prefixes" type="object" string="导出IP段" display="always"/>
-                    <button name="action_merge" type="object" string="IP合并" display="always"/>
-                    <button name="action_add_ipset" type="object" string="添加IP集" display="always"/>
-                    <button name="action_add_prefix" type="object" string="添加IP段" class="btn-primary" display="always"/>
+                    <button name="action_export_prefixes" type="object" string="导出地址段" display="always"/>
+                    <button name="action_merge" type="object" string="合并为地址集" display="always"/>
+                    <button name="action_add_ipset" type="object" string="新增地址集" display="always"/>
+                    <button name="action_add_prefix" type="object" string="新增地址段" class="btn-primary" display="always"/>
                 </header>
-                <field name="address"/>
-                <field name="block" optional="show"/>
+                <field name="address" class="font-monospace"/>
+                <field name="prefix_id" string="地址段" optional="show"/>
+                <field name="block" optional="hide"/>
                 <field name="datacenter_id"/>
                 <field name="pop" optional="hide"/>
                 <field name="partner_id"/>
@@ -31,11 +32,16 @@
         <field name="model">zenlenet.address</field>
         <field name="arch" type="xml">
             <form>
+                <header>
+                    <button name="action_open_netbox" type="object" string="在 NetBox 中查看" icon="fa-external-link" invisible="not netbox_id"/>
+                    <field name="status" widget="statusbar" options="{'clickable': true}" statusbar_visible="free,reserved,allocated,returning"/>
+                </header>
                 <sheet>
                     <group>
                         <group>
-                            <field name="address"/>
-                            <field name="block"/>
+                            <field name="address" class="font-monospace"/>
+                            <field name="prefix_id"/>
+                            <field name="block" invisible="1"/>
                             <field name="datacenter_id"/>
                             <field name="pop"/>
                             <field name="partner_id"/>
@@ -50,7 +56,11 @@
                             <field name="expires_on"/>
                         </group>
                     </group>
-                    <field name="remark"/>
+                    <field name="remark" placeholder="备注"/>
+                    <group string="NetBox" invisible="not netbox_id">
+                        <field name="netbox_id"/>
+                        <field name="netbox_synced"/>
+                    </group>
                 </sheet>
             </form>
         </field>
@@ -91,7 +101,7 @@
                     <filter name="group_dc" string="数据中心类型" context="{'group_by': 'dc_type'}"/>
                 </group>
                 <searchpanel>
-                    <field name="datacenter_id" string="数据中心" enable_counters="1" icon="fa-building"/>
+                    <field name="datacenter_id" string="数据中心" enable_counters="1" icon="fa-building" limit="60"/>
                     <field name="dc_type" string="数据中心类型" enable_counters="1" expand="1" icon="fa-tag"/>
                     <field name="status" string="分配状态" enable_counters="1" expand="1" icon="fa-tags"/>
                     <field name="net_attr" string="网络属性" enable_counters="1" expand="1" icon="fa-globe"/>
@@ -100,27 +110,27 @@
         </field>
     </record>
     <record id="action_addresses" model="ir.actions.act_window">
-        <field name="name">IP资源</field>
+        <field name="name">IP 地址</field>
         <field name="res_model">zenlenet.address</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_address_search"/>
-    </record>
+            </record>
     <record id="action_blocks" model="ir.actions.act_window">
-        <field name="name">IP段</field>
+        <field name="name">按地址段查看</field>
         <field name="res_model">zenlenet.address</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_address_search"/>
         <field name="context">{'search_default_group_block': 1}</field>
     </record>
     <record id="action_stock" model="ir.actions.act_window">
-        <field name="name">库存管理</field>
+        <field name="name">可用地址</field>
         <field name="res_model">zenlenet.address</field>
         <field name="view_mode">list,form</field>
         <field name="domain">[('status', '=', 'free')]</field>
         <field name="search_view_id" ref="view_address_search"/>
     </record>
     <record id="action_prefix_export" model="ir.actions.act_url">
-        <field name="name">导出IP段</field>
+        <field name="name">导出地址段</field>
         <field name="url">/zenlenet/prefixes.csv</field>
         <field name="target">new</field>
     </record>

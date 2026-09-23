@@ -81,6 +81,12 @@ class ZenlenetLoader(models.AbstractModel):
                 with open(icon, 'rb') as handle:
                     values['logo'] = base64.b64encode(handle.read())
         company.write(values)
+        currencies = self.env['res.currency'].sudo().with_context(active_test=False).search([('name', 'in', ('USD', 'SGD', 'CNY', 'HKD'))])
+        currencies.filtered(lambda currency: not currency.active).write({'active': True})
+        icp = self.env['ir.config_parameter'].sudo()
+        for key, value in (('zenlenet.netbox_api_url', 'https://172.18.0.1'), ('zenlenet.netbox_host', 'netbox.zenlenet.com')):
+            if not icp.get_param(key):
+                icp.set_param(key, value)
         lang = self.env['res.lang'].with_context(active_test=False).search([('code', '=', 'zh_CN')], limit=1)
         if lang and not lang.active:
             lang.active = True

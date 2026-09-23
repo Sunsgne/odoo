@@ -1,6 +1,6 @@
 {
     'name': 'ZENLENET 运营',
-    'version': '19.0.2.2.0',
+    'version': '19.0.3.0.0',
     'category': 'Sales',
     'summary': '数据中心、线路、IP；客户、报价、合同、出账；业务流转与工单',
     'author': 'ZENLENET PTE. LTD.',
@@ -20,6 +20,7 @@
         'views/invoice_views.xml',
         'views/contract_views.xml',
         'views/datacenter_views.xml',
+        'views/prefix_views.xml',
         'views/address_views.xml',
         'views/ipset_views.xml',
         'views/line_views.xml',

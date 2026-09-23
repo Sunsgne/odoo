@@ -71,7 +71,7 @@
         </field>
     </record>
     <record id="action_maintenance" model="ir.actions.act_window">
-        <field name="name">数据中心维护</field>
+        <field name="name">维护通告</field>
         <field name="res_model">zenlenet.maintenance</field>
         <field name="view_mode">kanban,list,form</field>
     </record>

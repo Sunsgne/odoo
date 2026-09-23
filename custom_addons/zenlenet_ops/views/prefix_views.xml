@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_prefix_list" model="ir.ui.view">
+        <field name="name">zenlenet.prefix.list</field>
+        <field name="model">zenlenet.prefix</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="status == 'deprecated'">
+                <field name="prefix" class="fw-bold"/>
+                <field name="family" optional="hide"/>
+                <field name="status" widget="badge" decoration-success="status == 'active'" decoration-info="status == 'container'" decoration-warning="status == 'reserved'"/>
+                <field name="datacenter_id"/>
+                <field name="partner_id"/>
+                <field name="role" optional="show"/>
+                <field name="vlan" optional="hide"/>
+                <field name="size"/>
+                <field name="allocated_count"/>
+                <field name="free_count"/>
+                <field name="utilization" widget="progressbar"/>
+                <field name="description" optional="show"/>
+                <field name="netbox_synced" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_prefix_form" model="ir.ui.view">
+        <field name="name">zenlenet.prefix.form</field>
+        <field name="model">zenlenet.prefix</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_open_netbox" type="object" string="在 NetBox 中查看" icon="fa-external-link" invisible="not netbox_id"/>
+                    <field name="status" widget="statusbar" options="{'clickable': true}"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_addresses" type="object" class="oe_stat_button" icon="fa-sitemap">
+                            <field name="address_count" widget="statinfo" string="地址"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="prefix" placeholder="例如 203.0.113.0/24" class="font-monospace"/></h1>
+                    </div>
+                    <group>
+                        <group string="归属">
+                            <field name="datacenter_id"/>
+                            <field name="partner_id"/>
+                            <field name="role"/>
+                            <field name="vlan"/>
+                        </group>
+                        <group string="容量">
+                            <field name="family"/>
+                            <field name="size"/>
+                            <field name="allocated_count"/>
+                            <field name="free_count"/>
+                            <field name="utilization" widget="progressbar"/>
+                            <field name="is_pool"/>
+                        </group>
+                    </group>
+                    <field name="description" placeholder="说明"/>
+                    <group string="NetBox" invisible="not netbox_id">
+                        <field name="netbox_id"/>
+                        <field name="netbox_synced"/>
+                    </group>
+                    <notebook>
+                        <page string="地址">
+                            <field name="address_ids" readonly="1">
+                                <list>
+                                    <field name="address" class="font-monospace"/>
+                                    <field name="partner_id"/>
+                                    <field name="status" widget="badge" decoration-success="status == 'allocated'" decoration-info="status == 'free'"/>
+                                    <field name="net_attr"/>
+                                    <field name="usage"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_prefix_search" model="ir.ui.view">
+        <field name="name">zenlenet.prefix.search</field>
+        <field name="model">zenlenet.prefix</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="prefix"/>
+                <field name="partner_id"/>
+                <field name="description"/>
+                <filter name="active" string="在用" domain="[('status', '=', 'active')]"/>
+                <filter name="has_free" string="有空余" domain="[('status', '=', 'active')]" context="{'group_by': 'datacenter_id'}"/>
+                <filter name="v4" string="IPv4" domain="[('family', '=', '4')]"/>
+                <filter name="v6" string="IPv6" domain="[('family', '=', '6')]"/>
+                <group>
+                    <filter name="group_dc" string="数据中心" context="{'group_by': 'datacenter_id'}"/>
+                    <filter name="group_partner" string="客户" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_status" string="状态" context="{'group_by': 'status'}"/>
+                </group>
+                <searchpanel>
+                    <field name="datacenter_id" string="数据中心" enable_counters="1" icon="fa-building" limit="60"/>
+                    <field name="status" string="状态" enable_counters="1" expand="1" icon="fa-flag"/>
+                    <field name="family" string="协议" enable_counters="1" expand="1" icon="fa-code-fork"/>
+                </searchpanel>
+            </search>
+        </field>
+    </record>
+    <record id="action_prefixes" model="ir.actions.act_window">
+        <field name="name">地址段</field>
+        <field name="res_model">zenlenet.prefix</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_prefix_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">还没有地址段</p>
+            <p>地址段与 NetBox 的 Prefix 一一对应。同步 NetBox 后会自动出现，也可以手工新增。</p>
+        </field>
+    </record>
+    <record id="view_price_item_list" model="ir.ui.view">
+        <field name="name">zenlenet.price.item.list</field>
+        <field name="model">product.pricelist.item</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="product_tmpl_id" string="业务" options="{'no_create': True}" domain="[('sale_ok', '=', True)]" required="1"/>
+                <field name="min_quantity" string="起订量"/>
+                <field name="fixed_price" string="客户单价 / 月"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="date_start" string="生效" optional="hide"/>
+                <field name="date_end" string="失效" optional="hide"/>
+                <field name="pricelist_id" column_invisible="1"/>
+                <field name="applied_on" column_invisible="1"/>
+                <field name="compute_price" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+</odoo>

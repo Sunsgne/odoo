@@ -15,7 +15,8 @@
                 <field name="end_date"/>
                 <field name="days_left"/>
                 <field name="billing_cycle"/>
-                <field name="monthly_amount" sum="合计"/>
+                <field name="monthly_amount"/>
+                <field name="currency_id" string="币种"/>
                 <field name="sales_user_id" optional="show"/>
                 <field name="currency_id" column_invisible="1"/>
                 <field name="state" widget="badge" decoration-success="state == 'active'" decoration-warning="state == 'expiring'" decoration-danger="state == 'expired'"/>

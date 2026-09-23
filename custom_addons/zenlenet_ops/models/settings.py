@@ -52,7 +52,18 @@ class ResConfigSettings(models.TransientModel):
     zenlenet_sla_normal = fields.Integer(string='普通（小时）', config_parameter='zenlenet.sla_normal', default=24)
     zenlenet_sla_low = fields.Integer(string='低（小时）', config_parameter='zenlenet.sla_low', default=72)
 
-    zenlenet_netbox_url = fields.Char(string='NetBox 地址', config_parameter='zenlenet.netbox_url')
+    zenlenet_netbox_url = fields.Char(string='NetBox 网址', config_parameter='zenlenet.netbox_url', help='给操作员点「在 NetBox 中查看」用。')
+    zenlenet_netbox_api_url = fields.Char(string='API 地址', config_parameter='zenlenet.netbox_api_url', help='本机能直接访问的地址，例如 https://172.18.0.1。')
+    zenlenet_netbox_host = fields.Char(string='Host 头', config_parameter='zenlenet.netbox_host', help='API 地址是 IP 时填 NetBox 的域名。')
+    zenlenet_netbox_token = fields.Char(string='API Token', config_parameter='zenlenet.netbox_token')
+    zenlenet_netbox_sync = fields.Boolean(string='自动同步', config_parameter='zenlenet.netbox_sync')
+    zenlenet_netbox_last_sync = fields.Char(string='上次同步', compute='_compute_counts')
+    zenlenet_netbox_last_stats = fields.Char(compute='_compute_counts')
+    zenlenet_netbox_ready = fields.Boolean(compute='_compute_counts')
+    zenlenet_currency_ids = fields.Many2many(
+        'res.currency', string='可用币种', compute='_compute_currencies', inverse='_inverse_currencies',
+        help='客户结算币种只能从这里选。汇率在币种上维护。',
+    )
     zenlenet_sso_enabled = fields.Boolean(string='启用 Office 365 登录')
     zenlenet_sso_client_id = fields.Char(string='Azure 应用 ID（Client ID）')
     zenlenet_sso_tenant = fields.Char(string='Azure 租户 ID', config_parameter='zenlenet.azure_tenant')
@@ -78,6 +89,35 @@ class ResConfigSettings(models.TransientModel):
             record.zenlenet_datacenter_count = self.env['zenlenet.datacenter'].sudo().search_count([])
             provider = record._oauth_provider()
             record.zenlenet_sso_ready = bool(provider and provider.client_id)
+            icp = self.env['ir.config_parameter'].sudo()
+            record.zenlenet_netbox_last_sync = icp.get_param('zenlenet.netbox_last_sync') or '还没同步过'
+            record.zenlenet_netbox_last_stats = icp.get_param('zenlenet.netbox_last_stats') or ''
+            record.zenlenet_netbox_ready = self.env['zenlenet.netbox'].is_configured()
+
+    def _compute_currencies(self):
+        active = self.env['res.currency'].search([('active', '=', True)])
+        for record in self:
+            record.zenlenet_currency_ids = active
+
+    def _inverse_currencies(self):
+        Currency = self.env['res.currency'].sudo().with_context(active_test=False)
+        company_currency = self.env.company.currency_id
+        for record in self:
+            wanted = record.zenlenet_currency_ids | company_currency
+            Currency.search([('active', '=', True), ('id', 'not in', wanted.ids)]).write({'active': False})
+            wanted.filtered(lambda currency: not currency.active).write({'active': True})
+
+    def action_netbox_sync(self):
+        return self.env['zenlenet.netbox'].action_sync()
+
+    def action_open_currencies(self):
+        return {
+            'type': 'ir.actions.act_window',
+            'name': '币种与汇率',
+            'res_model': 'res.currency',
+            'view_mode': 'list,form',
+            'domain': [('active', '=', True)],
+        }
 
     @api.model
     def get_values(self):

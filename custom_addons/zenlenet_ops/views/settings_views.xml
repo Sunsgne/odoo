@@ -52,7 +52,7 @@
         </field>
     </record>
     <record id="action_users" model="ir.actions.act_window">
-        <field name="name">系统设置</field>
+        <field name="name">用户与角色</field>
         <field name="res_model">res.users</field>
         <field name="view_mode">list,form</field>
         <field name="domain">[('share', '=', False)]</field>

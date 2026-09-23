@@ -138,7 +138,7 @@
         </field>
     </record>
     <record id="action_flow" model="ir.actions.act_window">
-        <field name="name">开通交付</field>
+        <field name="name">交付工单</field>
         <field name="res_model">zenlenet.flow</field>
         <field name="view_mode">kanban,list,form</field>
         <field name="search_view_id" ref="view_flow_search"/>

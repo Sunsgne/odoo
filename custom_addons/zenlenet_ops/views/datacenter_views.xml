@@ -58,12 +58,16 @@
         <field name="arch" type="xml">
             <form>
                 <header>
+                    <button name="action_open_netbox" type="object" string="在 NetBox 中查看" icon="fa-external-link" invisible="not netbox_id"/>
                     <field name="state" widget="statusbar" options="{'clickable': true}"/>
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
+                        <button name="action_open_prefixes" type="object" class="oe_stat_button" icon="fa-th-large">
+                            <field name="prefix_count" widget="statinfo" string="地址段"/>
+                        </button>
                         <button name="action_open_addresses" type="object" class="oe_stat_button" icon="fa-sitemap">
-                            <field name="address_count" widget="statinfo" string="IP资源"/>
+                            <field name="address_count" widget="statinfo" string="IP 地址"/>
                         </button>
                         <button name="action_open_lines" type="object" class="oe_stat_button" icon="fa-exchange">
                             <field name="line_count" widget="statinfo" string="线路"/>
@@ -81,6 +85,7 @@
                     <group>
                         <group string="基本">
                             <field name="code"/>
+                            <field name="facility"/>
                             <field name="kind"/>
                             <field name="supplier"/>
                             <field name="usage_percent" widget="progressbar"/>
@@ -94,7 +99,7 @@
                         </group>
                     </group>
                     <notebook>
-                        <page string="IP资源">
+                        <page string="IP 地址">
                             <field name="address_ids" readonly="1">
                                 <list>
                                     <field name="address"/>
@@ -120,6 +125,10 @@
                         </page>
                         <page string="备注">
                             <field name="note" placeholder="出入机房流程、电力、机柜编号等"/>
+                            <group string="NetBox" invisible="not netbox_id">
+                                <field name="netbox_id"/>
+                                <field name="netbox_synced"/>
+                            </group>
                         </page>
                     </notebook>
                 </sheet>

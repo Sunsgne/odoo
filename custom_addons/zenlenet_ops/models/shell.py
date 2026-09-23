@@ -21,6 +21,7 @@ class ZenlenetShell(models.AbstractModel):
         self.env['zenlenet.flow'].sudo().migrate_resources()
         self.env['zenlenet.flow'].sudo().search([]).sudo()._ensure_default_tasks()
         self.env['zenlenet.datacenter'].sudo().migrate_places()
+        self.env['zenlenet.prefix'].sudo().link_addresses()
         self.env['zenlenet.contract'].sudo().search([])._compute_amounts()
         self.env['res.partner']._zenlenet_refresh_status()
         action = self.env.ref('zenlenet_ops.action_home_page', raise_if_not_found=False)

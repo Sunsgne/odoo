@@ -19,3 +19,5 @@ access_zenlenet_contract_user,zenlenet.contract.user,model_zenlenet_contract,bas
 access_zenlenet_contract_manager,zenlenet.contract.manager,model_zenlenet_contract,zenlenet_ops.group_manager,1,1,1,1
 access_zenlenet_ticket_user,zenlenet.ticket.user,model_zenlenet_ticket,base.group_user,1,1,1,0
 access_zenlenet_ticket_manager,zenlenet.ticket.manager,model_zenlenet_ticket,zenlenet_ops.group_manager,1,1,1,1
+access_zenlenet_prefix_user,zenlenet.prefix.user,model_zenlenet_prefix,base.group_user,1,1,1,0
+access_zenlenet_prefix_manager,zenlenet.prefix.manager,model_zenlenet_prefix,zenlenet_ops.group_manager,1,1,1,1

@@ -5,19 +5,21 @@
         <field name="model">zenlenet.line</field>
         <field name="arch" type="xml">
             <list decoration-muted="stopped">
-                <field name="name"/>
+                <field name="name" class="font-monospace"/>
                 <field name="kind"/>
+                <field name="status" widget="badge" decoration-success="status == 'active'" decoration-info="status in ('planned', 'provisioning')" decoration-muted="status == 'decommissioned'" decoration-warning="status in ('offline', 'deprovisioning')"/>
                 <field name="datacenter_id"/>
                 <field name="a_end"/>
                 <field name="z_end"/>
                 <field name="bandwidth"/>
+                <field name="commit_rate" optional="hide"/>
                 <field name="partner_id"/>
                 <field name="partner_name" optional="hide"/>
                 <field name="supplier" optional="hide"/>
                 <field name="monthly_cost" optional="hide" sum="合计"/>
                 <field name="end_date" optional="show"/>
                 <field name="purpose" optional="hide"/>
-                <field name="stopped"/>
+                <field name="stopped" column_invisible="1"/>
             </list>
         </field>
     </record>
@@ -26,16 +28,21 @@
         <field name="model">zenlenet.line</field>
         <field name="arch" type="xml">
             <form>
+                <header>
+                    <button name="action_open_netbox" type="object" string="在 NetBox 中查看" icon="fa-external-link" invisible="not netbox_id"/>
+                    <field name="status" widget="statusbar" options="{'clickable': true}" statusbar_visible="planned,provisioning,active,decommissioned"/>
+                </header>
                 <sheet>
                     <group>
                         <group string="线路">
-                            <field name="name"/>
+                            <field name="name" class="font-monospace"/>
                             <field name="kind"/>
                             <field name="datacenter_id"/>
+                            <field name="commit_rate"/>
                             <field name="a_end"/>
                             <field name="z_end"/>
                             <field name="bandwidth"/>
-                            <field name="stopped"/>
+                            <field name="stopped" invisible="1"/>
                         </group>
                         <group string="商务">
                             <field name="partner_id"/>
@@ -47,6 +54,10 @@
                             <field name="end_date"/>
                             <field name="purpose"/>
                         </group>
+                    </group>
+                    <group string="NetBox" invisible="not netbox_id">
+                        <field name="netbox_id"/>
+                        <field name="netbox_synced"/>
                     </group>
                 </sheet>
             </form>
@@ -65,15 +76,16 @@
                 <field name="datacenter_id"/>
                 <filter name="private" string="供应商专线" domain="[('kind','=','private')]"/>
                 <filter name="vxlan" string="VXLAN" domain="[('kind','=','vxlan')]"/>
-                <filter name="running" string="在用" domain="[('stopped','=',False)]"/>
+                <filter name="running" string="在用" domain="[('status','=','active')]"/>
                 <filter name="stopped_lines" string="已终止" domain="[('stopped','=',True)]"/>
                 <group>
                     <filter name="group_dc" string="数据中心" context="{'group_by': 'datacenter_id'}"/>
                     <filter name="group_partner" string="客户" context="{'group_by': 'partner_id'}"/>
                 </group>
                 <searchpanel>
-                    <field name="datacenter_id" string="数据中心" enable_counters="1" icon="fa-building"/>
+                    <field name="datacenter_id" string="数据中心" enable_counters="1" icon="fa-building" limit="60"/>
                     <field name="kind" string="类型" enable_counters="1" expand="1" icon="fa-exchange"/>
+                    <field name="status" string="状态" enable_counters="1" expand="1" icon="fa-flag"/>
                 </searchpanel>
             </search>
         </field>
@@ -83,5 +95,6 @@
         <field name="res_model">zenlenet.line</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_line_search"/>
+        <field name="context">{'search_default_running': 1}</field>
     </record>
 </odoo>

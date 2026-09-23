@@ -4,12 +4,20 @@
         <field name="name">zenlenet.purchase.list</field>
         <field name="model">zenlenet.purchase</field>
         <field name="arch" type="xml">
-            <list>
+            <list decoration-muted="state == 'returned'" decoration-success="state == 'received'">
+                <field name="name"/>
+                <field name="category"/>
                 <field name="supplier"/>
                 <field name="resource"/>
-                <field name="pop"/>
-                <field name="user_id"/>
-                <field name="state"/>
+                <field name="datacenter_id"/>
+                <field name="quantity" optional="hide"/>
+                <field name="monthly_cost" sum="合计"/>
+                <field name="one_time_cost" optional="hide" sum="合计"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="expected_on" optional="show"/>
+                <field name="end_on" optional="hide"/>
+                <field name="user_id" widget="many2one_avatar_user" optional="show"/>
+                <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-warning="state == 'ordered'" decoration-success="state == 'received'"/>
             </list>
         </field>
     </record>
@@ -18,22 +26,77 @@
         <field name="model">zenlenet.purchase</field>
         <field name="arch" type="xml">
             <form>
+                <header>
+                    <button name="action_order" type="object" string="已下单" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_receive" type="object" string="已到货" class="btn-primary" invisible="state != 'ordered'"/>
+                    <button name="action_return" type="object" string="退回供应商" invisible="state != 'received'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,ordered,received"/>
+                </header>
                 <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                        <h2><field name="resource" placeholder="采购内容，例如：HKG 10G IP Transit"/></h2>
+                    </div>
                     <group>
-                        <field name="supplier"/>
-                        <field name="resource"/>
-                        <field name="pop"/>
-                        <field name="user_id"/>
-                        <field name="state"/>
+                        <group string="采购">
+                            <field name="category"/>
+                            <field name="supplier"/>
+                            <field name="datacenter_id"/>
+                            <field name="user_id" widget="many2one_avatar_user"/>
+                        </group>
+                        <group string="费用">
+                            <field name="currency_id"/>
+                            <field name="quantity"/>
+                            <field name="unit"/>
+                            <field name="unit_cost"/>
+                            <field name="monthly_cost"/>
+                            <field name="one_time_cost"/>
+                            <field name="term_months"/>
+                        </group>
+                        <group string="时间">
+                            <field name="ordered_on"/>
+                            <field name="expected_on"/>
+                            <field name="received_on"/>
+                            <field name="end_on"/>
+                        </group>
                     </group>
-                    <field name="note" placeholder="备注"/>
+                    <field name="note" placeholder="供应商联系人、合同号、端口信息"/>
                 </sheet>
             </form>
         </field>
     </record>
+    <record id="view_purchase_search" model="ir.ui.view">
+        <field name="name">zenlenet.purchase.search</field>
+        <field name="model">zenlenet.purchase</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="supplier"/>
+                <field name="resource"/>
+                <filter name="open" string="进行中" domain="[('state', 'in', ('draft', 'ordered'))]"/>
+                <filter name="received" string="已到货" domain="[('state', '=', 'received')]"/>
+                <group>
+                    <filter name="group_category" string="类别" context="{'group_by': 'category'}"/>
+                    <filter name="group_supplier" string="供应商" context="{'group_by': 'supplier'}"/>
+                    <filter name="group_state" string="状态" context="{'group_by': 'state'}"/>
+                </group>
+                <searchpanel>
+                    <field name="category" string="采购类别" enable_counters="1" expand="1" icon="fa-tags"/>
+                    <field name="state" string="状态" enable_counters="1" expand="1" icon="fa-flag"/>
+                    <field name="datacenter_id" string="数据中心" enable_counters="1" icon="fa-building" limit="60"/>
+                </searchpanel>
+            </search>
+        </field>
+    </record>
     <record id="action_purchases" model="ir.actions.act_window">
-        <field name="name">采购管理</field>
+        <field name="name">采购</field>
         <field name="res_model">zenlenet.purchase</field>
         <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_purchase_search"/>
+        <field name="context">{'search_default_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">还没有采购记录</p>
+            <p>按类别登记向供应商采购的 IP 段、带宽、专线、机柜、设备和云资源，跟进下单、到货和到期。</p>
+        </field>
     </record>
 </odoo>

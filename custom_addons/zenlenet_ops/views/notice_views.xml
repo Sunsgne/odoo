@@ -31,7 +31,7 @@
         </field>
     </record>
     <record id="action_templates" model="ir.actions.act_window">
-        <field name="name">通知模板</field>
+        <field name="name">通告模板</field>
         <field name="res_model">zenlenet.notice.template</field>
         <field name="view_mode">list,form</field>
     </record>

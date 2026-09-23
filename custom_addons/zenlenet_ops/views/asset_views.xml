@@ -41,7 +41,7 @@
         </field>
     </record>
     <record id="action_assets" model="ir.actions.act_window">
-        <field name="name">固定资产</field>
+        <field name="name">设备资产</field>
         <field name="res_model">zenlenet.asset</field>
         <field name="view_mode">list,form</field>
     </record>

@@ -108,7 +108,7 @@
         </field>
     </record>
     <record id="action_payments" model="ir.actions.act_window">
-        <field name="name">收款记录</field>
+        <field name="name">收款</field>
         <field name="res_model">account.payment</field>
         <field name="view_mode">list</field>
         <field name="view_id" ref="view_payment_list_zenlenet"/>
@@ -119,7 +119,7 @@
         </field>
     </record>
     <record id="action_invoices" model="ir.actions.act_window">
-        <field name="name">出账</field>
+        <field name="name">账单</field>
         <field name="res_model">account.move</field>
         <field name="view_mode">list,form</field>
         <field name="domain">[('move_type', '=', 'out_invoice'), ('state', '!=', 'cancel')]</field>

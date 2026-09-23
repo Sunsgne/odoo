@@ -44,7 +44,7 @@ class ZenlenetContract(models.Model):
         'res.partner', string='客户', required=True, tracking=True, domain=[('is_company', '=', True)],
     )
     company_id = fields.Many2one('res.company', default=lambda self: self.env.company, required=True)
-    currency_id = fields.Many2one(related='company_id.currency_id')
+    currency_id = fields.Many2one('res.currency', string='币种', compute='_compute_currency', store=True)
     order_ids = fields.Many2many(
         'sale.order', string='包含订单', domain="[('partner_id', '=', partner_id)]",
     )
@@ -71,6 +71,12 @@ class ZenlenetContract(models.Model):
     invoice_ids = fields.One2many('account.move', 'zenlenet_contract_id', string='账单')
     invoice_count = fields.Integer(compute='_compute_invoice_count')
     days_left = fields.Integer(string='剩余天数', compute='_compute_days_left')
+
+    @api.depends('partner_id', 'partner_id.property_product_pricelist', 'partner_id.property_product_pricelist.currency_id', 'company_id')
+    def _compute_currency(self):
+        for record in self:
+            pricelist = record.partner_id.property_product_pricelist
+            record.currency_id = pricelist.currency_id or record.company_id.currency_id or self.env.company.currency_id
 
     @api.depends('start_date', 'term_months')
     def _compute_end_date(self):
@@ -185,6 +191,7 @@ class ZenlenetContract(models.Model):
         invoice = Move.create({
             'move_type': 'out_invoice',
             'partner_id': self.partner_id.id,
+            'currency_id': self.currency_id.id,
             'invoice_date': day,
             'invoice_date_due': fields.Date.add(day, days=param_int(self.env, 'zenlenet.due_days', 30)),
             'ref': ref,

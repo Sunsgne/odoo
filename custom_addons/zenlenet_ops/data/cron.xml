@@ -24,6 +24,28 @@
         <field name="prefix">HT-%(year)s-</field>
         <field name="padding">3</field>
     </record>
+    <record id="cron_netbox_sync" model="ir.cron">
+        <field name="name">尊领：NetBox 同步</field>
+        <field name="model_id" ref="model_zenlenet_netbox"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_sync()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">hours</field>
+        <field name="active" eval="True"/>
+    </record>
+    <record id="seq_customer" model="ir.sequence">
+        <field name="name">ZENLENET 客户编号</field>
+        <field name="code">zenlenet.customer</field>
+        <field name="prefix">KH-</field>
+        <field name="padding">4</field>
+        <field name="number_next">1001</field>
+    </record>
+    <record id="seq_purchase" model="ir.sequence">
+        <field name="name">ZENLENET 采购</field>
+        <field name="code">zenlenet.purchase</field>
+        <field name="prefix">CG-%(year)s-</field>
+        <field name="padding">3</field>
+    </record>
     <record id="seq_ticket" model="ir.sequence">
         <field name="name">ZENLENET 工单</field>
         <field name="code">zenlenet.ticket</field>

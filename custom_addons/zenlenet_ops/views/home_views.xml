@@ -9,7 +9,7 @@
                     <field name="currency_id" invisible="1"/>
                     <field name="name" invisible="1"/>
 
-                    <div class="o_zl_section_title">业务主线</div>
+                    <div class="o_zl_section_title">业务流程</div>
                     <div class="o_zl_flow">
                         <button type="action" name="%(zenlenet_ops.action_customers)d" class="o_zl_step">
                             <i class="fa fa-building-o" title="客户"/><span>客户</span><small>录入公司</small>
@@ -24,7 +24,7 @@
                         </button>
                         <i class="fa fa-angle-right o_zl_arrow" title="下一步"/>
                         <button type="action" name="%(zenlenet_ops.action_flow)d" class="o_zl_step">
-                            <i class="fa fa-random" title="开通交付"/><span>开通交付</span><small>分配资源、验收</small>
+                            <i class="fa fa-random" title="开通交付"/><span>交付</span><small>分配资源、验收</small>
                         </button>
                         <i class="fa fa-angle-right o_zl_arrow" title="下一步"/>
                         <button type="action" name="%(zenlenet_ops.action_orders)d" class="o_zl_step">
@@ -36,11 +36,11 @@
                         </button>
                         <i class="fa fa-angle-right o_zl_arrow" title="下一步"/>
                         <button type="action" name="%(zenlenet_ops.action_tickets)d" class="o_zl_step">
-                            <i class="fa fa-life-ring" title="售后"/><span>售后</span><small>工单、割接维护</small>
+                            <i class="fa fa-life-ring" title="售后"/><span>售后</span><small>服务工单、维护通告</small>
                         </button>
                     </div>
 
-                    <div class="o_zl_section_title">今天要看的</div>
+                    <div class="o_zl_section_title">待办提醒</div>
                     <div class="o_zl_kpis">
                         <button type="object" name="action_open_my_flows" class="o_zl_kpi o_zl_kpi_primary">
                             <span class="o_zl_kpi_value"><field name="flows_mine" readonly="1"/></span>
@@ -64,7 +64,7 @@
                         </button>
                     </div>
 
-                    <div class="o_zl_section_title">经营概览</div>
+                    <div class="o_zl_section_title">运营指标</div>
                     <div class="o_zl_stats">
                         <div class="o_zl_stat"><span class="o_zl_stat_value"><field name="customers_active" readonly="1"/></span><span class="o_zl_stat_label">在网客户 / 共 <field name="customers_total" readonly="1"/></span></div>
                         <div class="o_zl_stat"><span class="o_zl_stat_value"><field name="services_active" readonly="1"/></span><span class="o_zl_stat_label">在网服务 · 测试中 <field name="services_testing" readonly="1"/></span></div>
@@ -77,24 +77,25 @@
                     <div class="o_zl_grid">
                         <div class="o_zl_group">
                             <div class="o_zl_group_title"><i class="fa fa-users" title="客户与财务"/> 客户与财务</div>
-                            <button type="action" name="%(zenlenet_ops.action_customers)d" class="o_zl_tile"><i class="fa fa-building-o" title="客户管理"/><span><b>客户管理</b><small>客户 360：服务、合同、账单、工单一页看完</small></span></button>
+                            <button type="action" name="%(zenlenet_ops.action_customers)d" class="o_zl_tile"><i class="fa fa-building-o" title="客户管理"/><span><b>客户</b><small>客户经理、结算币种、专属价格，服务与账单一页看完</small></span></button>
                             <button type="action" name="%(zenlenet_ops.action_quotes)d" class="o_zl_tile"><i class="fa fa-calculator" title="报价"/><span><b>报价</b><small>选业务、填月费、打印报价单</small></span></button>
                             <button type="action" name="%(zenlenet_ops.action_orders)d" class="o_zl_tile"><i class="fa fa-plug" title="服务订单"/><span><b>服务订单</b><small>在网、测试、已退租</small></span></button>
                             <button type="action" name="%(zenlenet_ops.action_contracts)d" class="o_zl_tile"><i class="fa fa-handshake-o" title="合同"/><span><b>合同</b><small>期限、出账周期、自动续签</small></span></button>
-                            <button type="action" name="%(zenlenet_ops.action_invoices)d" class="o_zl_tile"><i class="fa fa-money" title="出账与收款"/><span><b>出账与收款</b><small>按账期生成账单、登记收款</small></span></button>
+                            <button type="action" name="%(zenlenet_ops.action_invoices)d" class="o_zl_tile"><i class="fa fa-money" title="出账与收款"/><span><b>账单与收款</b><small>按账期生成账单、登记收款</small></span></button>
                         </div>
                         <div class="o_zl_group">
-                            <div class="o_zl_group_title"><i class="fa fa-cogs" title="交付与支持"/> 交付与支持</div>
-                            <button type="action" name="%(zenlenet_ops.action_flow)d" class="o_zl_tile"><i class="fa fa-random" title="开通交付"/><span><b>开通交付</b><small>销售录入 → 交付分配资源 → 售后验收</small></span></button>
-                            <button type="action" name="%(zenlenet_ops.action_tickets)d" class="o_zl_tile"><i class="fa fa-life-ring" title="工单"/><span><b>工单</b><small>故障、变更、咨询、投诉，按 SLA 倒计时</small></span></button>
-                            <button type="action" name="%(zenlenet_ops.action_maintenance)d" class="o_zl_tile"><i class="fa fa-wrench" title="割接与维护"/><span><b>割接与维护</b><small>方案评审、通知客户、执行、验证</small></span></button>
+                            <div class="o_zl_group_title"><i class="fa fa-cogs" title="工单"/> 工单</div>
+                            <button type="action" name="%(zenlenet_ops.action_flow)d" class="o_zl_tile"><i class="fa fa-random" title="开通交付"/><span><b>交付工单</b><small>销售录入 → 交付分配资源 → 售后验收</small></span></button>
+                            <button type="action" name="%(zenlenet_ops.action_tickets)d" class="o_zl_tile"><i class="fa fa-life-ring" title="工单"/><span><b>服务工单</b><small>故障、变更、咨询、投诉，按 SLA 倒计时</small></span></button>
+                            <button type="action" name="%(zenlenet_ops.action_maintenance)d" class="o_zl_tile"><i class="fa fa-wrench" title="割接与维护"/><span><b>维护通告</b><small>方案评审、通知客户、执行、验证</small></span></button>
                         </div>
                         <div class="o_zl_group">
-                            <div class="o_zl_group_title"><i class="fa fa-sitemap" title="资源"/> 资源</div>
+                            <div class="o_zl_group_title"><i class="fa fa-sitemap" title="网络资源"/> 网络资源</div>
                             <button type="action" name="%(zenlenet_ops.action_datacenters)d" class="o_zl_tile"><i class="fa fa-building" title="数据中心"/><span><b>数据中心</b><small>机房、POP 点、公有云的使用率</small></span></button>
-                            <button type="action" name="%(zenlenet_ops.action_addresses)d" class="o_zl_tile"><i class="fa fa-sitemap" title="IP资源"/><span><b>IP 资源</b><small>分配状态、网络属性、IP 段与 IP 集</small></span></button>
+                            <button type="action" name="%(zenlenet_ops.action_prefixes)d" class="o_zl_tile"><i class="fa fa-th-large" title="地址段"/><span><b>地址段</b><small>与 NetBox Prefix 一致，看每段的使用率</small></span></button>
+                            <button type="action" name="%(zenlenet_ops.action_addresses)d" class="o_zl_tile"><i class="fa fa-sitemap" title="IP 地址"/><span><b>IP 地址</b><small>分配状态、网络属性、地址集</small></span></button>
                             <button type="action" name="%(zenlenet_ops.action_lines)d" class="o_zl_tile"><i class="fa fa-exchange" title="线路"/><span><b>线路</b><small>供应商专线、VXLAN、成本与到期</small></span></button>
-                            <button type="action" name="%(zenlenet_ops.action_assets)d" class="o_zl_tile"><i class="fa fa-server" title="固定资产"/><span><b>固定资产与采购</b><small>设备在用 / 闲置，待采购与到货</small></span></button>
+                            <button type="action" name="%(zenlenet_ops.action_assets)d" class="o_zl_tile"><i class="fa fa-server" title="固定资产"/><span><b>采购与设备</b><small>按类别登记采购，设备在用 / 闲置</small></span></button>
                         </div>
                     </div>
                 </sheet>
@@ -102,10 +103,10 @@
         </field>
     </record>
     <record id="home_record" model="zenlenet.home">
-        <field name="name">首页</field>
+        <field name="name">工作台</field>
     </record>
     <record id="action_home_page" model="ir.actions.act_window">
-        <field name="name">首页</field>
+        <field name="name">工作台</field>
         <field name="res_model">zenlenet.home</field>
         <field name="view_mode">form</field>
         <field name="view_id" ref="view_home_form"/>

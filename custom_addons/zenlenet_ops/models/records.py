@@ -1,4 +1,4 @@
-from odoo import fields, models
+from odoo import api, fields, models
 from odoo.exceptions import UserError
 
 from odoo.addons.zenlenet_ops.blocks import parse_prefix
@@ -239,11 +239,33 @@ class ZenlenetPurchase(models.Model):
     _name = 'zenlenet.purchase'
     _description = '采购'
     _order = 'id desc'
-    _rec_name = 'supplier'
+    _rec_name = 'name'
 
-    supplier = fields.Char(string='供应商', required=True)
-    resource = fields.Char(string='资源', required=True)
-    pop = fields.Char(string='机房')
+    name = fields.Char(string='采购单号', default='/', copy=False, readonly=True)
+    category = fields.Selection([
+        ('ip', 'IP 地址段'),
+        ('transit', '带宽 / IP Transit'),
+        ('circuit', '专线 / 波分'),
+        ('colo', '机柜 / 电力'),
+        ('device', '设备'),
+        ('cloud', '云资源'),
+        ('other', '其他'),
+    ], string='采购类别', required=True, default='transit', index=True)
+    supplier = fields.Char(string='供应商', required=True, index=True)
+    resource = fields.Char(string='采购内容', required=True)
+    datacenter_id = fields.Many2one('zenlenet.datacenter', string='数据中心', index=True)
+    pop = fields.Char(string='机房（旧）')
+    quantity = fields.Float(string='数量', default=1.0)
+    unit = fields.Char(string='单位', default='项')
+    currency_id = fields.Many2one('res.currency', string='币种', default=lambda self: self.env.company.currency_id)
+    unit_cost = fields.Monetary(string='单价 / 月', currency_field='currency_id')
+    monthly_cost = fields.Monetary(string='月成本', compute='_compute_cost', store=True, currency_field='currency_id')
+    one_time_cost = fields.Monetary(string='一次性费用', currency_field='currency_id')
+    term_months = fields.Integer(string='合约期（月）', default=12)
+    ordered_on = fields.Date(string='下单日期')
+    expected_on = fields.Date(string='预计到货')
+    received_on = fields.Date(string='到货日期')
+    end_on = fields.Date(string='到期日期')
     user_id = fields.Many2one(
         'res.users', string='负责人', default=lambda self: self.env.user, domain=[('share', '=', False)],
     )
@@ -251,9 +273,31 @@ class ZenlenetPurchase(models.Model):
         ('draft', '待采购'),
         ('ordered', '已下单'),
         ('received', '已到货'),
-        ('returned', '已退'),
-    ], string='状态', default='draft', required=True)
+        ('returned', '已退回'),
+    ], string='状态', default='draft', required=True, index=True)
     note = fields.Text(string='备注')
+
+    @api.depends('quantity', 'unit_cost')
+    def _compute_cost(self):
+        for record in self:
+            record.monthly_cost = (record.quantity or 0.0) * (record.unit_cost or 0.0)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        sequence = self.env['ir.sequence']
+        for vals in vals_list:
+            if not vals.get('name') or vals.get('name') == '/':
+                vals['name'] = sequence.next_by_code('zenlenet.purchase') or '/'
+        return super().create(vals_list)
+
+    def action_order(self):
+        self.write({'state': 'ordered', 'ordered_on': fields.Date.context_today(self)})
+
+    def action_receive(self):
+        self.write({'state': 'received', 'received_on': fields.Date.context_today(self)})
+
+    def action_return(self):
+        self.write({'state': 'returned'})
 
 
 class ZenlenetAsset(models.Model):

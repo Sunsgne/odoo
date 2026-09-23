@@ -1,6 +1,19 @@
+import logging
+
 from odoo import api, fields, models
 
 from .records import DC_TYPES
+
+_logger = logging.getLogger(__name__)
+
+LINE_STATUSES = [
+    ('planned', '规划中'),
+    ('provisioning', '开通中'),
+    ('active', '在用'),
+    ('offline', '离线'),
+    ('deprovisioning', '拆除中'),
+    ('decommissioned', '已终止'),
+]
 
 
 class ZenlenetDatacenter(models.Model):
@@ -9,7 +22,12 @@ class ZenlenetDatacenter(models.Model):
     _order = 'sequence, name'
 
     name = fields.Char(string='名称', required=True, index=True)
-    code = fields.Char(string='简称')
+    code = fields.Char(string='简称 / Slug')
+    netbox_id = fields.Integer(string='NetBox ID', index=True, copy=False)
+    netbox_synced = fields.Datetime(string='上次同步')
+    facility = fields.Char(string='机房设施', help='运营商机房的正式名称或楼栋编号，对应 NetBox 的 Facility。')
+    prefix_ids = fields.One2many('zenlenet.prefix', 'datacenter_id', string='地址段')
+    prefix_count = fields.Integer(string='地址段数', compute='_compute_counts')
     sequence = fields.Integer(default=10)
     kind = fields.Selection(DC_TYPES, string='类型', default='主营机房', index=True)
     city = fields.Char(string='城市')
@@ -36,23 +54,57 @@ class ZenlenetDatacenter(models.Model):
 
     _name_unique = models.Constraint('unique(name)', '这个数据中心已经存在。')
 
-    @api.depends('address_ids.status', 'line_ids.stopped', 'asset_ids')
+    def _grouped(self, model, domain):
+        return {
+            record.id: count
+            for record, count in self.env[model]._read_group(
+                [('datacenter_id', 'in', self.ids)] + domain, ['datacenter_id'], ['__count'],
+            )
+        }
+
+    @api.depends('address_ids.status', 'line_ids.stopped', 'asset_ids', 'prefix_ids')
     def _compute_counts(self):
-        Address = self.env['zenlenet.address']
+        totals = self._grouped('zenlenet.address', [])
+        allocated = self._grouped('zenlenet.address', [('status', 'in', ('allocated', 'testing', 'internal'))])
+        free = self._grouped('zenlenet.address', [('status', '=', 'free')])
+        lines = self._grouped('zenlenet.line', [('stopped', '=', False)])
+        assets = self._grouped('zenlenet.asset', [])
+        prefixes = self._grouped('zenlenet.prefix', [])
         for record in self:
-            total = Address.search_count([('datacenter_id', '=', record.id)])
-            allocated = Address.search_count([
-                ('datacenter_id', '=', record.id),
-                ('status', 'in', ('allocated', 'testing', 'internal')),
-            ])
+            total = totals.get(record.id, 0)
+            used = allocated.get(record.id, 0)
             record.address_count = total
-            record.allocated_count = allocated
-            record.free_count = Address.search_count([('datacenter_id', '=', record.id), ('status', '=', 'free')])
-            record.line_count = self.env['zenlenet.line'].search_count([
-                ('datacenter_id', '=', record.id), ('stopped', '=', False),
-            ])
-            record.asset_count = self.env['zenlenet.asset'].search_count([('datacenter_id', '=', record.id)])
-            record.usage_percent = round(allocated * 100.0 / total, 1) if total else 0.0
+            record.allocated_count = used
+            record.free_count = free.get(record.id, 0)
+            record.line_count = lines.get(record.id, 0)
+            record.asset_count = assets.get(record.id, 0)
+            record.prefix_count = prefixes.get(record.id, 0)
+            record.usage_percent = round(used * 100.0 / total, 1) if total else 0.0
+
+    def write(self, vals):
+        result = super().write(vals)
+        if not self.env.context.get('netbox_skip_push') and {'name', 'state', 'address', 'facility', 'note'} & set(vals):
+            for record in self:
+                try:
+                    self.env['zenlenet.netbox'].push_site(record)
+                except Exception as error:
+                    _logger.warning('NetBox site push skipped for %s: %s', record.name, type(error).__name__)
+        return result
+
+    def action_open_netbox(self):
+        self.ensure_one()
+        link = self.env['zenlenet.netbox'].public_link(f'/dcim/sites/{self.netbox_id}/')
+        if not (self.netbox_id and link):
+            return False
+        return {'type': 'ir.actions.act_url', 'url': link, 'target': 'new'}
+
+    def action_open_prefixes(self):
+        self.ensure_one()
+        action = self.env.ref('zenlenet_ops.action_prefixes').read()[0]
+        action['domain'] = [('datacenter_id', '=', self.id)]
+        action['context'] = {'default_datacenter_id': self.id}
+        action['display_name'] = f'{self.name} · 地址段'
+        return action
 
     def _open(self, name, model, extra_domain=None, context=None):
         self.ensure_one()
@@ -144,6 +196,33 @@ class ZenlenetAddress(models.Model):
     _inherit = 'zenlenet.address'
 
     datacenter_id = fields.Many2one('zenlenet.datacenter', string='数据中心', index=True, ondelete='set null')
+    prefix_id = fields.Many2one('zenlenet.prefix', string='地址段', index=True, ondelete='set null')
+    netbox_id = fields.Integer(string='NetBox ID', index=True, copy=False)
+    netbox_synced = fields.Datetime(string='上次同步')
+
+    @api.onchange('prefix_id')
+    def _onchange_prefix(self):
+        for record in self:
+            if record.prefix_id:
+                record.block = record.prefix_id.prefix
+                if record.prefix_id.datacenter_id:
+                    record.datacenter_id = record.prefix_id.datacenter_id
+
+    def write(self, vals):
+        result = super().write(vals)
+        if not self.env.context.get('netbox_skip_push') and {'status', 'partner_id', 'usage', 'dc_type', 'net_attr', 'expires_on'} & set(vals):
+            try:
+                self.env['zenlenet.netbox'].push_addresses(self)
+            except Exception as error:
+                _logger.warning('NetBox address push skipped: %s', type(error).__name__)
+        return result
+
+    def action_open_netbox(self):
+        self.ensure_one()
+        link = self.env['zenlenet.netbox'].public_link(f'/ipam/ip-addresses/{self.netbox_id}/')
+        if not (self.netbox_id and link):
+            return False
+        return {'type': 'ir.actions.act_url', 'url': link, 'target': 'new'}
 
     @api.onchange('datacenter_id')
     def _onchange_datacenter(self):
@@ -158,6 +237,10 @@ class ZenlenetLine(models.Model):
     _inherit = 'zenlenet.line'
 
     datacenter_id = fields.Many2one('zenlenet.datacenter', string='数据中心', index=True, ondelete='set null')
+    netbox_id = fields.Integer(string='NetBox ID', index=True, copy=False)
+    netbox_synced = fields.Datetime(string='上次同步')
+    status = fields.Selection(LINE_STATUSES, string='状态', default='active', required=True, index=True)
+    commit_rate = fields.Integer(string='签约速率 (Mbps)')
     partner_id = fields.Many2one('res.partner', string='客户', index=True, domain=[('is_company', '=', True)])
     supplier = fields.Char(string='供应商')
     monthly_cost = fields.Monetary(string='月成本', currency_field='currency_id')
@@ -170,6 +253,29 @@ class ZenlenetLine(models.Model):
         for record in self:
             if record.partner_id:
                 record.partner_name = record.partner_id.name
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if vals.get('stopped') and not vals.get('status'):
+                vals['status'] = 'decommissioned'
+            if vals.get('status') in ('decommissioned', 'deprovisioning', 'offline'):
+                vals['stopped'] = True
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if 'status' in vals and 'stopped' not in vals:
+            vals['stopped'] = vals['status'] in ('decommissioned', 'deprovisioning', 'offline')
+        elif 'stopped' in vals and 'status' not in vals and vals['stopped']:
+            vals['status'] = 'decommissioned'
+        return super().write(vals)
+
+    def action_open_netbox(self):
+        self.ensure_one()
+        link = self.env['zenlenet.netbox'].public_link(f'/circuits/circuits/{self.netbox_id}/')
+        if not (self.netbox_id and link):
+            return False
+        return {'type': 'ir.actions.act_url', 'url': link, 'target': 'new'}
 
 
 class ZenlenetAsset(models.Model):

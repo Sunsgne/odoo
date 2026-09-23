@@ -64,6 +64,15 @@
                         </setting>
                     </block>
 
+                    <block title="币种" name="zenlenet_currency" help="每个客户可以用不同币种结算，单价按客户专属价目。">
+                        <setting id="zenlenet_currency_setting" string="可用币种" help="勾选允许作为结算币种的货币。公司本位币是 USD，汇率在币种上维护。">
+                            <field name="zenlenet_currency_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <div class="mt8">
+                                <button name="action_open_currencies" type="object" string="维护汇率" icon="oi-arrow-right" class="btn-link"/>
+                            </div>
+                        </setting>
+                    </block>
+
                     <block title="合同" name="zenlenet_contract" help="新建合同时的默认值和到期提醒。">
                         <setting id="zenlenet_contract_term_setting" string="默认期限与续签" help="新合同默认签几个月，到期是否自动按原条款续一期。">
                             <div class="content-group">
@@ -167,8 +176,33 @@
                                 <div class="text-success mt8" invisible="not zenlenet_sso_ready">Client ID 已填写。</div>
                             </div>
                         </setting>
-                        <setting id="zenlenet_netbox_setting" string="NetBox 引擎" help="IP 和线路的底层数据由 NetBox 4.7 维护，日常操作在本系统完成。">
-                            <field name="zenlenet_netbox_url" placeholder="https://netbox.zenlenet.com"/>
+                        <setting id="zenlenet_netbox_setting" string="NetBox" help="数据中心、地址段、IP 地址、线路以 NetBox 为准。这里同步过来，分配结果再写回去。">
+                            <div class="content-group">
+                                <div class="row mt8">
+                                    <label for="zenlenet_netbox_url" class="col-lg-4 o_light_label"/>
+                                    <field name="zenlenet_netbox_url" placeholder="https://netbox.zenlenet.com"/>
+                                </div>
+                                <div class="row">
+                                    <label for="zenlenet_netbox_api_url" class="col-lg-4 o_light_label"/>
+                                    <field name="zenlenet_netbox_api_url" placeholder="https://172.18.0.1"/>
+                                </div>
+                                <div class="row">
+                                    <label for="zenlenet_netbox_host" class="col-lg-4 o_light_label"/>
+                                    <field name="zenlenet_netbox_host" placeholder="netbox.zenlenet.com"/>
+                                </div>
+                                <div class="row">
+                                    <label for="zenlenet_netbox_token" class="col-lg-4 o_light_label"/>
+                                    <field name="zenlenet_netbox_token" password="True"/>
+                                </div>
+                                <div class="row">
+                                    <label for="zenlenet_netbox_sync" class="col-lg-4 o_light_label"/>
+                                    <field name="zenlenet_netbox_sync"/>
+                                </div>
+                                <div class="text-muted mt8"><field name="zenlenet_netbox_last_sync" readonly="1" class="w-auto"/> <field name="zenlenet_netbox_last_stats" readonly="1" class="w-auto ms-2"/></div>
+                                <div class="mt8">
+                                    <button name="action_netbox_sync" type="object" string="立即同步" icon="fa-refresh" class="btn-link" invisible="not zenlenet_netbox_ready"/>
+                                </div>
+                            </div>
                         </setting>
                     </block>
                 </app>
@@ -197,7 +231,7 @@
         </field>
     </record>
     <record id="action_products" model="ir.actions.act_window">
-        <field name="name">业务与价目</field>
+        <field name="name">产品与定价</field>
         <field name="res_model">product.template</field>
         <field name="view_mode">list</field>
         <field name="view_id" ref="view_product_list_zenlenet"/>

@@ -4,11 +4,21 @@
         <field name="name">zenlenet.partner.list</field>
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
-            <list>
+            <list decoration-muted="zenlenet_status == 'churned'">
+                <field name="zenlenet_code" string="编号" class="font-monospace"/>
                 <field name="name" string="客户"/>
-                <field name="zenlenet_status" widget="badge" decoration-success="zenlenet_status == 'active'" decoration-info="zenlenet_status == 'testing'" decoration-muted="zenlenet_status == 'churned'"/>
-                <field name="zenlenet_manager_id" widget="many2one_avatar_user" optional="show"/>
-                <field name="country_id" string="国家" optional="show"/>
+                <field name="zenlenet_status" widget="badge" decoration-success="zenlenet_status == 'active'" decoration-info="zenlenet_status == 'testing'" decoration-warning="zenlenet_status == 'lead'" decoration-muted="zenlenet_status == 'churned'"/>
+                <field name="zenlenet_level" optional="show"/>
+                <field name="zenlenet_manager_id" widget="many2one_avatar_user"/>
+                <field name="zenlenet_currency_id" string="币种"/>
+                <field name="zenlenet_mrr" optional="show"/>
+                <field name="zenlenet_order_count" string="服务" optional="show"/>
+                <field name="zenlenet_unpaid_amount" string="未收款" optional="show"/>
+                <field name="country_id" string="国家" optional="hide"/>
+                <field name="zenlenet_industry" optional="hide"/>
+                <field name="zenlenet_source" optional="hide"/>
+                <field name="create_uid" string="登记人" widget="many2one_avatar_user" optional="show"/>
+                <field name="create_date" string="登记时间" optional="show"/>
                 <field name="phone" string="电话" optional="hide"/>
                 <field name="email" optional="hide"/>
             </list>
@@ -21,6 +31,7 @@
             <form>
                 <header>
                     <button name="action_open_quote" type="object" string="新报价" class="btn-primary"/>
+                    <button name="action_open_prices" type="object" string="专属价格"/>
                     <field name="zenlenet_status" widget="statusbar" options="{'clickable': true}"/>
                 </header>
                 <sheet>
@@ -33,66 +44,73 @@
                         </button>
                         <button name="action_open_invoices" type="object" class="oe_stat_button" icon="fa-money">
                             <div class="o_stat_info">
-                                <span class="o_stat_value"><field name="zenlenet_unpaid_amount" widget="monetary" options="{'currency_field': 'currency_id'}"/></span>
+                                <span class="o_stat_value"><field name="zenlenet_unpaid_amount" widget="monetary" options="{'currency_field': 'zenlenet_currency_id'}"/></span>
                                 <span class="o_stat_text">未收款 · <field name="zenlenet_invoice_count"/> 张账单</span>
                             </div>
                         </button>
                         <button name="action_open_flows" type="object" class="oe_stat_button" icon="fa-random">
-                            <field name="zenlenet_flow_count" widget="statinfo" string="在办交付"/>
+                            <field name="zenlenet_flow_count" widget="statinfo" string="交付工单"/>
                         </button>
                         <button name="action_open_tickets" type="object" class="oe_stat_button" icon="fa-life-ring">
-                            <field name="zenlenet_ticket_count" widget="statinfo" string="未关闭工单"/>
+                            <field name="zenlenet_ticket_count" widget="statinfo" string="服务工单"/>
                         </button>
                         <button name="action_open_resources" type="object" class="oe_stat_button" icon="fa-sitemap">
-                            <field name="zenlenet_address_count" widget="statinfo" string="IP资源"/>
+                            <field name="zenlenet_address_count" widget="statinfo" string="IP 地址"/>
                         </button>
                         <button name="action_open_lines" type="object" class="oe_stat_button" icon="fa-exchange">
                             <field name="zenlenet_line_count" widget="statinfo" string="线路"/>
                         </button>
+                        <button name="action_open_prices" type="object" class="oe_stat_button" icon="fa-tag">
+                            <field name="zenlenet_price_count" widget="statinfo" string="专属价格"/>
+                        </button>
                     </div>
                     <div class="oe_title">
+                        <div class="text-muted font-monospace"><field name="zenlenet_code" readonly="1"/></div>
                         <h1><field name="name" placeholder="客户名称"/></h1>
                     </div>
                     <group>
-                        <group string="商务">
+                        <group string="归属">
                             <field name="zenlenet_manager_id" widget="many2one_avatar_user"/>
+                            <field name="zenlenet_level"/>
+                            <field name="zenlenet_source"/>
+                            <field name="zenlenet_industry"/>
+                            <field name="create_uid" string="登记人" readonly="1" widget="many2one_avatar_user"/>
+                            <field name="create_date" string="登记时间" readonly="1"/>
+                        </group>
+                        <group string="结算">
+                            <field name="zenlenet_currency_id" options="{'no_create': True}"/>
+                            <field name="zenlenet_payment_days"/>
                             <field name="zenlenet_mrr"/>
                             <field name="zenlenet_since"/>
-                            <field name="currency_id" invisible="1"/>
+                            <field name="vat" string="税号 / 注册号"/>
+                            <field name="property_product_pricelist" invisible="1"/>
                         </group>
-                        <group string="联系">
+                        <group string="商务联系">
+                            <field name="zenlenet_commercial_contact"/>
                             <field name="phone" widget="phone"/>
                             <field name="email" widget="email"/>
                             <field name="website" widget="url"/>
                         </group>
+                        <group string="技术联系（NOC）">
+                            <field name="zenlenet_noc_email" widget="email"/>
+                            <field name="zenlenet_noc_phone" widget="phone"/>
+                            <field name="street" string="地址"/>
+                            <field name="city" string="城市"/>
+                            <field name="country_id" string="国家"/>
+                        </group>
                     </group>
-                    <notebook>
-                        <page string="地址与备注">
-                            <group>
-                                <group>
-                                    <field name="street" string="地址"/>
-                                    <field name="city" string="城市"/>
-                                    <field name="country_id" string="国家"/>
-                                </group>
-                                <group>
-                                    <field name="vat" string="税号 / 注册号"/>
-                                    <field name="lang" string="语言"/>
-                                </group>
-                            </group>
-                            <field name="comment" placeholder="对接人、付款习惯、特殊约定"/>
-                        </page>
-                        <page string="联系人">
-                            <field name="child_ids" context="{'default_parent_id': id, 'default_is_company': False, 'default_type': 'contact'}">
-                                <list editable="bottom">
-                                    <field name="name" string="姓名"/>
-                                    <field name="function" string="职务"/>
-                                    <field name="phone" string="电话" widget="phone"/>
-                                    <field name="email" widget="email"/>
-                                    <field name="type" column_invisible="1"/>
-                                </list>
-                            </field>
-                        </page>
-                    </notebook>
+                    <group string="联系人">
+                        <field name="child_ids" nolabel="1" colspan="2" context="{'default_parent_id': id, 'default_is_company': False, 'default_type': 'contact'}">
+                            <list editable="bottom">
+                                <field name="name" string="姓名"/>
+                                <field name="function" string="职务"/>
+                                <field name="phone" string="电话" widget="phone"/>
+                                <field name="email" widget="email"/>
+                                <field name="type" column_invisible="1"/>
+                            </list>
+                        </field>
+                    </group>
+                    <field name="comment" placeholder="对接情况、付款习惯、特殊约定"/>
                     <field name="is_company" invisible="1"/>
                     <field name="company_type" invisible="1"/>
                     <field name="customer_rank" invisible="1"/>
@@ -106,19 +124,24 @@
         <field name="model">res.partner</field>
         <field name="arch" type="xml">
             <search>
-                <field name="name"/>
+                <field name="name" filter_domain="['|', '|', ('name', 'ilike', self), ('zenlenet_code', 'ilike', self), ('email', 'ilike', self)]" string="客户 / 编号 / 邮箱"/>
                 <field name="zenlenet_manager_id"/>
+                <filter name="mine" string="我的客户" domain="[('zenlenet_manager_id', '=', uid)]"/>
                 <filter name="active_customers" string="在网" domain="[('zenlenet_status','=','active')]"/>
                 <filter name="testing_customers" string="测试" domain="[('zenlenet_status','=','testing')]"/>
+                <filter name="leads" string="潜在" domain="[('zenlenet_status','=','lead')]"/>
                 <filter name="churned_customers" string="已退租" domain="[('zenlenet_status','=','churned')]"/>
+                <filter name="no_manager" string="没有客户经理" domain="[('zenlenet_manager_id', '=', False)]"/>
                 <group>
                     <filter name="group_status" string="业务状态" context="{'group_by': 'zenlenet_status'}"/>
                     <filter name="group_manager" string="客户经理" context="{'group_by': 'zenlenet_manager_id'}"/>
+                    <filter name="group_level" string="等级" context="{'group_by': 'zenlenet_level'}"/>
                     <filter name="group_country" string="国家" context="{'group_by': 'country_id'}"/>
                 </group>
                 <searchpanel>
                     <field name="zenlenet_status" string="业务状态" enable_counters="1" expand="1" icon="fa-tag"/>
-                    <field name="country_id" string="国家" enable_counters="1" icon="fa-globe" limit="40"/>
+                    <field name="zenlenet_manager_id" string="客户经理" enable_counters="1" icon="fa-user" limit="30"/>
+                    <field name="zenlenet_level" string="等级" enable_counters="1" expand="1" icon="fa-star"/>
                 </searchpanel>
             </search>
         </field>
@@ -134,11 +157,11 @@
         </field>
     </record>
     <record id="action_customers" model="ir.actions.act_window">
-        <field name="name">客户管理</field>
+        <field name="name">客户</field>
         <field name="res_model">res.partner</field>
         <field name="view_mode">list,form</field>
         <field name="domain">[('is_company', '=', True), ('customer_rank', '&gt;', 0)]</field>
-        <field name="context">{'default_is_company': True, 'default_company_type': 'company', 'default_customer_rank': 1}</field>
+        <field name="context">{'default_is_company': True, 'default_company_type': 'company', 'default_customer_rank': 1, 'search_default_active_customers': 1}</field>
         <field name="search_view_id" ref="view_partner_search_zenlenet"/>
         <field name="view_ids" eval="[(5, 0, 0),
             (0, 0, {'view_mode': 'list', 'view_id': ref('view_partner_list')}),
