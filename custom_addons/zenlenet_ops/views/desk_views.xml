@@ -27,7 +27,7 @@
     <record id="desk_flow" model="zenlenet.desk">
         <field name="name">业务流转</field>
         <field name="sequence">5</field>
-        <field name="hint">录入公司、分配资源、交付、验收。测试要回收或转商务</field>
+        <field name="hint">销售录入公司，交付分配资源，售后验收。测试要回收或转商务</field>
         <field name="action_ref">zenlenet_ops.action_flow</field>
     </record>
     <record id="desk_customers" model="zenlenet.desk">

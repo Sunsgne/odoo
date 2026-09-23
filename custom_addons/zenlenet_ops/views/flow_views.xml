@@ -4,12 +4,14 @@
         <field name="name">zenlenet.flow.kanban</field>
         <field name="model">zenlenet.flow</field>
         <field name="arch" type="xml">
-            <kanban default_group_by="state" records_draggable="0" group_create="false" group_delete="false" quick_create="false" class="o_kanban_small_column">
+            <kanban default_group_by="team" records_draggable="0" group_create="false" group_delete="false" quick_create="false" class="o_kanban_small_column">
+                <field name="team"/>
                 <field name="state"/>
                 <field name="kind"/>
                 <templates>
                     <t t-name="card">
                         <field name="name" class="fw-bold"/>
+                        <field name="state"/>
                         <field name="kind"/>
                         <field name="partner_id"/>
                         <field name="user_id"/>
@@ -25,9 +27,12 @@
             <list>
                 <field name="name"/>
                 <field name="kind"/>
-                <field name="partner_id"/>
-                <field name="user_id"/>
+                <field name="team"/>
                 <field name="state"/>
+                <field name="partner_id"/>
+                <field name="sales_user_id"/>
+                <field name="delivery_user_id"/>
+                <field name="service_user_id"/>
             </list>
         </field>
     </record>
@@ -53,32 +58,30 @@
                     <group>
                         <group>
                             <field name="kind" readonly="state != 'company'"/>
-                            <field name="user_id"/>
                             <field name="partner_id" context="{'default_is_company': True, 'default_company_type': 'company', 'default_customer_rank': 1, 'form_view_ref': 'zenlenet_ops.view_partner_form_simple', 'list_view_ref': 'zenlenet_ops.view_partner_list'}"/>
+                            <field name="team" readonly="1"/>
+                            <field name="user_id" readonly="1"/>
                         </group>
-                        <group>
+                        <group string="负责人">
+                            <field name="sales_user_id"/>
+                            <field name="delivery_user_id"/>
+                            <field name="service_user_id"/>
                             <field name="note"/>
                         </group>
                     </group>
                     <notebook>
                         <page string="资源">
-                            <field name="address_ids">
+                            <div class="text-muted mb-2">业务类型可选 IPT / RMIPT、专线 / SD-WAN、云主机、托管、转售、IP地址、线路。前五种选订单，IP地址选地址，线路选线路。没有单据时填写规格。</div>
+                            <field name="resource_ids">
                                 <list editable="bottom">
-                                    <field name="address"/>
-                                    <field name="block"/>
-                                    <field name="pop"/>
-                                    <field name="status"/>
+                                    <field name="service_type"/>
+                                    <field name="order_id" invisible="service_type not in ('ipt', 'pl', 'vm', 'colo', 'resale')" options="{'no_create': True}" context="{'list_view_ref': 'zenlenet_ops.view_order_list'}" domain="[('partner_id', '=', parent.partner_id), ('order_line.product_id.default_code', '=', service_type)]"/>
+                                    <field name="address_id" invisible="service_type != 'ip'"/>
+                                    <field name="line_id" invisible="service_type != 'line'"/>
+                                    <field name="spec"/>
                                 </list>
                             </field>
-                            <field name="line_ids">
-                                <list editable="bottom">
-                                    <field name="name"/>
-                                    <field name="kind"/>
-                                    <field name="a_end"/>
-                                    <field name="z_end"/>
-                                </list>
-                            </field>
-                            <field name="resource_note" placeholder="没有具体地址时，写清楚分配了什么"/>
+                            <field name="resource_note" placeholder="没有具体订单或地址时，写清楚要分配的业务"/>
                         </page>
                     </notebook>
                 </sheet>
@@ -94,7 +97,10 @@
                 <field name="name"/>
                 <field name="partner_id"/>
                 <field name="user_id"/>
-                <filter name="mine" string="我的" domain="[('user_id', '=', uid)]"/>
+                <filter name="mine" string="我的" domain="['|', '|', '|', ('user_id', '=', uid), ('sales_user_id', '=', uid), ('delivery_user_id', '=', uid), ('service_user_id', '=', uid)]"/>
+                <filter name="sales" string="销售" domain="[('team', '=', 'sales')]"/>
+                <filter name="delivery" string="交付" domain="[('team', '=', 'delivery')]"/>
+                <filter name="service" string="售后" domain="[('team', '=', 'service')]"/>
                 <filter name="test" string="测试" domain="[('kind', '=', 'test')]"/>
                 <filter name="business" string="商务" domain="[('kind', '=', 'business')]"/>
                 <filter name="open" string="未完成" domain="[('state', 'not in', ('done', 'cancel'))]"/>

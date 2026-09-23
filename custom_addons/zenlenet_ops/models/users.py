@@ -5,6 +5,12 @@ from odoo.exceptions import UserError
 class ResUsers(models.Model):
     _inherit = 'res.users'
 
+    zenlenet_team = fields.Selection([
+        ('sales', '销售'),
+        ('delivery', '交付'),
+        ('service', '售后'),
+    ], string='分组')
+
     def _generate_signup_values(self, provider, validation, params):
         values = super()._generate_signup_values(provider, validation, params)
         email = validation.get('email') or validation.get('preferred_username') or validation.get('upn')
@@ -41,6 +47,11 @@ class ZenlenetUserAdd(models.TransientModel):
     name = fields.Char(string='姓名', required=True)
     login = fields.Char(string='登录名', required=True)
     password = fields.Char(string='密码', required=True)
+    team = fields.Selection([
+        ('sales', '销售'),
+        ('delivery', '交付'),
+        ('service', '售后'),
+    ], string='分组')
 
     def action_create(self):
         self.ensure_one()
@@ -56,6 +67,7 @@ class ZenlenetUserAdd(models.TransientModel):
             'email': login if '@' in login else False,
             'password': self.password,
             'share': False,
+            'zenlenet_team': self.team or False,
             'group_ids': [(4, self.env.ref('base.group_user').id)],
         })
         return {'type': 'ir.actions.act_window_close'}

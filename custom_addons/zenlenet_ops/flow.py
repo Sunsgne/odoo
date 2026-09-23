@@ -73,3 +73,13 @@ def transition_allowed(kind, state, new_kind, new_state):
 
 def state_label(state):
     return dict(STATES).get(state, state)
+
+
+def team_for(state):
+    if state == 'company':
+        return 'sales'
+    if state in ('allocate', 'deliver'):
+        return 'delivery'
+    if state in ('accept', 'decide', 'reclaim', 'done'):
+        return 'service'
+    return None

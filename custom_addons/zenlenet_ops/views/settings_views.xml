@@ -11,6 +11,7 @@
                 </header>
                 <field name="name"/>
                 <field name="login"/>
+                <field name="zenlenet_team"/>
                 <field name="email"/>
             </list>
         </field>
@@ -25,6 +26,7 @@
                     <group>
                         <field name="name"/>
                         <field name="login"/>
+                        <field name="zenlenet_team"/>
                         <field name="email"/>
                     </group>
                 </sheet>
@@ -39,6 +41,7 @@
                 <group>
                     <field name="name"/>
                     <field name="login" placeholder="姓名拼音或邮箱"/>
+                    <field name="team"/>
                     <field name="password" password="True"/>
                 </group>
                 <footer>

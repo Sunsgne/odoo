@@ -8,8 +8,24 @@ from odoo.addons.zenlenet_ops.flow import (
     next_state,
     prev_state,
     state_label,
+    team_for,
     transition_allowed,
 )
+
+TEAMS = [
+    ('sales', '销售'),
+    ('delivery', '交付'),
+    ('service', '售后'),
+]
+SERVICE_TYPES = [
+    ('ipt', 'IPT / RMIPT'),
+    ('pl', '专线 / SD-WAN'),
+    ('vm', '云主机'),
+    ('colo', '托管'),
+    ('resale', '转售'),
+    ('ip', 'IP地址'),
+    ('line', '线路'),
+]
 
 
 class ZenlenetFlow(models.Model):
@@ -28,10 +44,24 @@ class ZenlenetFlow(models.Model):
         group_expand='_group_expand_states',
     )
     user_id = fields.Many2one(
-        'res.users', string='负责人', required=True, tracking=True,
+        'res.users', string='当前负责人', required=True, tracking=True,
         default=lambda self: self.env.user, domain=[('share', '=', False)],
     )
+    sales_user_id = fields.Many2one(
+        'res.users', string='销售', tracking=True, default=lambda self: self.env.user,
+        domain="['&', ('share', '=', False), '|', ('zenlenet_team', '=', 'sales'), ('zenlenet_team', '=', False)]",
+    )
+    delivery_user_id = fields.Many2one(
+        'res.users', string='交付', tracking=True, default=lambda self: self.env.user,
+        domain="['&', ('share', '=', False), '|', ('zenlenet_team', '=', 'delivery'), ('zenlenet_team', '=', False)]",
+    )
+    service_user_id = fields.Many2one(
+        'res.users', string='售后', tracking=True, default=lambda self: self.env.user,
+        domain="['&', ('share', '=', False), '|', ('zenlenet_team', '=', 'service'), ('zenlenet_team', '=', False)]",
+    )
+    team = fields.Selection(TEAMS, string='分组', compute='_compute_team', store=True, group_expand='_group_expand_teams')
     partner_id = fields.Many2one('res.partner', string='公司', tracking=True, domain=[('is_company', '=', True)])
+    resource_ids = fields.One2many('zenlenet.flow.resource', 'flow_id', string='资源')
     address_ids = fields.Many2many('zenlenet.address', string='IP资源')
     line_ids = fields.Many2many('zenlenet.line', string='线路')
     resource_note = fields.Text(string='资源说明')
@@ -44,9 +74,18 @@ class ZenlenetFlow(models.Model):
             values['state'] = 'company'
         return values
 
+    @api.depends('state')
+    def _compute_team(self):
+        for record in self:
+            record.team = team_for(record.state) or False
+
     @api.model
     def _group_expand_states(self, states, domain):
         return [key for key, _label in STATES if key != 'cancel']
+
+    @api.model
+    def _group_expand_teams(self, values, domain):
+        return [key for key, _label in TEAMS]
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -55,7 +94,9 @@ class ZenlenetFlow(models.Model):
             if not vals.get('name') or vals.get('name') == '/':
                 vals['name'] = sequence.next_by_code('zenlenet.flow') or '/'
             vals['state'] = 'company'
-        return super().create(vals_list)
+        records = super().create(vals_list)
+        records._sync_assignee()
+        return records
 
     def write(self, vals):
         if 'state' in vals or 'kind' in vals:
@@ -65,20 +106,81 @@ class ZenlenetFlow(models.Model):
                 if not transition_allowed(record.kind, record.state, new_kind, new_state):
                     raise UserError('请按顺序推进，不能跳步。')
         result = super().write(vals)
-        if {'state', 'kind', 'address_ids', 'partner_id'} & set(vals):
+        if {'state', 'sales_user_id', 'delivery_user_id', 'service_user_id'} & set(vals):
+            self._sync_assignee()
+        if {'state', 'kind', 'address_ids', 'partner_id', 'resource_ids'} & set(vals):
             self._apply_resources()
         return result
 
+    def _person_for(self, state):
+        self.ensure_one()
+        team = team_for(state)
+        return {
+            'sales': self.sales_user_id,
+            'delivery': self.delivery_user_id,
+            'service': self.service_user_id,
+        }.get(team)
+
+    def _sync_assignee(self):
+        for record in self:
+            person = record._person_for(record.state)
+            if person and record.user_id != person:
+                record.user_id = person
+
+    def _linked_addresses(self):
+        self.ensure_one()
+        picked = self.resource_ids.filtered(lambda item: item.service_type == 'ip').mapped('address_id')
+        return picked | self.address_ids
+
+    def _has_allocation(self):
+        self.ensure_one()
+        if (self.resource_note or '').strip() or self.address_ids or self.line_ids:
+            return True
+        return any(
+            item.order_id or item.address_id or item.line_id or (item.spec or '').strip()
+            for item in self.resource_ids
+        )
+
+    def migrate_resources(self):
+        Resource = self.env['zenlenet.flow.resource'].sudo()
+        for flow in self.sudo().search([]):
+            have_addresses = set(flow.resource_ids.mapped('address_id').ids)
+            for address in flow.address_ids:
+                if address.id not in have_addresses:
+                    Resource.create({
+                        'flow_id': flow.id,
+                        'service_type': 'ip',
+                        'address_id': address.id,
+                    })
+            have_lines = set(flow.resource_ids.mapped('line_id').ids)
+            for line in flow.line_ids:
+                if line.id not in have_lines:
+                    Resource.create({
+                        'flow_id': flow.id,
+                        'service_type': 'line',
+                        'line_id': line.id,
+                    })
+
     def _check_exit(self):
         self.ensure_one()
-        if self.state == 'company' and not self.partner_id:
-            raise UserError('请先录入公司，再进入下一步。')
-        if self.state == 'allocate' and not self.address_ids and not self.line_ids and not (self.resource_note or '').strip():
-            raise UserError('请先分配IP、线路，或写上资源说明。')
+        if self.state == 'company':
+            if not self.partner_id:
+                raise UserError('请先录入公司，再进入下一步。')
+            if not self.sales_user_id:
+                raise UserError('请指定销售。')
+            if not self.delivery_user_id:
+                raise UserError('请指定交付。')
+        if self.state == 'allocate':
+            if not self.delivery_user_id:
+                raise UserError('请指定交付。')
+            if not self._has_allocation():
+                raise UserError('请先按业务类型分配资源，或写上资源说明。')
+        if self.state == 'deliver' and not self.service_user_id:
+            raise UserError('请指定售后。')
 
     def _apply_resources(self):
         for record in self:
-            addresses = record.address_ids
+            addresses = record._linked_addresses()
             if not addresses:
                 continue
             partner = record.partner_id.id or False
@@ -135,3 +237,28 @@ class ZenlenetFlow(models.Model):
                 continue
             record.state = 'cancel'
             record._post('已取消')
+
+
+class ZenlenetFlowResource(models.Model):
+    _name = 'zenlenet.flow.resource'
+    _description = '流转资源'
+    _order = 'id'
+
+    flow_id = fields.Many2one('zenlenet.flow', required=True, ondelete='cascade')
+    service_type = fields.Selection(SERVICE_TYPES, string='业务类型', required=True)
+    order_id = fields.Many2one('sale.order', string='订单')
+    address_id = fields.Many2one('zenlenet.address', string='IP地址')
+    line_id = fields.Many2one('zenlenet.line', string='线路')
+    spec = fields.Char(string='规格')
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        records.flow_id._apply_resources()
+        return records
+
+    def write(self, vals):
+        result = super().write(vals)
+        if {'address_id', 'service_type'} & set(vals):
+            self.flow_id._apply_resources()
+        return result

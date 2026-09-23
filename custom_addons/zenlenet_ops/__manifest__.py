@@ -1,6 +1,6 @@
 {
     'name': 'ZENLENET 运营',
-    'version': '19.0.1.2.0',
+    'version': '19.0.1.3.0',
     'category': 'Sales',
     'summary': '客户、订单、出账、资源，以及分配到人的业务流转',
     'author': 'ZENLENET PTE. LTD.',

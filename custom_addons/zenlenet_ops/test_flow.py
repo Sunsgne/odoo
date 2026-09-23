@@ -1,6 +1,6 @@
 import unittest
 
-from flow import can_convert, can_reclaim, next_state, prev_state, transition_allowed
+from flow import can_convert, can_reclaim, next_state, prev_state, team_for, transition_allowed
 
 
 class FlowTests(unittest.TestCase):
@@ -54,6 +54,14 @@ class FlowTests(unittest.TestCase):
         self.assertEqual(prev_state('business', 'allocate'), 'company')
         self.assertIsNone(prev_state('business', 'company'))
         self.assertTrue(transition_allowed('test', 'deliver', 'test', 'allocate'))
+
+    def test_people_are_grouped_by_stage(self):
+        self.assertEqual(team_for('company'), 'sales')
+        self.assertEqual(team_for('allocate'), 'delivery')
+        self.assertEqual(team_for('deliver'), 'delivery')
+        for state in ('accept', 'decide', 'reclaim', 'done'):
+            self.assertEqual(team_for(state), 'service')
+        self.assertIsNone(team_for('cancel'))
 
 
 if __name__ == '__main__':

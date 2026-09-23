@@ -6,6 +6,7 @@ access_zenlenet_return_user,zenlenet.supplier.return.user,model_zenlenet_supplie
 access_zenlenet_notice_user,zenlenet.notice.template.user,model_zenlenet_notice_template,base.group_user,1,1,1,1
 access_zenlenet_desk_user,zenlenet.desk.user,model_zenlenet_desk,base.group_user,1,0,0,0
 access_zenlenet_flow_user,zenlenet.flow.user,model_zenlenet_flow,base.group_user,1,1,1,1
+access_zenlenet_flow_resource_user,zenlenet.flow.resource.user,model_zenlenet_flow_resource,base.group_user,1,1,1,1
 access_zenlenet_ipset_user,zenlenet.ipset.user,model_zenlenet_ipset,base.group_user,1,1,1,1
 access_zenlenet_prefix_add_user,zenlenet.prefix.add.user,model_zenlenet_prefix_add,base.group_user,1,1,1,1
 access_zenlenet_purchase_user,zenlenet.purchase.user,model_zenlenet_purchase,base.group_user,1,1,1,1
