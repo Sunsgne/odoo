@@ -15,6 +15,7 @@
                 <field name="invoice_date" string="日期"/>
                 <field name="invoice_date_due" string="到期" optional="hide"/>
                 <field name="amount_total" string="金额" sum="合计"/>
+                <field name="amount_residual" string="未收" sum="合计" optional="show"/>
                 <field name="currency_id" column_invisible="1"/>
                 <field name="state" string="状态" widget="badge" decoration-info="state == 'draft'" decoration-success="state == 'posted'"/>
                 <field name="payment_state" string="收款" widget="badge" decoration-success="payment_state == 'paid'" decoration-warning="payment_state in ('not_paid', 'partial')"/>
@@ -30,6 +31,7 @@
                     <button name="action_post" type="object" string="确认账单" class="btn-primary" invisible="state != 'draft'"/>
                     <button name="%(zenlenet_ops.report_invoice)d" type="action" string="打印账单"/>
                     <button name="action_register_payment" type="object" string="登记收款" class="btn-primary" invisible="state != 'posted' or payment_state in ('paid', 'in_payment', 'reversed')"/>
+                    <button name="action_invoice_sent" type="object" string="发送账单" invisible="state != 'posted'"/>
                     <button name="button_draft" type="object" string="改回草稿" invisible="state != 'posted' or payment_state != 'not_paid'"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,posted"/>
                 </header>
@@ -84,11 +86,21 @@
                 <filter name="posted" string="已确认" domain="[('state', '=', 'posted')]"/>
                 <filter name="unpaid" string="未收款" domain="[('state', '=', 'posted'), ('payment_state', 'in', ('not_paid', 'partial'))]"/>
                 <filter name="paid" string="已收款" domain="[('payment_state', '=', 'paid')]"/>
+                <filter name="overdue" string="已逾期" domain="[('state', '=', 'posted'), ('payment_state', 'in', ('not_paid', 'partial')), ('invoice_date_due', '&lt;', context_today().strftime('%Y-%m-%d'))]"/>
+                <separator/>
+                <filter name="this_month" string="本月" domain="[('invoice_date', '&gt;=', (context_today() + relativedelta(day=1)).strftime('%Y-%m-%d')), ('invoice_date', '&lt;', (context_today() + relativedelta(months=1, day=1)).strftime('%Y-%m-%d'))]"/>
+                <filter name="last_month" string="上月" domain="[('invoice_date', '&gt;=', (context_today() + relativedelta(months=-1, day=1)).strftime('%Y-%m-%d')), ('invoice_date', '&lt;', (context_today() + relativedelta(day=1)).strftime('%Y-%m-%d'))]"/>
                 <group>
                     <filter name="group_partner" string="客户" context="{'group_by': 'partner_id'}"/>
                     <filter name="group_period" string="账期" context="{'group_by': 'ref'}"/>
                     <filter name="group_state" string="状态" context="{'group_by': 'state'}"/>
+                    <filter name="group_month" string="月份" context="{'group_by': 'invoice_date:month'}"/>
+                    <filter name="group_due" string="到期月份" context="{'group_by': 'invoice_date_due:month'}"/>
                 </group>
+                <searchpanel>
+                    <field name="payment_state" string="收款状态" enable_counters="1" expand="1" icon="fa-money"/>
+                    <field name="currency_id" string="币种" enable_counters="1" icon="fa-usd"/>
+                </searchpanel>
             </search>
         </field>
     </record>
@@ -117,6 +129,50 @@
             <p class="o_view_nocontent_smiling_face">还没有收款</p>
             <p>在已确认的账单上点「登记收款」，这里就会有记录。</p>
         </field>
+    </record>
+    <record id="view_invoice_pivot" model="ir.ui.view">
+        <field name="name">zenlenet.invoice.pivot</field>
+        <field name="model">account.move</field>
+        <field name="arch" type="xml">
+            <pivot string="营收">
+                <field name="partner_id" type="row"/>
+                <field name="invoice_date" interval="month" type="col"/>
+                <field name="amount_untaxed_signed" type="measure" string="营收（本位币）"/>
+                <field name="amount_residual_signed" type="measure" string="未收（本位币）"/>
+            </pivot>
+        </field>
+    </record>
+    <record id="view_invoice_graph" model="ir.ui.view">
+        <field name="name">zenlenet.invoice.graph</field>
+        <field name="model">account.move</field>
+        <field name="arch" type="xml">
+            <graph string="营收" type="bar" stacked="True">
+                <field name="invoice_date" interval="month"/>
+                <field name="amount_untaxed_signed" type="measure" string="营收（本位币）"/>
+            </graph>
+        </field>
+    </record>
+    <record id="action_revenue" model="ir.actions.act_window">
+        <field name="name">营收分析</field>
+        <field name="res_model">account.move</field>
+        <field name="view_mode">graph,pivot,list</field>
+        <field name="domain">[('move_type', '=', 'out_invoice'), ('state', '=', 'posted')]</field>
+        <field name="search_view_id" ref="view_invoice_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'graph', 'view_id': ref('view_invoice_graph')}),
+            (0, 0, {'view_mode': 'pivot', 'view_id': ref('view_invoice_pivot')}),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_invoice_list')})]"/>
+    </record>
+    <record id="action_receivable_aging" model="ir.actions.act_window">
+        <field name="name">应收账龄</field>
+        <field name="res_model">account.move</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('move_type', '=', 'out_invoice'), ('state', '=', 'posted'), ('payment_state', 'in', ('not_paid', 'partial'))]</field>
+        <field name="context">{'search_default_group_partner': 1, 'search_default_group_due': 1}</field>
+        <field name="search_view_id" ref="view_invoice_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_invoice_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_invoice_form')})]"/>
     </record>
     <record id="action_invoices" model="ir.actions.act_window">
         <field name="name">账单</field>

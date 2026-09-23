@@ -7,7 +7,7 @@
         <field name="inherit_id" ref="base.res_config_settings_view_form"/>
         <field name="arch" type="xml">
             <xpath expr="//form" position="inside">
-                <app data-string="尊领运营" string="尊领运营" name="zenlenet_ops" logo="/zenlenet_ops/static/description/icon.png">
+                <app data-string="系统设置" string="系统设置" name="zenlenet_ops" logo="/zenlenet_ops/static/description/icon.png">
                     <block title="公司资料" name="zenlenet_company" help="出现在报价单、合同和账单抬头。">
                         <setting id="zenlenet_company_setting" string="抬头信息" help="公司名称、UEN、地址和账务联系方式。">
                             <div class="content-group">

@@ -153,7 +153,18 @@ class ReportContract(models.AbstractModel):
             lines[doc.id] = self._line_rows(Line.search([
                 ('partner_id', '=', doc.partner_id.id), ('stopped', '=', False),
             ], limit=100))
+        items = {}
+        for doc in values['docs']:
+            items[doc.id] = [{
+                'kind': '一次性' if item.kind == 'one_time' else dict(item._fields['cycle'].selection).get(item.cycle, ''),
+                'one_time': item.kind == 'one_time',
+                'name': item.name,
+                'qty': item.quantity,
+                'price': item.price_unit,
+                'amount': item.amount,
+            } for item in doc.item_ids.sorted(lambda item: (item.kind != 'recurring', item.sequence, item.id))]
         values.update({
+            'items_by_doc': items,
             'rows_by_doc': rows,
             'addresses_by_doc': addresses,
             'lines_by_doc': lines,

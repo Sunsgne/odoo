@@ -219,7 +219,23 @@
                     </table>
 
                     <h3 class="zl-h">二、费用与结算</h3>
-                    <p>乙方<t t-out="cycle_label(o)"/>出具账单，每期金额 <t t-out="o.cycle_amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>。甲方应在账单载明的付款期限内付款。带宽类业务按签约带宽出账，超量部分按实际使用另行结算。</p>
+                    <table class="zl-table" t-if="items_by_doc[o.id]">
+                        <thead><tr><th>费用项目</th><th>收费方式</th><th class="num">数量</th><th class="num">单价</th><th class="num">金额</th></tr></thead>
+                        <tbody>
+                            <tr t-foreach="items_by_doc[o.id]" t-as="row">
+                                <td t-out="row['name']"/>
+                                <td><span t-attf-class="zl-badge zl-badge-#{'warn' if row['one_time'] else 'info'}" t-out="row['kind']"/></td>
+                                <td class="num" t-out="'%g' % row['qty']"/>
+                                <td class="num" t-out="row['price']" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                                <td class="num" t-out="row['amount']" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr><td colspan="4">周期费用折合每月</td><td class="num" t-out="o.monthly_amount" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></tr>
+                            <tr t-if="o.one_time_total"><td colspan="4">一次性费用合计（首期账单收取）</td><td class="num" t-out="o.one_time_total" t-options='{"widget": "monetary", "display_currency": o.currency_id}'/></tr>
+                        </tfoot>
+                    </table>
+                    <p>周期费用按各自周期到期出具账单；一次性费用在首期账单中一并收取。甲方应在账单载明的付款期限内付款。带宽类业务按签约带宽出账，超量部分按 95 值结算。</p>
                     <h3 class="zl-h">三、服务保障</h3>
                     <p>乙方提供 7×24 小时故障受理；计划性割接与维护至少提前 3 个工作日通知甲方；紧急维护在处置后及时说明。服务等级：紧急故障 4 小时、高优先级 8 小时、普通 24 小时内解决。</p>
                     <h3 class="zl-h">四、期限与终止</h3>

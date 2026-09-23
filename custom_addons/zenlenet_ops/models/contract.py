@@ -4,6 +4,7 @@ from odoo import api, fields, models
 from odoo.exceptions import UserError
 
 from odoo.addons.zenlenet_ops.billing import (
+    CYCLE_MONTHS,
     bandwidth_lines,
     bills_this_period,
     clean_label,
@@ -60,8 +61,12 @@ class ZenlenetContract(models.Model):
         string='到期自动续签',
         default=lambda self: self.env['ir.config_parameter'].sudo().get_param('zenlenet.auto_renew', 'True') != 'False',
     )
-    monthly_amount = fields.Monetary(string='月费', compute='_compute_amounts', store=True)
+    item_ids = fields.One2many('zenlenet.contract.item', 'contract_id', string='费用条款', copy=True)
+    monthly_amount = fields.Monetary(string='月费', compute='_compute_amounts', store=True,
+                                     help='所有周期性费用折算到每月的合计，未税。')
     cycle_amount = fields.Monetary(string='每期金额', compute='_compute_amounts', store=True)
+    one_time_total = fields.Monetary(string='一次性费用', compute='_compute_amounts', store=True)
+    one_time_billed = fields.Monetary(string='一次性已出账', compute='_compute_amounts', store=True)
     state = fields.Selection(STATES, string='状态', default='draft', required=True, tracking=True, index=True)
     signed_on = fields.Date(string='签署日期')
     sales_user_id = fields.Many2one(
@@ -84,12 +89,51 @@ class ZenlenetContract(models.Model):
         for record in self:
             record.end_date = contract_end(record.start_date, record.term_months)
 
-    @api.depends('order_ids.amount_untaxed', 'billing_cycle')
+    @api.depends('item_ids.amount', 'item_ids.kind', 'item_ids.cycle', 'item_ids.billed', 'billing_cycle')
     def _compute_amounts(self):
         for record in self:
-            monthly = sum(record.order_ids.mapped('amount_untaxed'))
+            recurring = record.item_ids.filtered(lambda item: item.kind == 'recurring')
+            monthly = sum(item.amount / CYCLE_MONTHS.get(item.cycle, 1) for item in recurring)
             record.monthly_amount = monthly
             record.cycle_amount = cycle_amount(monthly, record.billing_cycle)
+            one_time = record.item_ids.filtered(lambda item: item.kind == 'one_time')
+            record.one_time_total = sum(one_time.mapped('amount'))
+            record.one_time_billed = sum(one_time.filtered('billed').mapped('amount'))
+
+    def action_load_items(self):
+        """Build the fee schedule from the linked orders: a recurring item per service line, a one-time item per setup fee."""
+        Item = self.env['zenlenet.contract.item']
+        for record in self:
+            have = set(record.item_ids.mapped('order_line_id').ids)
+            for order in record.order_ids:
+                for line in order.order_line.filtered(lambda item: not item.display_type):
+                    if line.id in have:
+                        continue
+                    name = clean_label(line.name) or line.product_id.name
+                    Item.create({
+                        'contract_id': record.id,
+                        'kind': 'recurring',
+                        'cycle': record.billing_cycle or 'monthly',
+                        'name': name,
+                        'product_id': line.product_id.id,
+                        'order_line_id': line.id,
+                        'quantity': line.product_uom_qty,
+                        'price_unit': line.price_unit * (1 - (line.discount or 0.0) / 100.0),
+                        'p95': order.zenlenet_bill_mode == 'p95' and line == order._zenlenet_bandwidth_line(),
+                        'start_date': record.start_date,
+                    })
+                    if line.zenlenet_setup_fee:
+                        Item.create({
+                            'contract_id': record.id,
+                            'kind': 'one_time',
+                            'name': f'{name} 一次性费用',
+                            'product_id': line.product_id.id,
+                            'order_line_id': line.id,
+                            'quantity': 1.0,
+                            'price_unit': line.zenlenet_setup_fee,
+                            'start_date': record.start_date,
+                        })
+        return True
 
     @api.depends('invoice_ids')
     def _compute_invoice_count(self):
@@ -108,12 +152,20 @@ class ZenlenetContract(models.Model):
         for vals in vals_list:
             if not vals.get('name') or vals.get('name') == '/':
                 vals['name'] = sequence.next_by_code('zenlenet.contract') or '/'
-        return super().create(vals_list)
+        records = super().create(vals_list)
+        records.filtered(lambda record: record.order_ids and not record.item_ids).action_load_items()
+        return records
+
+    def write(self, vals):
+        result = super().write(vals)
+        if 'order_ids' in vals:
+            self.action_load_items()
+        return result
 
     def action_activate(self):
         for record in self:
-            if not record.order_ids:
-                raise UserError('请先把这个客户的订单加进合同。')
+            if not record.item_ids:
+                raise UserError('请先填写费用条款（或加入订单后点「从订单带入费用」）。')
             if not record.signed_on:
                 record.signed_on = fields.Date.context_today(self)
             record.state = contract_status('active', record.end_date, fields.Date.context_today(self))
@@ -168,8 +220,6 @@ class ZenlenetContract(models.Model):
         self.ensure_one()
         if self.state not in ('active', 'expiring'):
             return self.env['account.move']
-        if not force and not bills_this_period(self.billing_cycle, day, self.start_date):
-            return self.env['account.move']
         ref = period_ref(self.partner_id.id, day)
         Move = self.env['account.move']
         if Move.search_count([('ref', '=', ref), ('zenlenet_contract_id', '=', self.id), ('state', '!=', 'cancel')]):
@@ -179,46 +229,55 @@ class ZenlenetContract(models.Model):
         lines = []
         Usage = self.env['zenlenet.usage']
         label = period_label(day)
-        for order in self.order_ids:
-            usage = Usage.for_order(order, day) if order.zenlenet_bill_mode == 'p95' else Usage
-            bandwidth_line = order._zenlenet_bandwidth_line()
-            for line in order.order_line.filtered(lambda item: not item.display_type):
-                base_name = clean_label(line.name) or line.product_id.name
-                if order.zenlenet_bill_mode == 'p95' and line == bandwidth_line:
-                    commit = line._zenlenet_commit()
-                    p95 = usage.p95_mbps if usage else None
-                    for kind, mbps, price in bandwidth_lines(commit, p95, line.price_unit, line.zenlenet_overage_price):
-                        if kind == 'commit':
-                            detail = f'保底 {commit:g}M' + (f'，95 值 {p95:g}M' if p95 is not None else '，本期无 95 值按保底')
-                        else:
-                            detail = f'95 值 {p95:g}M 超出保底 {commit:g}M 的部分'
-                        lines.append((0, 0, {
-                            'product_id': line.product_id.id,
-                            'name': f'{base_name}（{label} · {detail}）',
-                            'quantity': mbps,
-                            'price_unit': price,
-                            'tax_ids': [(6, 0, [])],
-                            'sale_line_ids': [(4, line.id)],
-                        }))
+        billed_one_time = self.env['zenlenet.contract.item']
+        for item in self.item_ids.sorted('sequence'):
+            if item.kind == 'one_time':
+                if item.billed or (item.start_date and item.start_date > day):
                     continue
                 lines.append((0, 0, {
-                    'product_id': line.product_id.id,
-                    'name': f'{base_name}（{label}）',
-                    'quantity': line.product_uom_qty,
-                    'price_unit': line.price_unit,
+                    'product_id': item.product_id.id,
+                    'name': f'{item.name}（一次性）',
+                    'quantity': item.quantity,
+                    'price_unit': item.price_unit,
                     'tax_ids': [(6, 0, [])],
-                    'sale_line_ids': [(4, line.id)],
+                    'sale_line_ids': [(4, item.order_line_id.id)] if item.order_line_id else False,
                 }))
-            if not order.zenlenet_setup_billed:
-                for line in order.order_line.filtered(lambda item: not item.display_type and item.zenlenet_setup_fee):
+                billed_one_time |= item
+                continue
+            if item.end_date and item.end_date < first:
+                continue
+            if item.start_date and item.start_date > last:
+                continue
+            if not bills_this_period(item.cycle, day, item.start_date or self.start_date):
+                continue
+            cycle_label = dict(CYCLES).get(item.cycle, '')
+            if item.p95 and item.order_line_id:
+                order = item.order_line_id.order_id
+                usage = Usage.for_order(order, day)
+                commit = item.order_line_id._zenlenet_commit()
+                p95 = usage.p95_mbps if usage else None
+                for kind, mbps, price in bandwidth_lines(commit, p95, item.price_unit, item.order_line_id.zenlenet_overage_price):
+                    if kind == 'commit':
+                        detail = f'保底 {commit:g}M' + (f'，95 值 {p95:g}M' if p95 is not None else '，本期无 95 值按保底')
+                    else:
+                        detail = f'95 值 {p95:g}M 超出保底 {commit:g}M 的部分'
                     lines.append((0, 0, {
-                        'product_id': line.product_id.id,
-                        'name': f'{clean_label(line.name) or line.product_id.name} 一次性费用',
-                        'quantity': 1.0,
-                        'price_unit': line.zenlenet_setup_fee,
+                        'product_id': item.product_id.id,
+                        'name': f'{item.name}（{label} · {detail}）',
+                        'quantity': mbps,
+                        'price_unit': price,
                         'tax_ids': [(6, 0, [])],
+                        'sale_line_ids': [(4, item.order_line_id.id)],
                     }))
-                order.zenlenet_setup_billed = True
+                continue
+            lines.append((0, 0, {
+                'product_id': item.product_id.id,
+                'name': f'{item.name}（{label} · {cycle_label}）',
+                'quantity': item.quantity,
+                'price_unit': item.price_unit,
+                'tax_ids': [(6, 0, [])],
+                'sale_line_ids': [(4, item.order_line_id.id)] if item.order_line_id else False,
+            }))
         if not lines:
             return Move
         invoice = Move.create({
@@ -233,6 +292,8 @@ class ZenlenetContract(models.Model):
             'narration': '\n'.join(part for part in (f'{self.title or "服务"} 账期 {first} 至 {last}', footer) if part),
             'invoice_line_ids': lines,
         })
+        if billed_one_time:
+            billed_one_time.write({'billed': True, 'invoice_id': invoice.id})
         self.message_post(body=f'已生成 {period_label(day)} 账单 {invoice.name or ""}'.strip())
         return invoice
 
@@ -281,6 +342,44 @@ class ZenlenetContract(models.Model):
                 'next': {'type': 'ir.actions.act_window_close'},
             },
         }
+
+
+class ZenlenetContractItem(models.Model):
+    """One fee line of a contract: charged once, or every month / quarter / year."""
+
+    _name = 'zenlenet.contract.item'
+    _description = '合同费用条款'
+    _order = 'contract_id, kind desc, sequence, id'
+
+    contract_id = fields.Many2one('zenlenet.contract', required=True, ondelete='cascade')
+    sequence = fields.Integer(default=10)
+    kind = fields.Selection([('recurring', '周期费用'), ('one_time', '一次性费用')], string='类型', required=True, default='recurring')
+    cycle = fields.Selection(CYCLES, string='周期', default='monthly')
+    name = fields.Char(string='费用项目', required=True)
+    product_id = fields.Many2one('product.product', string='业务 / SKU', domain=[('sale_ok', '=', True)])
+    order_line_id = fields.Many2one('sale.order.line', string='来源订单行', ondelete='set null')
+    quantity = fields.Float(string='数量', default=1.0)
+    price_unit = fields.Monetary(string='单价', currency_field='currency_id')
+    amount = fields.Monetary(string='金额', compute='_compute_amount', store=True, currency_field='currency_id')
+    currency_id = fields.Many2one(related='contract_id.currency_id')
+    p95 = fields.Boolean(string='按 95 值', help='出账时按该订单行的保底和 95 值拆行。')
+    start_date = fields.Date(string='开始计费')
+    end_date = fields.Date(string='停止计费')
+    billed = fields.Boolean(string='已出账', help='一次性费用出过账后打勾，不再重复。')
+    invoice_id = fields.Many2one('account.move', string='所在账单', readonly=True)
+
+    @api.depends('quantity', 'price_unit')
+    def _compute_amount(self):
+        for item in self:
+            item.amount = (item.quantity or 0.0) * (item.price_unit or 0.0)
+
+    @api.onchange('product_id')
+    def _onchange_product(self):
+        for item in self:
+            if item.product_id and not item.name:
+                item.name = item.product_id.name
+            if item.product_id and not item.price_unit:
+                item.price_unit = item.product_id.lst_price
 
 
 class AccountMove(models.Model):

@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <record id="module_category_zenlenet" model="ir.module.category">
-        <field name="name">尊领运营</field>
+        <field name="name">运营后台</field>
         <field name="sequence">1</field>
     </record>
     <record id="privilege_zenlenet" model="res.groups.privilege">
-        <field name="name">尊领运营</field>
+        <field name="name">运营后台</field>
         <field name="sequence">1</field>
         <field name="category_id" ref="module_category_zenlenet"/>
     </record>

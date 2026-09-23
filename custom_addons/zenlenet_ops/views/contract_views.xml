@@ -16,6 +16,7 @@
                 <field name="days_left"/>
                 <field name="billing_cycle"/>
                 <field name="monthly_amount"/>
+                <field name="one_time_total" optional="show"/>
                 <field name="currency_id" string="币种"/>
                 <field name="sales_user_id" optional="show"/>
                 <field name="currency_id" column_invisible="1"/>
@@ -30,7 +31,8 @@
             <form>
                 <header>
                     <button name="action_activate" type="object" string="开始执行" class="btn-primary" invisible="state != 'draft'"/>
-                    <button name="action_bill_now" type="object" string="立即出账" class="btn-primary" invisible="state not in ('active', 'expiring')"/>
+                    <button name="action_bill_now" type="object" string="出本期账单" class="btn-primary" invisible="state not in ('active', 'expiring')"/>
+                    <button name="action_load_items" type="object" string="从订单带入费用" invisible="not order_ids or state not in ('draft', 'active', 'expiring')"/>
                     <button name="%(zenlenet_ops.report_contract)d" type="action" string="打印合同"/>
                     <button name="action_renew" type="object" string="续签一期" invisible="state not in ('expiring', 'expired')"/>
                     <button name="action_terminate" type="object" string="终止" invisible="state in ('terminated', 'draft')"/>
@@ -57,16 +59,40 @@
                             <field name="auto_renew"/>
                             <field name="signed_on"/>
                         </group>
-                        <group string="出账">
-                            <field name="billing_cycle"/>
+                        <group string="费用">
+                            <field name="billing_cycle" string="默认周期"/>
                             <field name="monthly_amount"/>
                             <field name="cycle_amount"/>
+                            <field name="one_time_total"/>
+                            <field name="one_time_billed" invisible="not one_time_total"/>
                             <field name="sales_user_id"/>
                             <field name="currency_id" invisible="1"/>
                             <field name="company_id" invisible="1"/>
                         </group>
                     </group>
                     <notebook>
+                        <page string="费用条款">
+                            <div class="text-muted mb-2">合同按这张表出账：周期费用按周期到期时开票；一次性费用只在开始计费之后的第一张账单收一次。</div>
+                            <field name="item_ids">
+                                <list editable="bottom" decoration-muted="billed">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="kind"/>
+                                    <field name="name"/>
+                                    <field name="product_id" optional="show"/>
+                                    <field name="cycle" invisible="kind != 'recurring'"/>
+                                    <field name="quantity"/>
+                                    <field name="price_unit"/>
+                                    <field name="amount" sum="合计"/>
+                                    <field name="p95" optional="show" invisible="kind != 'recurring'"/>
+                                    <field name="start_date" optional="show"/>
+                                    <field name="end_date" optional="show"/>
+                                    <field name="billed" invisible="kind != 'one_time'" readonly="1"/>
+                                    <field name="invoice_id" optional="hide" readonly="1"/>
+                                    <field name="order_line_id" column_invisible="1"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
                         <page string="订单">
                             <field name="order_ids" context="{'list_view_ref': 'zenlenet_ops.view_order_list'}" options="{'no_create': True}">
                                 <list>

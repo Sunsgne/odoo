@@ -1,6 +1,6 @@
 {
-    'name': 'ZENLENET 运营',
-    'version': '19.0.3.1.0',
+    'name': '运营后台',
+    'version': '19.0.3.2.0',
     'category': 'Sales',
     'summary': '数据中心、线路、IP；客户、报价、合同、出账；业务流转与工单',
     'author': 'ZENLENET PTE. LTD.',
