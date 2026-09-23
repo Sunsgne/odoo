@@ -205,7 +205,10 @@ class ZenlenetNetbox(models.AbstractModel):
         count = 0
         batch = []
         for item in self._iterate(session, base, '/ipam/ip-addresses/'):
-            custom = item.get('custom_fields') or {}
+            custom = {
+                key: (value.get('value') if isinstance(value, dict) else value)
+                for key, value in (item.get('custom_fields') or {}).items()
+            }
             status = (item.get('status') or {}).get('value')
             partner_id = self._partner_by_tenant(item.get('tenant'))
             values = {
