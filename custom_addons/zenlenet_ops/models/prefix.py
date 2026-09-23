@@ -32,7 +32,8 @@ class ZenlenetPrefix(models.Model):
     vlan = fields.Char(string='VLAN')
     description = fields.Char(string='说明')
     is_pool = fields.Boolean(string='地址池', help='整段作为地址池分配，网络地址和广播地址也可用。')
-    size = fields.Integer(string='地址总数', compute='_compute_size', store=True)
+    size = fields.Integer(string='可用地址数', compute='_compute_size', store=True, help='IPv6 段按 2^31 上限记录，实际容量见协议列。')
+    size_display = fields.Char(string='容量', compute='_compute_size', store=True)
     address_ids = fields.One2many('zenlenet.address', 'prefix_id', string='地址')
     address_count = fields.Integer(string='已登记', compute='_compute_usage')
     allocated_count = fields.Integer(string='已分配', compute='_compute_usage')
@@ -41,20 +42,22 @@ class ZenlenetPrefix(models.Model):
 
     _prefix_unique = models.Constraint('unique(prefix)', '这个地址段已经存在。')
 
-    @api.depends('prefix')
+    @api.depends('prefix', 'is_pool')
     def _compute_size(self):
         for record in self:
             try:
                 network = ipaddress.ip_network(parse_prefix(record.prefix or ''), strict=False)
             except ValueError:
                 record.size = 0
+                record.size_display = ''
                 record.family = False
                 continue
             record.family = str(network.version)
             usable = network.num_addresses
             if network.version == 4 and network.prefixlen < 31 and not record.is_pool:
                 usable = max(usable - 2, 0)
-            record.size = usable
+            record.size = min(usable, 2_147_483_647)
+            record.size_display = f'2^{network.max_prefixlen - network.prefixlen}' if network.version == 6 else f'{usable:,}'
 
     def _compute_usage(self):
         Address = self.env['zenlenet.address']

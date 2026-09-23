@@ -60,7 +60,7 @@ class ResPartner(models.Model):
 
 
     # ------------------------------------------------------------------ pricing
-    @api.depends('property_product_pricelist', 'property_product_pricelist.currency_id')
+    @api.depends('property_product_pricelist')
     def _compute_currency(self):
         for record in self:
             record.zenlenet_currency_id = record.property_product_pricelist.currency_id or self.env.company.currency_id

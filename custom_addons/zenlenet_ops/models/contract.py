@@ -72,7 +72,7 @@ class ZenlenetContract(models.Model):
     invoice_count = fields.Integer(compute='_compute_invoice_count')
     days_left = fields.Integer(string='剩余天数', compute='_compute_days_left')
 
-    @api.depends('partner_id', 'partner_id.property_product_pricelist', 'partner_id.property_product_pricelist.currency_id', 'company_id')
+    @api.depends('partner_id', 'company_id')
     def _compute_currency(self):
         for record in self:
             pricelist = record.partner_id.property_product_pricelist
