@@ -291,7 +291,17 @@ $zl-primary: #714b67;
         }
         .zl-ipam-main { flex: 1 0 auto; overflow: visible; }
         .zl-ipam-head { padding: 10px 12px; }
-        .zl-ipam-title { font-size: 16px; }
+        .zl-ipam-title {
+            font-size: 16px;
+            flex-wrap: wrap;
+            row-gap: 4px;
+            > span { white-space: nowrap; }
+        }
+        .zl-ipam-actions {
+            flex-wrap: wrap;
+            width: 100%;
+            .btn { white-space: nowrap; }
+        }
         .zl-ipam-body { flex-direction: column; overflow: visible; }
         .zl-ipam-grid-wrap { padding: 10px 12px; }
         .zl-grid { grid-template-columns: repeat(auto-fill, minmax(30px, 1fr)); }
@@ -301,7 +311,7 @@ $zl-primary: #714b67;
             border-left: 0;
             border-top: 1px solid #e3e6ea;
         }
-        .zl-assign-pop { right: auto; left: 0; width: min(280px, 90vw); }
+        .zl-assign-pop { right: auto; left: 0; width: 280px; max-width: 90vw; }
         .zl-cell-pop {
             position: fixed;
             right: 12px;
