@@ -69,10 +69,10 @@ class ZenlenetContract(models.Model):
         for record in self:
             record.end_date = contract_end(record.start_date, record.term_months)
 
-    @api.depends('order_ids.amount_total', 'billing_cycle')
+    @api.depends('order_ids.amount_untaxed', 'billing_cycle')
     def _compute_amounts(self):
         for record in self:
-            monthly = sum(record.order_ids.mapped('amount_total'))
+            monthly = sum(record.order_ids.mapped('amount_untaxed'))
             record.monthly_amount = monthly
             record.cycle_amount = cycle_amount(monthly, record.billing_cycle)
 

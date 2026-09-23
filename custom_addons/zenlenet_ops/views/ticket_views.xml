@@ -4,7 +4,7 @@
         <field name="name">zenlenet.ticket.kanban</field>
         <field name="model">zenlenet.ticket</field>
         <field name="arch" type="xml">
-            <kanban default_group_by="state" records_draggable="0" group_create="false" group_delete="false" quick_create="false" highlight_color="color">
+            <kanban default_group_by="state" records_draggable="0" group_create="false" group_delete="false" quick_create="false" highlight_color="color" class="o_kanban_small_column">
                 <field name="state"/>
                 <field name="priority"/>
                 <field name="overdue"/>

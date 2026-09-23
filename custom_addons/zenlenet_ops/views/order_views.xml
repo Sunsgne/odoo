@@ -56,7 +56,7 @@
                 <attribute name="invisible">1</attribute>
             </xpath>
             <xpath expr="//field[@name='tax_totals']" position="replace">
-                <field name="amount_total" string="金额"/>
+                <field name="amount_untaxed" string="月费"/>
             </xpath>
             <xpath expr="//chatter" position="replace"/>
             <xpath expr="//field[@name='discount']" position="attributes">
@@ -75,7 +75,7 @@
                 <field name="name" string="单号"/>
                 <field name="partner_id" string="客户"/>
                 <field name="origin" string="业务"/>
-                <field name="amount_total" string="金额"/>
+                <field name="amount_untaxed" string="月费"/>
                 <field name="zenlenet_stage"/>
                 <field name="date_order" string="日期" optional="hide"/>
             </list>

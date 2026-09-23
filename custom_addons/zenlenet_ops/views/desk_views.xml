@@ -15,7 +15,7 @@
                     <t t-name="card">
                         <div class="p-2 d-flex gap-3 align-items-start">
                             <div class="rounded-3 d-flex align-items-center justify-content-center bg-primary-subtle text-primary flex-shrink-0" style="width: 44px; height: 44px;">
-                                <i t-attf-class="fa fa-lg #{record.icon.raw_value}" role="img"/>
+                                <i t-attf-class="fa fa-lg #{record.icon.raw_value}" role="img" t-att-title="record.name.raw_value"/>
                             </div>
                             <div class="flex-grow-1 min-w-0">
                                 <div class="d-flex justify-content-between align-items-baseline">
@@ -42,7 +42,7 @@
 
     <record id="desk_flow" model="zenlenet.desk">
         <field name="name">业务流转</field>
-        <field name="group">work</field>
+        <field name="group">1_work</field>
         <field name="icon">fa-random</field>
         <field name="sequence">5</field>
         <field name="hint">销售录入公司，交付分配资源，售后验收。测试要回收或转商务</field>
@@ -53,7 +53,7 @@
     </record>
     <record id="desk_tickets" model="zenlenet.desk">
         <field name="name">工单</field>
-        <field name="group">work</field>
+        <field name="group">1_work</field>
         <field name="icon">fa-life-ring</field>
         <field name="sequence">6</field>
         <field name="hint">故障、变更、咨询、投诉，按优先级有 SLA 截止时间</field>
@@ -64,7 +64,7 @@
     </record>
     <record id="desk_maintenance" model="zenlenet.desk">
         <field name="name">割接与维护</field>
-        <field name="group">work</field>
+        <field name="group">1_work</field>
         <field name="icon">fa-wrench</field>
         <field name="sequence">7</field>
         <field name="hint">方案评审、通知客户、执行、验证</field>
@@ -76,7 +76,7 @@
 
     <record id="desk_customers" model="zenlenet.desk">
         <field name="name">客户管理</field>
-        <field name="group">customer</field>
+        <field name="group">2_customer</field>
         <field name="icon">fa-building-o</field>
         <field name="sequence">10</field>
         <field name="hint">在网、测试、已退租</field>
@@ -87,18 +87,18 @@
     </record>
     <record id="desk_quotes" model="zenlenet.desk">
         <field name="name">报价</field>
-        <field name="group">customer</field>
+        <field name="group">2_customer</field>
         <field name="icon">fa-calculator</field>
         <field name="sequence">15</field>
         <field name="hint">选客户、加业务、打印报价单，确认后变成订单</field>
         <field name="action_ref">zenlenet_ops.action_quotes</field>
         <field name="count_model">sale.order</field>
-        <field name="count_domain">[('state', 'in', ('draft', 'sent'))]</field>
+        <field name="count_domain">[('state', 'in', ('draft', 'sent')), ('zenlenet_stage', '=', False)]</field>
         <field name="count_label">待确认</field>
     </record>
     <record id="desk_orders" model="zenlenet.desk">
         <field name="name">订单管理</field>
-        <field name="group">customer</field>
+        <field name="group">2_customer</field>
         <field name="icon">fa-file-text-o</field>
         <field name="sequence">20</field>
         <field name="hint">IPT、专线、云主机、托管、转售</field>
@@ -109,7 +109,7 @@
     </record>
     <record id="desk_contracts" model="zenlenet.desk">
         <field name="name">合同</field>
-        <field name="group">customer</field>
+        <field name="group">2_customer</field>
         <field name="icon">fa-handshake-o</field>
         <field name="sequence">25</field>
         <field name="hint">期限、出账周期、到期前 30 天提醒续签</field>
@@ -120,7 +120,7 @@
     </record>
     <record id="desk_invoices" model="zenlenet.desk">
         <field name="name">出账</field>
-        <field name="group">customer</field>
+        <field name="group">2_customer</field>
         <field name="icon">fa-money</field>
         <field name="sequence">30</field>
         <field name="hint">每月自动按合同生成账单。单价是演示价目，不是合同价</field>
@@ -132,7 +132,7 @@
 
     <record id="desk_datacenters" model="zenlenet.desk">
         <field name="name">数据中心</field>
-        <field name="group">resource</field>
+        <field name="group">3_resource</field>
         <field name="icon">fa-building</field>
         <field name="sequence">35</field>
         <field name="hint">机房、POP 点、公有云，看每个点的 IP 和线路使用率</field>
@@ -143,7 +143,7 @@
     </record>
     <record id="desk_addresses" model="zenlenet.desk">
         <field name="name">IP资源</field>
-        <field name="group">resource</field>
+        <field name="group">3_resource</field>
         <field name="icon">fa-sitemap</field>
         <field name="sequence">40</field>
         <field name="hint">按数据中心、分配状态、网络属性筛选</field>
@@ -154,7 +154,7 @@
     </record>
     <record id="desk_blocks" model="zenlenet.desk">
         <field name="name">线路</field>
-        <field name="group">resource</field>
+        <field name="group">3_resource</field>
         <field name="icon">fa-exchange</field>
         <field name="sequence">45</field>
         <field name="hint">供应商专线和 VXLAN，客户、成本、到期</field>
@@ -165,7 +165,7 @@
     </record>
     <record id="desk_returns" model="zenlenet.desk">
         <field name="name">退资源</field>
-        <field name="group">resource</field>
+        <field name="group">3_resource</field>
         <field name="icon">fa-reply</field>
         <field name="sequence">50</field>
         <field name="hint">退给供应商的 IP 和线路</field>
@@ -177,7 +177,7 @@
 
     <record id="desk_lines" model="zenlenet.desk">
         <field name="name">采购管理</field>
-        <field name="group">operation</field>
+        <field name="group">4_operation</field>
         <field name="icon">fa-shopping-cart</field>
         <field name="sequence">60</field>
         <field name="hint">待采购、已下单、已到货</field>
@@ -188,7 +188,7 @@
     </record>
     <record id="desk_assets" model="zenlenet.desk">
         <field name="name">固定资产</field>
-        <field name="group">operation</field>
+        <field name="group">4_operation</field>
         <field name="icon">fa-server</field>
         <field name="sequence">70</field>
         <field name="hint">在用、闲置、报废</field>
@@ -199,7 +199,7 @@
     </record>
     <record id="desk_templates" model="zenlenet.desk">
         <field name="name">通知模板</field>
-        <field name="group">operation</field>
+        <field name="group">4_operation</field>
         <field name="icon">fa-envelope-o</field>
         <field name="sequence">80</field>
         <field name="hint">维护、割接、风险、紧急、接入点</field>
@@ -207,7 +207,7 @@
     </record>
     <record id="desk_settings" model="zenlenet.desk">
         <field name="name">账号与分组</field>
-        <field name="group">operation</field>
+        <field name="group">4_operation</field>
         <field name="icon">fa-users</field>
         <field name="sequence">90</field>
         <field name="hint">销售、交付、售后</field>

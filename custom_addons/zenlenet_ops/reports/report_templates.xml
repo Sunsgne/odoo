@@ -48,7 +48,7 @@
                             <tfoot>
                                 <tr>
                                     <td colspan="3" class="text-end fw-bold">月费合计</td>
-                                    <td class="text-end fw-bold"><span t-field="doc.amount_total" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/></td>
+                                    <td class="text-end fw-bold"><span t-field="doc.amount_untaxed" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -144,7 +144,7 @@
                         </p>
                         <h5>三、费用与结算</h5>
                         <p>
-                            乙方按 <span t-field="doc.billing_cycle"/> 出具账单，每期金额 <span t-field="doc.cycle_amount" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/>。
+                            乙方<span t-field="doc.billing_cycle"/>出具账单，每期金额 <span t-field="doc.cycle_amount" t-options='{"widget": "monetary", "display_currency": doc.currency_id}'/>。
                             甲方应在收到账单后 30 日内付款。带宽超量部分按实际使用另行结算。
                         </p>
                         <h5>四、服务保障</h5>

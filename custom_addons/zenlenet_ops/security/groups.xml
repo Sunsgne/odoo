@@ -4,9 +4,14 @@
         <field name="name">尊领运营</field>
         <field name="sequence">1</field>
     </record>
-    <record id="group_manager" model="res.groups">
-        <field name="name">尊领管理员</field>
+    <record id="privilege_zenlenet" model="res.groups.privilege">
+        <field name="name">尊领运营</field>
+        <field name="sequence">1</field>
         <field name="category_id" ref="module_category_zenlenet"/>
+    </record>
+    <record id="group_manager" model="res.groups">
+        <field name="name">管理员</field>
+        <field name="privilege_id" ref="privilege_zenlenet"/>
         <field name="comment">可以删除合同、工单、数据中心等记录，普通账号只能新建和修改。</field>
     </record>
     <record id="base.group_system" model="res.groups">

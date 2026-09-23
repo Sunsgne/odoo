@@ -126,7 +126,7 @@ class ZenlenetLine(models.Model):
     a_end = fields.Char(string='A端')
     z_end = fields.Char(string='Z端')
     bandwidth = fields.Char(string='带宽')
-    partner_name = fields.Char(string='客户')
+    partner_name = fields.Char(string='客户（导入名）')
     purpose = fields.Char(string='用途')
     stopped = fields.Boolean(string='已终止')
 
@@ -196,11 +196,11 @@ class ZenlenetDesk(models.Model):
     name = fields.Char(required=True)
     hint = fields.Char(string='说明')
     group = fields.Selection([
-        ('work', '工作台'),
-        ('customer', '客户'),
-        ('resource', '资源'),
-        ('operation', '运营'),
-    ], string='分区', default='work', required=True)
+        ('1_work', '工作台'),
+        ('2_customer', '客户'),
+        ('3_resource', '资源'),
+        ('4_operation', '运营'),
+    ], string='分区', default='1_work', required=True)
     icon = fields.Char(default='fa-folder-o')
     sequence = fields.Integer(default=10)
     action_ref = fields.Char()
