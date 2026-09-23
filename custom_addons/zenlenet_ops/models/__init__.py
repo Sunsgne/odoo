@@ -13,6 +13,7 @@ from . import flow
 from . import ticket
 from . import contract
 from . import usage
+from . import credit
 from . import home
 from . import report
 from . import loader

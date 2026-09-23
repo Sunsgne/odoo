@@ -7,6 +7,8 @@ from billing import (
     bills_this_period,
     clean_label,
     contract_end,
+    credit_amount,
+    outage_hours,
     contract_status,
     cycle_amount,
     period_bounds,
@@ -24,6 +26,17 @@ class BillingTests(unittest.TestCase):
         self.assertEqual(bandwidth_lines(500, 320, 6.0, 8.0), [('commit', 500.0, 6.0)])
         self.assertEqual(bandwidth_lines(500, 640, 6.0, 8.0), [('commit', 500.0, 6.0), ('overage', 140.0, 8.0)])
         self.assertEqual(bandwidth_lines(500, 640, 6.0), [('commit', 640.0, 6.0)])
+
+    def test_outage_credits(self):
+        from datetime import datetime
+        self.assertEqual(outage_hours(datetime(2026, 9, 1, 8, 0), datetime(2026, 9, 1, 11, 30)), 3.5)
+        self.assertEqual(outage_hours(datetime(2026, 9, 1, 8, 0), None), 0.0)
+        self.assertEqual(credit_amount(3000, 'hours', hours=3.5, rate=5), 525.0)
+        self.assertEqual(credit_amount(3000, 'hours', hours=40, rate=5), 3000.0)
+        self.assertEqual(credit_amount(3000, 'hours', hours=40, rate=5, cap_ratio=0.5), 1500.0)
+        self.assertEqual(credit_amount(3000, 'percent', rate=10), 300.0)
+        self.assertEqual(credit_amount(3000, 'amount', amount=200), 200.0)
+        self.assertEqual(credit_amount(3000, 'amount', amount=-5), 0.0)
 
     def test_labels_lose_their_codes(self):
         self.assertEqual(clean_label('[colo] 托管'), '托管')

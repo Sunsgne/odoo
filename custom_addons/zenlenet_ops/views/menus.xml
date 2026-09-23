@@ -17,6 +17,7 @@
     <menuitem id="menu_fin_billing" name="计费" parent="menu_finance" sequence="20"/>
     <menuitem id="menu_billing_run" name="合同出账" parent="menu_fin_billing" action="action_contracts" sequence="10"/>
     <menuitem id="menu_usage" name="95 值用量" parent="menu_fin_billing" action="action_usage" sequence="20"/>
+    <menuitem id="menu_credits" name="故障减免" parent="menu_fin_billing" action="action_credits" sequence="30"/>
     <menuitem id="menu_fin_ap" name="应付" parent="menu_finance" sequence="30"/>
     <menuitem id="menu_vendor_bills" name="供应商账单" parent="menu_fin_ap" action="action_vendor_bills" sequence="10"/>
     <menuitem id="menu_vendor_payments" name="付款" parent="menu_fin_ap" action="action_vendor_payments" sequence="20"/>

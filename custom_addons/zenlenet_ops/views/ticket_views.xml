@@ -65,11 +65,15 @@
                     <button name="action_next" type="object" string="关闭" class="btn-primary" invisible="state != 'resolved'"/>
                     <button name="action_wait" type="object" string="等待客户" invisible="state not in ('assigned', 'processing')"/>
                     <button name="action_prev" type="object" string="退回" invisible="state in ('new', 'closed', 'cancel', 'waiting')"/>
+                    <button name="action_request_credit" type="object" string="申请故障减免" invisible="kind != 'fault' or state in ('new', 'cancel')"/>
                     <button name="action_cancel" type="object" string="取消" invisible="state in ('closed', 'cancel')"/>
                     <field name="state" widget="statusbar" options="{'clickable': false}" statusbar_visible="new,assigned,processing,resolved,closed"/>
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
+                        <button name="action_open_credits" type="object" class="oe_stat_button" icon="fa-percent" invisible="not credit_count">
+                            <field name="credit_count" widget="statinfo" string="故障减免"/>
+                        </button>
                         <button name="action_open_flow" type="object" class="oe_stat_button" icon="fa-random" invisible="not flow_id">
                             <div class="o_stat_info"><span class="o_stat_text">业务流转</span></div>
                         </button>

@@ -80,3 +80,8 @@ access_zenlenet_flow_task_pm,zenlenet.flow.task.pm,model_zenlenet_flow_task,zenl
 access_zenlenet_task_template_user,zenlenet.task.template.user,model_zenlenet_task_template,base.group_user,1,0,0,0
 access_zenlenet_task_template_pm,zenlenet.task.template.pm,model_zenlenet_task_template,zenlenet_ops.group_pm,1,1,1,1
 access_zenlenet_task_template_manager,zenlenet.task.template.manager,model_zenlenet_task_template,zenlenet_ops.group_manager,1,1,1,1
+access_zenlenet_credit_user,zenlenet.credit.user,model_zenlenet_credit,base.group_user,1,0,0,0
+access_zenlenet_credit_service,zenlenet.credit.service,model_zenlenet_credit,zenlenet_ops.group_service,1,1,1,0
+access_zenlenet_credit_sales,zenlenet.credit.sales,model_zenlenet_credit,zenlenet_ops.group_sales,1,1,1,0
+access_zenlenet_credit_finance,zenlenet.credit.finance,model_zenlenet_credit,zenlenet_ops.group_finance,1,1,1,0
+access_zenlenet_credit_manager,zenlenet.credit.manager,model_zenlenet_credit,zenlenet_ops.group_manager,1,1,1,1

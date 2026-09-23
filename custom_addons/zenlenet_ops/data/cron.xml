@@ -46,6 +46,12 @@
         <field name="prefix">CG-%(year)s-</field>
         <field name="padding">3</field>
     </record>
+    <record id="seq_credit" model="ir.sequence">
+        <field name="name">ZENLENET 故障减免</field>
+        <field name="code">zenlenet.credit</field>
+        <field name="prefix">JM-%(year)s-</field>
+        <field name="padding">3</field>
+    </record>
     <record id="seq_ticket" model="ir.sequence">
         <field name="name">ZENLENET 工单</field>
         <field name="code">zenlenet.ticket</field>

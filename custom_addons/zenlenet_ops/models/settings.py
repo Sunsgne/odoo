@@ -45,6 +45,8 @@ class ResConfigSettings(models.TransientModel):
         help='打印在每张账单底部，例如收款账户信息。',
     )
 
+    zenlenet_credit_rate = fields.Integer(string='每小时减免月费 %', config_parameter='zenlenet.credit_rate', default=5)
+    zenlenet_credit_cap = fields.Integer(string='单次减免上限（月费 %）', config_parameter='zenlenet.credit_cap', default=100)
     zenlenet_contract_term = fields.Integer(string='默认期限（月）', config_parameter='zenlenet.contract_term', default=12)
     zenlenet_notice_days = fields.Integer(string='到期提前提醒（天）', config_parameter='zenlenet.notice_days', default=30)
     zenlenet_auto_renew = fields.Boolean(string='默认自动续签', config_parameter='zenlenet.auto_renew', default=True)

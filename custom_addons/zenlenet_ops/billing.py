@@ -89,3 +89,28 @@ def bandwidth_lines(commit, p95, price, overage_price=None):
     if overage_price:
         return [('commit', commit, price), ('overage', round(p95 - commit, 2), overage_price)]
     return [('commit', round(p95, 2), price)]
+
+
+def credit_amount(monthly_fee, method, hours=0.0, rate=0.0, amount=0.0, cap_ratio=1.0):
+    """Service credit for an outage.
+
+    method 'hours'   : hours × rate% of the monthly fee per hour
+    method 'percent' : rate% of the monthly fee
+    method 'amount'  : a fixed amount
+    The result never exceeds cap_ratio × monthly fee.
+    """
+    fee = float(monthly_fee or 0.0)
+    if method == 'hours':
+        value = fee * float(rate or 0.0) / 100.0 * float(hours or 0.0)
+    elif method == 'percent':
+        value = fee * float(rate or 0.0) / 100.0
+    else:
+        value = float(amount or 0.0)
+    cap = fee * float(cap_ratio if cap_ratio is not None else 1.0)
+    return round(max(0.0, min(value, cap)) if cap > 0 else max(0.0, value), 2)
+
+
+def outage_hours(start, end):
+    if not start or not end or end <= start:
+        return 0.0
+    return round((end - start).total_seconds() / 3600.0, 2)

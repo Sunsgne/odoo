@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_credit_list" model="ir.ui.view">
+        <field name="name">zenlenet.credit.list</field>
+        <field name="model">zenlenet.credit</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'rejected'" decoration-success="state == 'applied'" decoration-warning="state == 'draft'">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="order_id"/>
+                <field name="ticket_id" optional="show"/>
+                <field name="outage_start"/>
+                <field name="hours"/>
+                <field name="method" optional="hide"/>
+                <field name="amount" sum="合计"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="apply_mode"/>
+                <field name="invoice_id" optional="show"/>
+                <field name="requested_by" widget="many2one_avatar_user" optional="hide"/>
+                <field name="approver_id" widget="many2one_avatar_user" optional="hide"/>
+                <field name="state" widget="badge" decoration-warning="state == 'draft'" decoration-info="state == 'approved'" decoration-success="state == 'applied'" decoration-danger="state == 'rejected'"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_credit_form" model="ir.ui.view">
+        <field name="name">zenlenet.credit.form</field>
+        <field name="model">zenlenet.credit</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_approve" type="object" string="批准" class="btn-primary" invisible="state != 'draft'" groups="zenlenet_ops.group_finance,zenlenet_ops.group_manager" confirm="批准后按处理方式抵扣下期账单或立即开红字账单。继续？"/>
+                    <button name="action_reject" type="object" string="驳回" invisible="state != 'draft'" groups="zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
+                    <button name="action_reset" type="object" string="改回待审批" invisible="state not in ('approved', 'rejected')" groups="zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,approved,applied"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_invoice" type="object" class="oe_stat_button" icon="fa-file-text-o" invisible="not invoice_id">
+                            <div class="o_stat_info"><span class="o_stat_text">抵扣账单</span><span class="o_stat_value"><field name="invoice_id" readonly="1"/></span></div>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="故障">
+                            <field name="partner_id" readonly="state != 'draft'" options="{'no_create': True}"/>
+                            <field name="order_id" readonly="state != 'draft'" options="{'no_create': True}" context="{'list_view_ref': 'zenlenet_ops.view_order_list'}"/>
+                            <field name="ticket_id" readonly="state != 'draft'" options="{'no_create': True}"/>
+                            <field name="outage_start" readonly="state != 'draft'"/>
+                            <field name="outage_end" readonly="state != 'draft'"/>
+                            <field name="hours"/>
+                            <field name="contract_id"/>
+                        </group>
+                        <group string="减免">
+                            <field name="monthly_fee"/>
+                            <field name="method" readonly="state != 'draft'"/>
+                            <field name="rate" readonly="state != 'draft'" invisible="method == 'amount'"/>
+                            <field name="fixed_amount" readonly="state != 'draft'" invisible="method != 'amount'"/>
+                            <field name="cap_percent" readonly="state != 'draft'" invisible="method == 'amount'"/>
+                            <field name="amount" class="fw-bold"/>
+                            <field name="apply_mode" readonly="state != 'draft'"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <field name="reason" placeholder="故障现象、时间线、影响范围、依据的 SLA 条款" readonly="state != 'draft'"/>
+                    <group string="审批" invisible="state == 'draft'">
+                        <field name="requested_by" widget="many2one_avatar_user"/>
+                        <field name="approver_id" widget="many2one_avatar_user"/>
+                        <field name="approved_at"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="view_credit_search" model="ir.ui.view">
+        <field name="name">zenlenet.credit.search</field>
+        <field name="model">zenlenet.credit</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="ticket_id"/>
+                <filter name="draft" string="待审批" domain="[('state', '=', 'draft')]"/>
+                <filter name="approved" string="待抵扣" domain="[('state', '=', 'approved')]"/>
+                <filter name="applied" string="已抵扣" domain="[('state', '=', 'applied')]"/>
+                <group>
+                    <filter name="group_partner" string="客户" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_state" string="状态" context="{'group_by': 'state'}"/>
+                </group>
+                <searchpanel>
+                    <field name="state" string="状态" enable_counters="1" expand="1" icon="fa-flag"/>
+                    <field name="apply_mode" string="处理方式" enable_counters="1" expand="1" icon="fa-money"/>
+                </searchpanel>
+            </search>
+        </field>
+    </record>
+    <record id="action_credits" model="ir.actions.act_window">
+        <field name="name">故障减免</field>
+        <field name="res_model">zenlenet.credit</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_credit_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">还没有减免申请</p>
+            <p>在故障工单上点「申请故障减免」，按故障时长自动算出金额；财务批准后在下期账单里自动抵扣，或立即开红字账单。</p>
+        </field>
+    </record>
+</odoo>

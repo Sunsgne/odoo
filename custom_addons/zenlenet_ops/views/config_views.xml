@@ -107,6 +107,21 @@
                         </setting>
                     </block>
 
+                    <block title="故障减免" name="zenlenet_credit" help="故障工单可申请减免，财务批准后自动在下期账单抵扣或开红字账单。">
+                        <setting id="zenlenet_credit_setting" string="默认减免规则" help="按故障小时数 × 每小时比例 × 该服务月费计算，不超过上限。申请时可逐单改。">
+                            <div class="content-group">
+                                <div class="row mt8">
+                                    <label for="zenlenet_credit_rate" class="col-lg-5 o_light_label"/>
+                                    <field name="zenlenet_credit_rate" class="col-lg-3"/>
+                                </div>
+                                <div class="row">
+                                    <label for="zenlenet_credit_cap" class="col-lg-5 o_light_label"/>
+                                    <field name="zenlenet_credit_cap" class="col-lg-3"/>
+                                </div>
+                            </div>
+                        </setting>
+                    </block>
+
                     <block title="工单 SLA" name="zenlenet_sla" help="按优先级规定多少小时内要解决，超时的工单会标红。">
                         <setting id="zenlenet_sla_setting" string="解决时限" help="从受理时间起算。">
                             <div class="content-group">

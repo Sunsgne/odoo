@@ -62,6 +62,8 @@ class ZenlenetTicket(models.Model):
     sla_hours = fields.Integer(string='SLA（小时）', compute='_compute_due', store=True)
     overdue = fields.Boolean(string='已超时', compute='_compute_overdue', search='_search_overdue')
     color = fields.Integer(compute='_compute_color')
+    credit_ids = fields.One2many('zenlenet.credit', 'ticket_id', string='故障减免')
+    credit_count = fields.Integer(compute='_compute_credit_count')
 
     @api.model
     def _group_expand_states(self, states, domain):
@@ -90,6 +92,18 @@ class ZenlenetTicket(models.Model):
         wanted = (operator == '=' and value) or (operator == '!=' and not value)
         domain = [('due_at', '<', fields.Datetime.now()), ('state', 'not in', ('resolved', 'closed', 'cancel'))]
         return domain if wanted else ['!'] + domain
+
+    @api.depends('credit_ids')
+    def _compute_credit_count(self):
+        for record in self:
+            record.credit_count = len(record.credit_ids)
+
+    def action_open_credits(self):
+        self.ensure_one()
+        action = self.env.ref('zenlenet_ops.action_credits').read()[0]
+        action['domain'] = [('ticket_id', '=', self.id)]
+        action['context'] = {'default_ticket_id': self.id, 'default_partner_id': self.partner_id.id}
+        return action
 
     @api.depends('priority', 'overdue')
     def _compute_color(self):
@@ -160,6 +174,27 @@ class ZenlenetTicket(models.Model):
                 continue
             record.state = 'cancel'
             record._post('已取消')
+
+    def action_request_credit(self):
+        self.ensure_one()
+        order = self.flow_id.order_id
+        if not order:
+            order = self.env['sale.order'].search([('partner_id', '=', self.partner_id.id), ('state', '=', 'sale'), ('zenlenet_stage', '=', 'active')], limit=1)
+        return {
+            'type': 'ir.actions.act_window',
+            'name': '申请故障减免',
+            'res_model': 'zenlenet.credit',
+            'view_mode': 'form',
+            'target': 'current',
+            'context': {
+                'default_ticket_id': self.id,
+                'default_partner_id': self.partner_id.id,
+                'default_order_id': order.id,
+                'default_outage_start': self.opened_at,
+                'default_outage_end': self.resolved_at or fields.Datetime.now(),
+                'default_reason': self.subject,
+            },
+        }
 
     def action_open_flow(self):
         self.ensure_one()

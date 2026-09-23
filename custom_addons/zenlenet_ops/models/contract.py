@@ -281,6 +281,9 @@ class ZenlenetContract(models.Model):
                 'tax_ids': [(6, 0, [])],
                 'sale_line_ids': [(4, item.order_line_id.id)] if item.order_line_id else False,
             }))
+        credits = self.env['zenlenet.credit'].pending_for(self.partner_id, self.order_ids)
+        for credit in credits:
+            lines.append((0, 0, credit._invoice_line_vals()))
         if not lines:
             return Move
         invoice = Move.create({
@@ -297,6 +300,8 @@ class ZenlenetContract(models.Model):
         })
         if billed_one_time:
             billed_one_time.write({'billed': True, 'invoice_id': invoice.id})
+        if credits:
+            credits.write({'state': 'applied', 'invoice_id': invoice.id})
         self.message_post(body=f'已生成 {period_label(day)} 账单 {invoice.name or ""}'.strip())
         return invoice
 
