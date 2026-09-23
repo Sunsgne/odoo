@@ -104,11 +104,13 @@ class ZenlenetContract(models.Model):
         """Build the fee schedule from the linked orders: a recurring item per service line, a one-time item per setup fee."""
         Item = self.env['zenlenet.contract.item']
         for record in self:
-            have = set(record.item_ids.mapped('order_line_id').ids)
+            existing = Item.search([('contract_id', '=', record.id), ('order_line_id', '!=', False)])
+            have = {(item.order_line_id.id, item.kind) for item in existing}
             for order in record.order_ids:
                 for line in order.order_line.filtered(lambda item: not item.display_type):
-                    if line.id in have:
+                    if (line.id, 'recurring') in have:
                         continue
+                    have.add((line.id, 'recurring'))
                     name = clean_label(line.name) or line.product_id.name
                     Item.create({
                         'contract_id': record.id,
@@ -122,7 +124,8 @@ class ZenlenetContract(models.Model):
                         'p95': order.zenlenet_bill_mode == 'p95' and line == order._zenlenet_bandwidth_line(),
                         'start_date': record.start_date,
                     })
-                    if line.zenlenet_setup_fee:
+                    if line.zenlenet_setup_fee and (line.id, 'one_time') not in have:
+                        have.add((line.id, 'one_time'))
                         Item.create({
                             'contract_id': record.id,
                             'kind': 'one_time',
