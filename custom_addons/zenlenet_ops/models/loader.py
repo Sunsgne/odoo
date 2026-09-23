@@ -69,6 +69,12 @@ class ZenlenetLoader(models.AbstractModel):
         values['country_id'] = country.id
         if not self.env['account.move'].sudo().search_count([]):
             values['currency_id'] = usd.id
+        layout = self.env.ref('web.external_layout_standard', raise_if_not_found=False)
+        if layout and not company.external_report_layout_id:
+            values['external_report_layout_id'] = layout.id
+        paper = self.env.ref('zenlenet_ops.paperformat_zenlenet', raise_if_not_found=False)
+        if paper:
+            values['paperformat_id'] = paper.id
         if not company.logo or company.uses_default_logo:
             icon = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'description', 'icon.png')
             if os.path.isfile(icon):
