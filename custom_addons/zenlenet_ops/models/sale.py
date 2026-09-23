@@ -94,10 +94,9 @@ class SaleOrder(models.Model):
         if not partner.zenlenet_manager_id:
             partner.zenlenet_manager_id = self.user_id
         Contract = self.env['zenlenet.contract']
-        contract = Contract.search([('partner_id', '=', partner.id), ('state', '=', 'draft')], limit=1)
-        if contract:
-            contract.order_ids = [(4, self.id)]
-        else:
+        # One confirmed order owns one contract. Never fold it into some other draft of the same customer.
+        contract = Contract.search([('order_ids', 'in', self.id)], limit=1)
+        if not contract:
             contract = Contract.create({
                 'partner_id': partner.id,
                 'order_ids': [(6, 0, self.ids)],

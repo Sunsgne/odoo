@@ -49,6 +49,7 @@ class ZenlenetPrefix(models.Model):
     size = fields.Integer(string='可用地址数', compute='_compute_size', store=True, help='IPv6 段按 2^31 上限记录，实际容量见协议列。')
     size_display = fields.Char(string='容量', compute='_compute_size', store=True)
     address_ids = fields.One2many('zenlenet.address', 'prefix_id', string='地址')
+    allocation_ids = fields.One2many('zenlenet.flow.resource', 'prefix_id', string='交付记录')
     address_count = fields.Integer(string='已登记', compute='_compute_usage')
     allocated_count = fields.Integer(string='已分配', compute='_compute_usage')
     free_count = fields.Integer(string='未分配', compute='_compute_usage')

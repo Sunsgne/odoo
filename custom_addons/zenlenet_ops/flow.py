@@ -1,7 +1,60 @@
 """Person-assigned handoff. No Odoo imports."""
 
+# Which concrete resource a demand line may hold. Anything else (云主机、托管、转售) needs no network resource.
+RESOURCE_SLOT = {
+    'ipt': 'prefix',
+    'ip': 'prefix',
+    'ip_single': 'address',
+    'pl': 'line',
+    'sdwan': 'line',
+    'line': 'line',
+}
+
+
+def resource_slot(service_type):
+    return RESOURCE_SLOT.get(service_type)
+
+
+def normalize_assignment(service_type, prefix_id=None, address_id=None, line_id=None, resource_ref=None):
+    """A demand line holds exactly one resource, and only the kind its business uses.
+
+    ``resource_ref`` (``model,id``) is accepted so older callers keep working. Returns
+    ``(prefix_id, address_id, line_id)`` with the unused slots cleared.
+    """
+    if resource_ref and not any((prefix_id, address_id, line_id)):
+        model, _, raw = str(resource_ref).partition(',')
+        try:
+            rid = int(raw)
+        except (TypeError, ValueError):
+            rid = None
+        if model == 'zenlenet.prefix':
+            prefix_id = rid
+        elif model == 'zenlenet.address':
+            address_id = rid
+        elif model == 'zenlenet.line':
+            line_id = rid
+    slot = resource_slot(service_type)
+    if slot == 'prefix':
+        return prefix_id or None, None, None
+    if slot == 'address':
+        return None, address_id or None, None
+    if slot == 'line':
+        return None, None, line_id or None
+    return None, None, None
+
+
+def resource_reference(prefix_id, address_id, line_id):
+    if prefix_id:
+        return f'zenlenet.prefix,{prefix_id}'
+    if address_id:
+        return f'zenlenet.address,{address_id}'
+    if line_id:
+        return f'zenlenet.line,{line_id}'
+    return False
+
+
 STATES = [
-    ('company', '录入公司'),
+    ('company', '录入客户'),
     ('allocate', '分配资源'),
     ('deliver', '交付'),
     ('accept', '验收'),

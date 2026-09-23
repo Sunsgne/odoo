@@ -162,6 +162,18 @@
                                 </list>
                             </field>
                         </page>
+                        <page string="交付工单">
+                            <field name="zenlenet_flow_ids" readonly="1">
+                                <list limit="20">
+                                    <field name="name"/>
+                                    <field name="order_id"/>
+                                    <field name="state"/>
+                                    <field name="datacenter_id"/>
+                                    <field name="pending_count" string="待分配"/>
+                                    <field name="user_id" widget="many2one_avatar_user"/>
+                                </list>
+                            </field>
+                        </page>
                         <page string="IP 地址段">
                             <field name="zenlenet_prefix_ids" readonly="1">
                                 <list limit="20">
@@ -171,6 +183,18 @@
                                     <field name="allocated_count"/>
                                     <field name="utilization" widget="progressbar"/>
                                     <field name="status" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="线路">
+                            <field name="zenlenet_line_ids" readonly="1">
+                                <list limit="20">
+                                    <field name="name"/>
+                                    <field name="kind"/>
+                                    <field name="status"/>
+                                    <field name="datacenter_id"/>
+                                    <field name="bandwidth"/>
+                                    <field name="supplier_id"/>
                                 </list>
                             </field>
                         </page>

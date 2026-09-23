@@ -48,6 +48,7 @@ class ZenlenetAddress(models.Model):
     net_attr = fields.Selection(NET_ATTRS, string='网络属性', default='公网', index=True)
     dc_type = fields.Selection(DC_TYPES, string='数据中心类型', index=True)
     status = fields.Selection(STATUSES, string='分配状态', default='free', index=True)
+    allocation_ids = fields.One2many('zenlenet.flow.resource', 'address_id', string='交付记录')
     usage = fields.Char(string='用途')
     expires_on = fields.Date(string='到期日')
     remark = fields.Text(string='备注')
@@ -127,6 +128,7 @@ class ZenlenetLine(models.Model):
     z_end = fields.Char(string='Z端')
     bandwidth = fields.Char(string='带宽')
     partner_name = fields.Char(string='客户（导入名）')
+    allocation_ids = fields.One2many('zenlenet.flow.resource', 'line_id', string='交付记录')
     purpose = fields.Char(string='用途')
     stopped = fields.Boolean(string='已终止')
 

@@ -8,7 +8,10 @@ from odoo.addons.zenlenet_ops.flow import (
     can_convert,
     can_reclaim,
     next_state,
+    normalize_assignment,
     prev_state,
+    resource_reference,
+    resource_slot,
     state_label,
     team_for,
     transition_allowed,
@@ -75,13 +78,14 @@ class ZenlenetFlow(models.Model):
         domain="['&', ('share', '=', False), '|', ('zenlenet_team', '=', 'service'), ('zenlenet_team', '=', False)]",
     )
     team = fields.Selection(TEAMS, string='分组', compute='_compute_team', store=True, group_expand='_group_expand_teams')
-    partner_id = fields.Many2one('res.partner', string='公司', tracking=True, domain=[('is_company', '=', True)])
+    partner_id = fields.Many2one('res.partner', string='客户', tracking=True, domain=[('is_company', '=', True)])
     datacenter_id = fields.Many2one('zenlenet.datacenter', string='期望数据中心', tracking=True, help='销售录入时填，分资源的人按这个找网段和线路。')
     pending_count = fields.Integer(string='待分配', compute='_compute_pending')
     order_id = fields.Many2one(
         'sale.order', string='服务订单', tracking=True, domain="[('partner_id', '=', partner_id)]",
         help='从哪张订单来的交付。选好后点「从订单带入」生成业务行。',
     )
+    contract_id = fields.Many2one('zenlenet.contract', string='合同', compute='_compute_contract')
     resource_ids = fields.One2many('zenlenet.flow.resource', 'flow_id', string='资源')
     task_ids = fields.One2many('zenlenet.flow.task', 'flow_id', string='交付任务')
     task_progress = fields.Float(string='任务进度', compute='_compute_task_progress')
@@ -156,6 +160,20 @@ class ZenlenetFlow(models.Model):
     def _compute_ticket_count(self):
         for record in self:
             record.ticket_count = len(record.ticket_ids)
+
+    @api.depends('order_id')
+    def _compute_contract(self):
+        Contract = self.env['zenlenet.contract']
+        for record in self:
+            record.contract_id = Contract.search([('order_ids', 'in', record.order_id.id)], limit=1) if record.order_id else False
+
+    def action_open_order(self):
+        self.ensure_one()
+        return {'type': 'ir.actions.act_window', 'res_model': 'sale.order', 'res_id': self.order_id.id, 'view_mode': 'form', 'target': 'current'}
+
+    def action_open_contract(self):
+        self.ensure_one()
+        return {'type': 'ir.actions.act_window', 'res_model': 'zenlenet.contract', 'res_id': self.contract_id.id, 'view_mode': 'form', 'target': 'current'}
 
     def action_load_order(self):
         """Create one resource row per service line of the order; rows that already exist are kept."""
@@ -332,7 +350,7 @@ class ZenlenetFlow(models.Model):
         self._ensure_role(self.state)
         if self.state == 'company':
             if not self.partner_id:
-                raise UserError('请先录入公司，再进入下一步。')
+                raise UserError('请先录入客户，再进入下一步。')
             if not self.sales_user_id:
                 raise UserError('请指定销售。')
             if not self.delivery_user_id:
@@ -549,16 +567,16 @@ class ZenlenetFlowResource(models.Model):
     order_line_id = fields.Many2one('sale.order.line', string='订单行', ondelete='set null')
     resource_ref = fields.Reference(
         selection=[('zenlenet.prefix', 'IP 地址段'), ('zenlenet.address', '单个 IP'), ('zenlenet.line', '线路')],
-        string='交付资源', help='这项业务实际交付的资源：IP 地址段、单个 IP 或线路。',
+        string='交付资源', help='由下面的网段 / IP / 线路自动填写，一项业务只挂一种。',
     )
     partner_id = fields.Many2one(related='flow_id.partner_id', string='客户', store=True)
     flow_state = fields.Selection(related='flow_id.state', string='工单阶段', store=True)
     datacenter_id = fields.Many2one(related='flow_id.datacenter_id', string='期望数据中心', store=True)
     flow_user_id = fields.Many2one(related='flow_id.delivery_user_id', string='交付负责人')
     needs_resource = fields.Boolean(string='需要资源', compute='_compute_needs_resource', store=True)
-    prefix_id = fields.Many2one('zenlenet.prefix', string='IP 地址段', compute='_compute_targets', store=True, readonly=False)
-    address_id = fields.Many2one('zenlenet.address', string='单个 IP', compute='_compute_targets', store=True, readonly=False)
-    line_id = fields.Many2one('zenlenet.line', string='线路', compute='_compute_targets', store=True, readonly=False)
+    prefix_id = fields.Many2one('zenlenet.prefix', string='网段', index=True)
+    address_id = fields.Many2one('zenlenet.address', string='IP', index=True)
+    line_id = fields.Many2one('zenlenet.line', string='线路', index=True)
     spec = fields.Char(string='规格 / 说明')
 
     def _delete_snapshot(self):
@@ -577,31 +595,36 @@ class ZenlenetFlowResource(models.Model):
         return 24 if self.service_type in ('ipt', 'ip') else 0
 
     def action_suggest(self):
-        """Pick the first free block (or circuit) that fits the request, preferring the wanted data center."""
+        """Fill the one slot this business uses: a free block, a free host, or a free circuit."""
         Prefix = self.env['zenlenet.prefix']
+        Address = self.env['zenlenet.address']
         Line = self.env['zenlenet.line']
         for record in self:
             if record.resource_ref:
                 continue
-            if record.service_type in ('pl', 'sdwan', 'line'):
-                domain = [('status', 'in', ('planned', 'provisioning', 'active')), ('partner_id', '=', False)]
-                if record.datacenter_id:
-                    domain.append(('datacenter_id', '=', record.datacenter_id.id))
-                line = Line.search(domain, limit=1, order='datacenter_id, name')
+            slot = resource_slot(record.service_type)
+            dc = [('datacenter_id', '=', record.datacenter_id.id)] if record.datacenter_id else []
+            if slot == 'line':
+                line = Line.search([('status', 'in', ('planned', 'provisioning', 'active')), ('partner_id', '=', False)] + dc, limit=1, order='name')
                 if not line:
                     raise UserError(f'{record.datacenter_id.name or "库里"}没有空闲线路，请先采购或录入。')
-                record.resource_ref = line
-                continue
-            wanted = record._wanted_prefixlen()
-            base = [('status', 'in', ('active', 'reserved')), ('partner_id', '=', False), ('child_ids', '=', False)]
-            if wanted:
-                base.append(('prefixlen', '=', wanted))
-            candidates = Prefix.search(base + ([('datacenter_id', '=', record.datacenter_id.id)] if record.datacenter_id else []), limit=1, order='prefix')
-            if not candidates:
-                candidates = Prefix.search(base, limit=1, order='prefix')
-            if not candidates:
-                raise UserError(f'没有空闲的 /{wanted or "任意"} 网段，请先切割或录入。')
-            record.resource_ref = candidates
+                record.line_id = line
+            elif slot == 'address':
+                address = Address.search([('status', '=', 'free')] + dc, limit=1, order='address')
+                if not address:
+                    raise UserError(f'{record.datacenter_id.name or "库里"}没有未分配的 IP。')
+                record.address_id = address
+            elif slot == 'prefix':
+                wanted = record._wanted_prefixlen()
+                base = [('status', 'in', ('active', 'reserved')), ('partner_id', '=', False), ('child_ids', '=', False)]
+                if wanted:
+                    base.append(('prefixlen', '=', wanted))
+                candidates = Prefix.search(base + dc, limit=1, order='prefix') or Prefix.search(base, limit=1, order='prefix')
+                if not candidates:
+                    raise UserError(f'没有空闲的 /{wanted or "任意"} 网段，请先切割或录入。')
+                record.prefix_id = candidates
+            else:
+                raise UserError('这项业务不需要分配网段、IP 或线路。')
         return True
 
     def action_open_flow(self):
@@ -623,22 +646,81 @@ class ZenlenetFlowResource(models.Model):
         flows.action_next()
         return True
 
-    @api.depends('resource_ref')
-    def _compute_targets(self):
+    def _assignment_vals(self, vals, current=None):
+        """Force the row onto the single slot its business type allows, and mirror it into resource_ref."""
+        current = current or self.env['zenlenet.flow.resource']
+        service = vals.get('service_type', current.service_type if current else None)
+        prefix = vals['prefix_id'] if 'prefix_id' in vals else (current.prefix_id.id if current else None)
+        address = vals['address_id'] if 'address_id' in vals else (current.address_id.id if current else None)
+        line = vals['line_id'] if 'line_id' in vals else (current.line_id.id if current else None)
+        ref = vals.get('resource_ref')
+        if ref and not isinstance(ref, str):
+            ref = f'{ref._name},{ref.id}' if ref else False
+        prefix, address, line = normalize_assignment(service, prefix, address, line, ref if not any((prefix, address, line)) else None)
+        vals = dict(vals)
+        vals['prefix_id'] = prefix or False
+        vals['address_id'] = address or False
+        vals['line_id'] = line or False
+        vals['resource_ref'] = resource_reference(prefix, address, line) or False
+        return vals
+
+    def _check_single_holder(self):
+        """One network resource belongs to one open delivery ticket."""
         for record in self:
-            ref = record.resource_ref
-            record.prefix_id = ref if ref and ref._name == 'zenlenet.prefix' else record.prefix_id if not ref else False
-            record.address_id = ref if ref and ref._name == 'zenlenet.address' else record.address_id if not ref else False
-            record.line_id = ref if ref and ref._name == 'zenlenet.line' else record.line_id if not ref else False
+            for field, label in (('prefix_id', '网段'), ('address_id', 'IP'), ('line_id', '线路')):
+                target = record[field]
+                if not target:
+                    continue
+                clash = self.search([
+                    (field, '=', target.id), ('id', '!=', record.id), ('flow_state', 'not in', ('cancel',)),
+                ], limit=1)
+                if clash:
+                    raise UserError(f'{target.display_name} 已经挂在交付工单 {clash.flow_id.name}（{clash.partner_id.name or "未填客户"}）。一个{label}只属于一张工单。')
+
+    def _release_dropped(self, before):
+        """Clear the customer on a resource that this row no longer holds and nobody else does."""
+        for record_id, (old_prefix, old_address, old_line) in before.items():
+            current = self.browse(record_id).exists()
+            if old_prefix and old_prefix != (current.prefix_id if current else old_prefix.browse()) and not self.search_count([('prefix_id', '=', old_prefix.id)]):
+                old_prefix.partner_id = False
+            if old_address and old_address != (current.address_id if current else old_address.browse()) and not self.search_count([('address_id', '=', old_address.id)]):
+                old_address.write({'partner_id': False, 'status': 'free'})
+            if old_line and old_line != (current.line_id if current else old_line.browse()) and not self.search_count([('line_id', '=', old_line.id)]):
+                old_line.partner_id = False
+
+    def unlink(self):
+        before = {record.id: (record.prefix_id, record.address_id, record.line_id) for record in self}
+        flows = self.flow_id
+        result = super().unlink()
+        self._release_dropped(before)
+        flows._apply_resources()
+        return result
 
     @api.model_create_multi
     def create(self, vals_list):
+        vals_list = [self._assignment_vals(dict(vals)) for vals in vals_list]
         records = super().create(vals_list)
+        records._check_single_holder()
         records.flow_id._apply_resources()
         return records
 
     def write(self, vals):
+        keys = {'prefix_id', 'address_id', 'line_id', 'resource_ref', 'service_type'}
+        before = {}
+        if keys & set(vals):
+            before = {record.id: (record.prefix_id, record.address_id, record.line_id) for record in self}
+            if len(self) == 1:
+                vals = self._assignment_vals(vals, self)
+            else:
+                for record in self:
+                    super(ZenlenetFlowResource, record).write(record._assignment_vals(dict(vals), record))
+                self._check_single_holder()
+                self._release_dropped(before)
+                self.flow_id._apply_resources()
+                return True
         result = super().write(vals)
-        if {'address_id', 'prefix_id', 'resource_ref', 'service_type'} & set(vals):
+        if keys & set(vals):
+            self._check_single_holder()
+            self._release_dropped(before)
             self.flow_id._apply_resources()
         return result

@@ -81,6 +81,18 @@
                         </group>
                     </group>
                     <notebook>
+                        <page string="交付记录">
+                            <field name="allocation_ids" readonly="1">
+                                <list>
+                                    <field name="flow_id"/>
+                                    <field name="order_id"/>
+                                    <field name="partner_id"/>
+                                    <field name="service_type"/>
+                                    <field name="spec"/>
+                                    <field name="flow_state"/>
+                                </list>
+                            </field>
+                        </page>
                         <page string="下级网段">
                             <field name="child_ids" readonly="1">
                                 <list decoration-muted="status == 'deprecated'">

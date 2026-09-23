@@ -70,6 +70,12 @@
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
+                        <button name="action_open_order" type="object" class="oe_stat_button" icon="fa-plug" invisible="not order_id">
+                            <div class="o_stat_info"><span class="o_stat_text">服务订单</span></div>
+                        </button>
+                        <button name="action_open_contract" type="object" class="oe_stat_button" icon="fa-handshake-o" invisible="not contract_id">
+                            <div class="o_stat_info"><span class="o_stat_text">合同</span></div>
+                        </button>
                         <button name="action_open_tickets" type="object" class="oe_stat_button" icon="fa-life-ring">
                             <field name="ticket_count" widget="statinfo" string="工单"/>
                         </button>
@@ -79,6 +85,8 @@
                     </div>
                     <div class="text-muted mb-2" invisible="kind != 'test'">测试单验收之后只有两条路：回收（地址回到未分配后完成），或转商务继续交付。</div>
                     <div class="text-muted mb-2" invisible="kind != 'business'">商务单验收之后进入完成。</div>
+                    <div class="text-muted mb-2">客户 → 服务订单 → 合同（出账）→ 本工单（交付）。下面每一行是订单里的一项业务，只挂一种资源：网段、单个 IP 或线路。</div>
+                    <field name="contract_id" invisible="1"/>
                     <group>
                         <group>
                             <field name="kind" readonly="state != 'company'"/>
@@ -109,20 +117,20 @@
                     </group>
                     <notebook>
                         <page string="资源">
-                            <div class="text-muted mb-2">选好服务订单点「从订单带入」，每条业务一行；在「交付资源」里给每行挂上实际交付的 IP 地址段或线路。</div>
+                            <div class="text-muted mb-2">先选服务订单，点「从订单带入」。IPT / IP 段填「网段」，单个 IP 填「IP」，专线 / SD-WAN 填「线路」。另外两列留空。</div>
                             <field name="resource_ids">
                                 <list editable="bottom">
                                     <field name="service_type" string="业务"/>
                                     <field name="order_line_id" column_invisible="1"/>
-                                    <field name="order_id" column_invisible="1"/>
+                                    <field name="order_id" string="订单" optional="hide"/>
                                     <field name="spec" string="规格 / 说明"/>
-                                    <field name="resource_ref" string="交付资源" options="{'no_create': True}"/>
-                                    <field name="prefix_id" column_invisible="1"/>
-                                    <field name="address_id" column_invisible="1"/>
-                                    <field name="line_id" column_invisible="1"/>
+                                    <field name="prefix_id" string="网段" options="{'no_create': True}" domain="[('partner_id', '=', False), ('child_ids', '=', False), ('status', 'in', ('active', 'reserved'))]" invisible="service_type not in ('ipt', 'ip')"/>
+                                    <field name="address_id" string="IP" options="{'no_create': True}" domain="[('status', '=', 'free')]" invisible="service_type != 'ip_single'"/>
+                                    <field name="line_id" string="线路" options="{'no_create': True}" domain="[('partner_id', '=', False), ('status', 'in', ('planned', 'provisioning', 'active'))]" invisible="service_type not in ('pl', 'sdwan', 'line')"/>
+                                    <field name="resource_ref" column_invisible="1"/>
                                 </list>
                             </field>
-                            <field name="resource_note" placeholder="没有具体订单或地址时，写清楚要分配的业务"/>
+                            <field name="resource_note" placeholder="整单说明，例如测试用途、期望割接窗口"/>
                         </page>
                         <page string="交付任务">
                             <div class="d-flex align-items-center gap-3 mb-2">
@@ -190,12 +198,16 @@
                     <button name="action_finish_allocation" type="object" string="分配完成，转交付" class="btn-primary"/>
                 </header>
                 <field name="flow_id" readonly="1" string="交付工单"/>
-                <field name="partner_id" readonly="1"/>
-                <field name="datacenter_id" readonly="1"/>
+                <field name="partner_id" readonly="1" string="客户"/>
+                <field name="order_id" readonly="1" string="订单"/>
+                <field name="datacenter_id" readonly="1" string="期望机房"/>
                 <field name="service_type" readonly="1" string="业务"/>
                 <field name="spec" readonly="1" string="需求"/>
-                <field name="resource_ref" string="分配资源" options="{'no_create': True}"/>
-                <field name="flow_user_id" readonly="1" widget="many2one_avatar_user"/>
+                <field name="prefix_id" string="网段" options="{'no_create': True}" domain="[('partner_id', '=', False), ('child_ids', '=', False), ('status', 'in', ('active', 'reserved'))]" invisible="service_type not in ('ipt', 'ip')"/>
+                <field name="address_id" string="IP" options="{'no_create': True}" domain="[('status', '=', 'free')]" invisible="service_type != 'ip_single'"/>
+                <field name="line_id" string="线路" options="{'no_create': True}" domain="[('partner_id', '=', False), ('status', 'in', ('planned', 'provisioning', 'active'))]" invisible="service_type not in ('pl', 'sdwan', 'line')"/>
+                <field name="resource_ref" column_invisible="1"/>
+                <field name="flow_user_id" readonly="1" widget="many2one_avatar_user" string="交付"/>
                 <field name="flow_state" column_invisible="1"/>
                 <field name="needs_resource" column_invisible="1"/>
                 <button name="action_suggest" type="object" icon="fa-magic" title="推荐一个空闲资源" invisible="resource_ref"/>
@@ -233,7 +245,7 @@
         <field name="context">{'search_default_pending': 1, 'search_default_group_flow': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">没有待分配的资源</p>
-            <p>交付工单进入「分配资源」阶段后，需要网段、IP 或线路的业务行会排在这里。给每行挂上资源，再点「分配完成，转交付」。</p>
+            <p>每行是一张订单里的一项业务。IPT 和 IP 段填「网段」，单个 IP 填「IP」，专线和 SD-WAN 填「线路」。同一资源不能挂到两张工单。全部填完后点「分配完成，转交付」。</p>
         </field>
     </record>
     <record id="view_flow_task_kanban" model="ir.ui.view">

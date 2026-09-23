@@ -1,6 +1,9 @@
 import unittest
 
-from flow import can_convert, can_reclaim, next_state, prev_state, team_for, transition_allowed
+from flow import (
+    can_convert, can_reclaim, next_state, normalize_assignment, prev_state,
+    resource_reference, resource_slot, team_for, transition_allowed,
+)
 
 
 class FlowTests(unittest.TestCase):
@@ -34,6 +37,18 @@ class FlowTests(unittest.TestCase):
     def test_business_accept_goes_to_done(self):
         self.assertEqual(next_state('business', 'accept'), 'done')
         self.assertTrue(transition_allowed('business', 'accept', 'business', 'done'))
+
+    def test_one_slot_per_business(self):
+        self.assertEqual(resource_slot('ipt'), 'prefix')
+        self.assertEqual(resource_slot('ip_single'), 'address')
+        self.assertEqual(resource_slot('sdwan'), 'line')
+        self.assertIsNone(resource_slot('vm'))
+        self.assertEqual(normalize_assignment('ipt', 5, 9, 3), (5, None, None))
+        self.assertEqual(normalize_assignment('pl', 5, None, 3), (None, None, 3))
+        self.assertEqual(normalize_assignment('colo', 5, 9, 3), (None, None, None))
+        self.assertEqual(normalize_assignment('ip_single', resource_ref='zenlenet.address,12'), (None, 12, None))
+        self.assertEqual(resource_reference(5, None, None), 'zenlenet.prefix,5')
+        self.assertFalse(resource_reference(None, None, None))
 
     def test_cannot_skip(self):
         self.assertFalse(transition_allowed('business', 'company', 'business', 'deliver'))

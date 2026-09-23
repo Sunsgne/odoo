@@ -60,6 +60,8 @@ class ResPartner(models.Model):
     zenlenet_contract_ids = fields.One2many('zenlenet.contract', 'partner_id', string='合同')
     zenlenet_ticket_ids = fields.One2many('zenlenet.ticket', 'partner_id', string='服务工单')
     zenlenet_prefix_ids = fields.One2many('zenlenet.prefix', 'partner_id', string='地址段')
+    zenlenet_flow_ids = fields.One2many('zenlenet.flow', 'partner_id', string='交付工单')
+    zenlenet_line_ids = fields.One2many('zenlenet.line', 'partner_id', string='线路')
     zenlenet_invoice_ids = fields.One2many('account.move', 'partner_id', string='账单', domain=[('move_type', '=', 'out_invoice'), ('state', '!=', 'cancel')])
 
 
