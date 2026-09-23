@@ -5,8 +5,14 @@
         <field name="model">zenlenet.address</field>
         <field name="arch" type="xml">
             <list>
+                <header>
+                    <button name="action_export_prefixes" type="object" string="导出IP段" display="always"/>
+                    <button name="action_merge" type="object" string="IP合并" display="always"/>
+                    <button name="action_add_ipset" type="object" string="添加IP集" display="always"/>
+                    <button name="action_add_prefix" type="object" string="添加IP段" class="btn-primary" display="always"/>
+                </header>
                 <field name="address"/>
-                <field name="block" optional="hide"/>
+                <field name="block" optional="show"/>
                 <field name="pop"/>
                 <field name="partner_id"/>
                 <field name="status"/>
@@ -60,9 +66,20 @@
                 <filter name="allocated" string="已分配" domain="[('status','=','allocated')]"/>
                 <filter name="free" string="未分配" domain="[('status','=','free')]"/>
                 <filter name="reserved" string="预分配" domain="[('status','=','reserved')]"/>
-                <filter name="testing" string="测试" domain="[('status','=','testing')]"/>
+                <filter name="transferring" string="调库中" domain="[('status','=','transferring')]"/>
                 <filter name="returning" string="出库中" domain="[('status','=','returning')]"/>
+                <filter name="testing" string="测试" domain="[('status','=','testing')]"/>
+                <filter name="internal" string="自用" domain="[('status','=','internal')]"/>
                 <separator/>
+                <filter name="dc_returned" string="已退租" domain="[('dc_type','=','已退租')]"/>
+                <filter name="dc_rare" string="不常用" domain="[('dc_type','=','不常用')]"/>
+                <filter name="dc_main" string="主营机房" domain="[('dc_type','=','主营机房')]"/>
+                <filter name="dc_an" string="安畅云" domain="[('dc_type','=','安畅云')]"/>
+                <filter name="dc_third" string="第三方" domain="[('dc_type','=','第三方')]"/>
+                <filter name="dc_pop" string="POP点" domain="[('dc_type','=','POP点')]"/>
+                <filter name="dc_cloud" string="公有云" domain="[('dc_type','=','公有云')]"/>
+                <separator/>
+                <filter name="fastfiber" string="FastFiber" domain="[('net_attr','=','FastFiber')]"/>
                 <filter name="public_net" string="公网" domain="[('net_attr','=','公网')]"/>
                 <filter name="private_net" string="内网" domain="[('net_attr','=','内网')]"/>
                 <group>
@@ -71,6 +88,11 @@
                     <filter name="group_status" string="分配状态" context="{'group_by': 'status'}"/>
                     <filter name="group_dc" string="数据中心类型" context="{'group_by': 'dc_type'}"/>
                 </group>
+                <searchpanel>
+                    <field name="dc_type" string="数据中心类型" enable_counters="1" icon="fa-building"/>
+                    <field name="status" string="分配状态" enable_counters="1" icon="fa-tags"/>
+                    <field name="net_attr" string="网络属性" enable_counters="1" icon="fa-globe"/>
+                </searchpanel>
             </search>
         </field>
     </record>
@@ -86,6 +108,13 @@
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_address_search"/>
         <field name="context">{'search_default_group_block': 1}</field>
+    </record>
+    <record id="action_stock" model="ir.actions.act_window">
+        <field name="name">库存管理</field>
+        <field name="res_model">zenlenet.address</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('status', '=', 'free')]</field>
+        <field name="search_view_id" ref="view_address_search"/>
     </record>
     <record id="action_prefix_export" model="ir.actions.act_url">
         <field name="name">导出IP段</field>

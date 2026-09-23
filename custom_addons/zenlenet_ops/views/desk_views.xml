@@ -24,14 +24,20 @@
         <field name="view_mode">kanban</field>
         <field name="target">current</field>
     </record>
+    <record id="desk_flow" model="zenlenet.desk">
+        <field name="name">业务流转</field>
+        <field name="sequence">5</field>
+        <field name="hint">录入公司、分配资源、交付、验收。测试要回收或转商务</field>
+        <field name="action_ref">zenlenet_ops.action_flow</field>
+    </record>
     <record id="desk_customers" model="zenlenet.desk">
-        <field name="name">客户</field>
+        <field name="name">客户管理</field>
         <field name="sequence">10</field>
         <field name="hint">在网、测试、已退租</field>
         <field name="action_ref">zenlenet_ops.action_customers</field>
     </record>
     <record id="desk_orders" model="zenlenet.desk">
-        <field name="name">订单</field>
+        <field name="name">订单管理</field>
         <field name="sequence">20</field>
         <field name="hint">IPT、专线、云主机、托管、转售</field>
         <field name="action_ref">zenlenet_ops.action_orders</field>
@@ -43,38 +49,44 @@
         <field name="action_ref">zenlenet_ops.action_invoices</field>
     </record>
     <record id="desk_addresses" model="zenlenet.desk">
-        <field name="name">IP资源</field>
+        <field name="name">资源管理</field>
         <field name="sequence">40</field>
-        <field name="hint">地址、机房、分配状态</field>
+        <field name="hint">IP、线路、退资源</field>
         <field name="action_ref">zenlenet_ops.action_addresses</field>
     </record>
     <record id="desk_blocks" model="zenlenet.desk">
-        <field name="name">IP段</field>
-        <field name="sequence">50</field>
-        <field name="hint">按网段查看，也可以导出</field>
-        <field name="action_ref">zenlenet_ops.action_blocks</field>
+        <field name="name">库存管理</field>
+        <field name="sequence">70</field>
+        <field name="hint">还没分出去的地址</field>
+        <field name="action_ref">zenlenet_ops.action_stock</field>
     </record>
     <record id="desk_lines" model="zenlenet.desk">
-        <field name="name">线路</field>
+        <field name="name">采购管理</field>
         <field name="sequence">60</field>
-        <field name="hint">供应商专线和 VXLAN</field>
-        <field name="action_ref">zenlenet_ops.action_lines</field>
+        <field name="hint">待采购、已下单、已到货</field>
+        <field name="action_ref">zenlenet_ops.action_purchases</field>
     </record>
     <record id="desk_returns" model="zenlenet.desk">
-        <field name="name">退资源</field>
-        <field name="sequence">70</field>
-        <field name="hint">退回供应商的地址和资源</field>
-        <field name="action_ref">zenlenet_ops.action_returns</field>
+        <field name="name">固定资产</field>
+        <field name="sequence">80</field>
+        <field name="hint">在用、闲置、报废</field>
+        <field name="action_ref">zenlenet_ops.action_assets</field>
     </record>
     <record id="desk_maintenance" model="zenlenet.desk">
-        <field name="name">割接 / 维护</field>
-        <field name="sequence">80</field>
-        <field name="hint">从草稿走到通知、执行和验证</field>
+        <field name="name">数据中心维护</field>
+        <field name="sequence">50</field>
+        <field name="hint">割接和维护通知</field>
         <field name="action_ref">zenlenet_ops.action_maintenance</field>
+    </record>
+    <record id="desk_settings" model="zenlenet.desk">
+        <field name="name">系统设置</field>
+        <field name="sequence">90</field>
+        <field name="hint">账号</field>
+        <field name="action_ref">zenlenet_ops.action_users</field>
     </record>
     <record id="desk_templates" model="zenlenet.desk">
         <field name="name">通知模板</field>
-        <field name="sequence">90</field>
+        <field name="sequence">100</field>
         <field name="hint">维护、割接、风险、紧急、接入点</field>
         <field name="action_ref">zenlenet_ops.action_templates</field>
     </record>

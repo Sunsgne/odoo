@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_asset_list" model="ir.ui.view">
+        <field name="name">zenlenet.asset.list</field>
+        <field name="model">zenlenet.asset</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="pop"/>
+                <field name="serial"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_asset_form" model="ir.ui.view">
+        <field name="name">zenlenet.asset.form</field>
+        <field name="model">zenlenet.asset</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="partner_id"/>
+                        <field name="pop"/>
+                        <field name="serial"/>
+                        <field name="state"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_assets" model="ir.actions.act_window">
+        <field name="name">固定资产</field>
+        <field name="res_model">zenlenet.asset</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

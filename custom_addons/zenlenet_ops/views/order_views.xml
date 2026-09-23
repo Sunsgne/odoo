@@ -92,7 +92,7 @@
         </field>
     </record>
     <record id="action_orders" model="ir.actions.act_window">
-        <field name="name">订单</field>
+        <field name="name">订单管理</field>
         <field name="res_model">sale.order</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_order_search_zenlenet"/>

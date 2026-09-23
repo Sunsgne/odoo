@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_flow_kanban" model="ir.ui.view">
+        <field name="name">zenlenet.flow.kanban</field>
+        <field name="model">zenlenet.flow</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" records_draggable="0" group_create="false" group_delete="false" quick_create="false" class="o_kanban_small_column">
+                <field name="state"/>
+                <field name="kind"/>
+                <templates>
+                    <t t-name="card">
+                        <field name="name" class="fw-bold"/>
+                        <field name="kind"/>
+                        <field name="partner_id"/>
+                        <field name="user_id"/>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+    <record id="view_flow_list" model="ir.ui.view">
+        <field name="name">zenlenet.flow.list</field>
+        <field name="model">zenlenet.flow</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="kind"/>
+                <field name="partner_id"/>
+                <field name="user_id"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_flow_form" model="ir.ui.view">
+        <field name="name">zenlenet.flow.form</field>
+        <field name="model">zenlenet.flow</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_prev" type="object" string="退回" invisible="state in ('company', 'done', 'cancel')"/>
+                    <button name="action_next" type="object" string="推进" class="btn-primary" invisible="state in ('done', 'cancel') or (kind == 'test' and state == 'decide')"/>
+                    <button name="action_reclaim" type="object" string="回收" invisible="kind != 'test' or state not in ('accept', 'decide')"/>
+                    <button name="action_to_business" type="object" string="转商务" class="btn-primary" invisible="kind != 'test' or state not in ('accept', 'decide', 'reclaim')"/>
+                    <button name="action_cancel" type="object" string="取消" invisible="state in ('done', 'cancel')"/>
+                    <field name="state" widget="statusbar" options="{'clickable': false}" statusbar_visible="company,allocate,deliver,accept,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <div class="text-muted mb-2" invisible="kind != 'test'">测试单验收之后，选择回收，或转成商务继续交付。</div>
+                    <div class="text-muted mb-2" invisible="kind != 'business'">商务单验收之后进入完成。</div>
+                    <group>
+                        <group>
+                            <field name="kind" readonly="state != 'company'"/>
+                            <field name="user_id"/>
+                            <field name="partner_id" context="{'default_is_company': True, 'default_company_type': 'company', 'default_customer_rank': 1, 'form_view_ref': 'zenlenet_ops.view_partner_form_simple', 'list_view_ref': 'zenlenet_ops.view_partner_list'}"/>
+                        </group>
+                        <group>
+                            <field name="note"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="资源">
+                            <field name="address_ids">
+                                <list>
+                                    <field name="address"/>
+                                    <field name="block"/>
+                                    <field name="pop"/>
+                                    <field name="status"/>
+                                </list>
+                            </field>
+                            <field name="line_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="kind"/>
+                                    <field name="a_end"/>
+                                    <field name="z_end"/>
+                                </list>
+                            </field>
+                            <field name="resource_note" placeholder="没有具体地址时，写清楚分配了什么"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="view_flow_search" model="ir.ui.view">
+        <field name="name">zenlenet.flow.search</field>
+        <field name="model">zenlenet.flow</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="user_id"/>
+                <filter name="mine" string="我的" domain="[('user_id', '=', uid)]"/>
+                <filter name="test" string="测试" domain="[('kind', '=', 'test')]"/>
+                <filter name="business" string="商务" domain="[('kind', '=', 'business')]"/>
+                <filter name="open" string="未完成" domain="[('state', 'not in', ('done', 'cancel'))]"/>
+            </search>
+        </field>
+    </record>
+    <record id="action_flow" model="ir.actions.act_window">
+        <field name="name">业务流转</field>
+        <field name="res_model">zenlenet.flow</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="view_flow_search"/>
+    </record>
+</odoo>

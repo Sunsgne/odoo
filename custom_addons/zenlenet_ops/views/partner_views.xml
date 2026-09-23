@@ -45,6 +45,7 @@
                     <field name="comment" placeholder="备注"/>
                     <field name="is_company" invisible="1"/>
                     <field name="company_type" invisible="1"/>
+                    <field name="customer_rank" invisible="1"/>
                 </sheet>
             </form>
         </field>
@@ -72,7 +73,7 @@
         </field>
     </record>
     <record id="action_customers" model="ir.actions.act_window">
-        <field name="name">客户</field>
+        <field name="name">客户管理</field>
         <field name="res_model">res.partner</field>
         <field name="view_mode">list,form</field>
         <field name="domain">[('is_company', '=', True), ('customer_rank', '&gt;', 0)]</field>

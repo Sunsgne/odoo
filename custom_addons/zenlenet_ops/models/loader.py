@@ -205,13 +205,15 @@ class ZenlenetLoader(models.AbstractModel):
         self._lines(connection)
         self._returns(connection)
         connection.close()
+        self._assets()
         _logger.info(
-            'zenlenet rows addresses=%s lines=%s returns=%s orders=%s templates=%s',
+            'zenlenet rows addresses=%s lines=%s returns=%s orders=%s templates=%s assets=%s',
             self.env['zenlenet.address'].sudo().search_count([]),
             self.env['zenlenet.line'].sudo().search_count([]),
             self.env['zenlenet.supplier.return'].sudo().search_count([]),
             self.env['sale.order'].sudo().search_count([]),
             self.env['zenlenet.notice.template'].sudo().search_count([]),
+            self.env['zenlenet.asset'].sudo().search_count([]),
         )
 
     def _snapshot_path(self):
@@ -256,14 +258,16 @@ class ZenlenetLoader(models.AbstractModel):
             'bgp': 'BGP',
             'other': '其他',
         }
-        statuses = {'allocated', 'free', 'reserved', 'testing', 'returning', 'internal'}
+        statuses = {'allocated', 'free', 'reserved', 'testing', 'returning', 'internal', 'transferring'}
         batch = []
         for row in connection.execute('select * from ip_records'):
             if row['id'] in existing:
                 continue
             partner = partners.get(names.get(row['customer_id']))
-            net_attr = row['net_attr'] if row['net_attr'] in {'公网', '内网'} else '公网'
-            dc_type = row['dc_type'] if row['dc_type'] in {'主营机房', '第三方', 'POP点', '公有云'} else False
+            net_attr = row['net_attr'] if row['net_attr'] in {'公网', '内网', 'FastFiber'} else '公网'
+            dc_type = row['dc_type'] if row['dc_type'] in {
+                '主营机房', '第三方', 'POP点', '公有云', '已退租', '不常用', '安畅云',
+            } else False
             batch.append({
                 'snapshot_id': row['id'],
                 'address': f"{row['address']}/{row['prefixlen']}",
@@ -338,6 +342,35 @@ class ZenlenetLoader(models.AbstractModel):
             })
         if batch:
             Return.create(batch)
+
+    def _assets(self):
+        Asset = self.env['zenlenet.asset'].sudo()
+        existing = set(Asset.search([]).mapped('snapshot_key'))
+        orders = self.env['sale.order'].sudo().search([
+            ('zenlenet_key', '!=', False),
+            ('order_line.product_id.default_code', '=', 'colo'),
+        ])
+        batch = []
+        for order in orders:
+            key = f'colo:{order.zenlenet_key}'
+            if key in existing:
+                continue
+            existing.add(key)
+            line = order.order_line[:1]
+            label = ((line.name if line else '') or '托管').strip() or '托管'
+            batch.append({
+                'snapshot_key': key,
+                'name': label[:200],
+                'partner_id': order.partner_id.id,
+                'pop': (order.origin or '')[:120],
+                'state': 'idle' if order.zenlenet_stage == 'terminated' else 'in_use',
+            })
+        if not batch:
+            return
+        try:
+            Asset.create(batch)
+        except Exception as error:
+            _logger.warning('colo assets were not loaded: %s', type(error).__name__)
 
 
 def _price(product, bandwidth):
