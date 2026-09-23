@@ -467,6 +467,7 @@ class ZenlenetFlowResource(models.Model):
         flows = self.mapped('flow_id').filtered(lambda flow: flow.state == 'allocate' and not flow.pending_count)
         if not flows:
             raise UserError('勾选的工单还有没挂资源的行，或者不在「分配资源」阶段。')
+        flows.mapped('task_ids').filtered(lambda task: task.stage == 'allocate' and not task.done).write({'done': True})
         flows.action_next()
         return True
 
