@@ -67,3 +67,25 @@ def bills_this_period(cycle, day, start):
         return True
     elapsed = (day.year - start.year) * 12 + day.month - start.month
     return elapsed >= 0 and elapsed % months == 0
+
+
+def p95_billable(commit, p95):
+    """Billable megabits for a burstable service: never below the commit."""
+    return max(float(commit or 0), float(p95 or 0))
+
+
+def bandwidth_lines(commit, p95, price, overage_price=None):
+    """Split a burstable month into (kind, mbps, unit price) parts.
+
+    kind is 'commit' for the guaranteed part and 'overage' for traffic above it.
+    Without a 95th-percentile reading the commit is billed as usual.
+    """
+    commit = float(commit or 0)
+    if p95 is None:
+        return [('commit', commit, price)]
+    p95 = float(p95)
+    if p95 <= commit:
+        return [('commit', commit, price)]
+    if overage_price:
+        return [('commit', commit, price), ('overage', round(p95 - commit, 2), overage_price)]
+    return [('commit', round(p95, 2), price)]

@@ -3,6 +3,7 @@ from datetime import date
 
 from billing import (
     add_months,
+    bandwidth_lines,
     bills_this_period,
     clean_label,
     contract_end,
@@ -11,10 +12,19 @@ from billing import (
     period_bounds,
     period_label,
     period_ref,
+    p95_billable,
 )
 
 
 class BillingTests(unittest.TestCase):
+    def test_burstable_billing_follows_the_95th_percentile(self):
+        self.assertEqual(p95_billable(500, 320), 500.0)
+        self.assertEqual(p95_billable(500, 640), 640.0)
+        self.assertEqual(bandwidth_lines(500, None, 6.0), [('commit', 500.0, 6.0)])
+        self.assertEqual(bandwidth_lines(500, 320, 6.0, 8.0), [('commit', 500.0, 6.0)])
+        self.assertEqual(bandwidth_lines(500, 640, 6.0, 8.0), [('commit', 500.0, 6.0), ('overage', 140.0, 8.0)])
+        self.assertEqual(bandwidth_lines(500, 640, 6.0), [('commit', 640.0, 6.0)])
+
     def test_labels_lose_their_codes(self):
         self.assertEqual(clean_label('[colo] 托管'), '托管')
         self.assertEqual(clean_label('  IPT 带宽 500M '), 'IPT 带宽 500M')

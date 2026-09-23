@@ -111,6 +111,70 @@
                         </field>
                     </group>
                     <field name="comment" placeholder="对接情况、付款习惯、特殊约定"/>
+                    <notebook>
+                        <page string="服务订单">
+                            <field name="sale_order_ids" readonly="1" context="{'list_view_ref': 'zenlenet_ops.view_order_list'}">
+                                <list limit="20" default_order="date_order desc">
+                                    <field name="name" string="单号"/>
+                                    <field name="origin" string="业务"/>
+                                    <field name="amount_untaxed" string="月费"/>
+                                    <field name="currency_id" string="币种"/>
+                                    <field name="zenlenet_bill_mode"/>
+                                    <field name="zenlenet_stage"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="合同">
+                            <field name="zenlenet_contract_ids" readonly="1">
+                                <list limit="20">
+                                    <field name="name"/>
+                                    <field name="start_date"/>
+                                    <field name="end_date"/>
+                                    <field name="billing_cycle"/>
+                                    <field name="monthly_amount"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="账单">
+                            <field name="zenlenet_invoice_ids" readonly="1">
+                                <list limit="20" default_order="invoice_date desc">
+                                    <field name="name" string="账单"/>
+                                    <field name="ref" string="账期"/>
+                                    <field name="invoice_date" string="日期"/>
+                                    <field name="amount_total" string="金额"/>
+                                    <field name="amount_residual" string="未收"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                    <field name="payment_state" string="收款" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="服务工单">
+                            <field name="zenlenet_ticket_ids" readonly="1">
+                                <list limit="20">
+                                    <field name="name"/>
+                                    <field name="priority" widget="priority"/>
+                                    <field name="subject"/>
+                                    <field name="user_id" widget="many2one_avatar_user"/>
+                                    <field name="due_at"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="IP 地址段">
+                            <field name="zenlenet_prefix_ids" readonly="1">
+                                <list limit="20">
+                                    <field name="prefix" class="font-monospace"/>
+                                    <field name="datacenter_id"/>
+                                    <field name="size_display"/>
+                                    <field name="allocated_count"/>
+                                    <field name="utilization" widget="progressbar"/>
+                                    <field name="status" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
                     <field name="is_company" invisible="1"/>
                     <field name="company_type" invisible="1"/>
                     <field name="customer_rank" invisible="1"/>

@@ -15,7 +15,7 @@
                 <field name="commit_rate" optional="hide"/>
                 <field name="partner_id"/>
                 <field name="partner_name" optional="hide"/>
-                <field name="supplier" optional="hide"/>
+                <field name="supplier_id" optional="show"/>
                 <field name="monthly_cost" optional="hide" sum="合计"/>
                 <field name="end_date" optional="show"/>
                 <field name="purpose" optional="hide"/>
@@ -46,8 +46,8 @@
                         </group>
                         <group string="商务">
                             <field name="partner_id"/>
-                            <field name="partner_name"/>
-                            <field name="supplier"/>
+                            <field name="partner_name" invisible="1"/>
+                            <field name="supplier_id" options="{'no_create': True}"/>
                             <field name="monthly_cost"/>
                             <field name="currency_id" invisible="1"/>
                             <field name="start_date"/>
@@ -86,6 +86,7 @@
                     <field name="datacenter_id" string="数据中心" enable_counters="1" icon="fa-building" limit="60"/>
                     <field name="kind" string="类型" enable_counters="1" expand="1" icon="fa-exchange"/>
                     <field name="status" string="状态" enable_counters="1" expand="1" icon="fa-flag"/>
+                    <field name="supplier_id" string="供应商" enable_counters="1" icon="fa-truck" limit="40"/>
                 </searchpanel>
             </search>
         </field>

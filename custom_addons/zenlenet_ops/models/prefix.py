@@ -1,6 +1,7 @@
 import ipaddress
 
 from odoo import api, fields, models
+from odoo.exceptions import UserError
 
 from odoo.addons.zenlenet_ops.blocks import parse_prefix
 
@@ -89,6 +90,29 @@ class ZenlenetPrefix(models.Model):
             record.free_count = free.get(record.id, 0)
             base = record.size or record.address_count
             record.utilization = round(record.allocated_count * 100.0 / base, 1) if base else 0.0
+
+    def write(self, vals):
+        result = super().write(vals)
+        if not self.env.context.get('netbox_skip_push') and {'partner_id', 'status', 'description'} & set(vals):
+            try:
+                self.env['zenlenet.netbox'].push_prefixes(self)
+            except Exception as error:  # noqa: BLE001 - never block an operator on the mirror
+                import logging
+                logging.getLogger(__name__).warning('NetBox prefix push skipped: %s', type(error).__name__)
+        return result
+
+    def action_allocate(self):
+        """Mark the whole block and every address in it as allocated to the block's customer."""
+        for record in self:
+            if not record.partner_id:
+                raise UserError('请先选择客户，再整段分配。')
+            record.address_ids.write({'status': 'allocated', 'partner_id': record.partner_id.id})
+            record.status = 'active'
+
+    def action_release(self):
+        for record in self:
+            record.address_ids.write({'status': 'free', 'partner_id': False})
+            record.write({'partner_id': False, 'status': 'active'})
 
     def action_open_addresses(self):
         self.ensure_one()

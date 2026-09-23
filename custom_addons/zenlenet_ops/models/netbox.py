@@ -281,6 +281,7 @@ class ZenlenetNetbox(models.AbstractModel):
                 'kind': CIRCUIT_TYPE.get(kind_name, 'private'),
                 'status': (item.get('status') or {}).get('value') or 'active',
                 'supplier': (item.get('provider') or {}).get('name') or '',
+                'supplier_id': self.env['res.partner'].zenlenet_supplier_by_name((item.get('provider') or {}).get('name'), 'carrier').id or False,
                 'commit_rate': int(rate / 1000) if rate else 0,
                 'start_date': item.get('install_date') or False,
                 'end_date': item.get('termination_date') or False,
@@ -352,6 +353,22 @@ class ZenlenetNetbox(models.AbstractModel):
             }
             self._write(session, base, 'PATCH', f'/ipam/ip-addresses/{address.netbox_id}/', payload)
             address.with_context(netbox_skip_push=True).write({'netbox_synced': fields.Datetime.now()})
+
+    @api.model
+    def push_prefixes(self, prefixes):
+        cfg = self._params()
+        if not cfg['enabled'] or not self.is_configured():
+            return
+        session, base = self._session()
+        status_out = {'container': 'container', 'active': 'active', 'reserved': 'reserved', 'deprecated': 'deprecated'}
+        for prefix in prefixes.filtered('netbox_id'):
+            payload = {
+                'status': status_out.get(prefix.status, 'active'),
+                'tenant': self._tenant_for(session, base, prefix.partner_id) if prefix.partner_id else None,
+                'description': (prefix.description or '')[:200],
+            }
+            self._write(session, base, 'PATCH', f'/ipam/prefixes/{prefix.netbox_id}/', payload)
+            prefix.with_context(netbox_skip_push=True).write({'netbox_synced': fields.Datetime.now()})
 
     @api.model
     def push_site(self, datacenter):

@@ -23,7 +23,8 @@ class FlowTests(unittest.TestCase):
                 break
             seen.append(nxt)
             state = nxt
-        self.assertEqual(seen, ['company', 'allocate', 'deliver', 'accept', 'decide'])
+        self.assertEqual(seen, ['company', 'allocate', 'deliver', 'accept'])
+        self.assertIsNone(next_state('test', 'accept'))
         self.assertIsNone(next_state('test', 'decide'))
 
     def test_reclaim_finishes(self):

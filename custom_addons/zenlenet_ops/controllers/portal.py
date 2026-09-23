@@ -1,5 +1,6 @@
 import csv
 import io
+import json
 
 from odoo import http
 from odoo.http import request
@@ -33,3 +34,32 @@ class ZenlenetPortal(http.Controller):
         if not partner:
             return request.redirect('/odoo/contacts')
         return request.redirect(f'/odoo/contacts/{partner.id}')
+
+    @http.route('/zenlenet/usage', type='http', auth='public', methods=['POST'], csrf=False, save_session=False)
+    def usage(self, **kwargs):
+        """Cacti pushes monthly 95th-percentile readings here."""
+        try:
+            payload = json.loads(request.httprequest.get_data(as_text=True) or '{}')
+        except ValueError:
+            return request.make_json_response({'error': 'invalid json'}, status=400)
+        env = request.env(su=True)
+        expected = (env['ir.config_parameter'].get_param('zenlenet.usage_token') or '').strip()
+        if not expected or payload.get('token') != expected:
+            return request.make_json_response({'error': 'unauthorized'}, status=401)
+        period = (payload.get('period') or '').strip()
+        if len(period) != 7:
+            return request.make_json_response({'error': 'period must be YYYY-MM'}, status=400)
+        Order = env['sale.order']
+        done, missing = 0, []
+        for item in payload.get('items') or []:
+            key = str(item.get('order') or item.get('graph_id') or '').strip()
+            order = Order.search(['|', ('name', '=', key), ('zenlenet_graph_ref', '=', key)], limit=1) if key else Order
+            if not order or item.get('p95_mbps') is None:
+                missing.append(key)
+                continue
+            env['zenlenet.usage'].upsert(
+                order, period, float(item['p95_mbps']), item.get('max_mbps'), item.get('avg_mbps'),
+                source='cacti', graph_ref=str(item.get('graph_id') or '') or None,
+            )
+            done += 1
+        return request.make_json_response({'imported': done, 'missing': missing})

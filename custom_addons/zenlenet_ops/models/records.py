@@ -140,7 +140,8 @@ class ZenlenetSupplierReturn(models.Model):
     _order = 'id desc'
 
     snapshot_id = fields.Integer(index=True, copy=False)
-    supplier = fields.Char(string='供应商', required=True)
+    supplier = fields.Char(string='供应商（旧）')
+    supplier_id = fields.Many2one('res.partner', string='供应商', domain=[('supplier_rank', '>', 0)], index=True)
     resource = fields.Char(string='IP / 资源', required=True)
     when_text = fields.Char(string='时间')
     note = fields.Text(string='备注')
@@ -251,8 +252,10 @@ class ZenlenetPurchase(models.Model):
         ('cloud', '云资源'),
         ('other', '其他'),
     ], string='采购类别', required=True, default='transit', index=True)
-    supplier = fields.Char(string='供应商', required=True, index=True)
+    supplier = fields.Char(string='供应商（旧）')
+    supplier_id = fields.Many2one('res.partner', string='供应商', domain=[('supplier_rank', '>', 0)], index=True)
     resource = fields.Char(string='采购内容', required=True)
+    bill_id = fields.Many2one('account.move', string='供应商账单', readonly=True, copy=False)
     datacenter_id = fields.Many2one('zenlenet.datacenter', string='数据中心', index=True)
     pop = fields.Char(string='机房（旧）')
     quantity = fields.Float(string='数量', default=1.0)
@@ -298,6 +301,44 @@ class ZenlenetPurchase(models.Model):
 
     def action_return(self):
         self.write({'state': 'returned'})
+
+    def action_make_bill(self):
+        Move = self.env['account.move']
+        created = Move
+        for record in self:
+            if record.bill_id or not record.supplier_id:
+                continue
+            bill = Move.create({
+                'move_type': 'in_invoice',
+                'partner_id': record.supplier_id.id,
+                'currency_id': record.currency_id.id,
+                'invoice_date': fields.Date.context_today(self),
+                'ref': record.name,
+                'invoice_origin': record.name,
+                'invoice_line_ids': [(0, 0, {
+                    'name': f'{record.resource}（{dict(record._fields["category"].selection).get(record.category, "")}）',
+                    'quantity': record.quantity or 1.0,
+                    'price_unit': record.unit_cost,
+                    'tax_ids': [(6, 0, [])],
+                })] + ([(0, 0, {
+                    'name': f'{record.resource} 一次性费用',
+                    'quantity': 1.0,
+                    'price_unit': record.one_time_cost,
+                    'tax_ids': [(6, 0, [])],
+                })] if record.one_time_cost else []),
+            })
+            record.bill_id = bill
+            created |= bill
+        if not created:
+            raise UserError('请先选择供应商；已经生成过账单的采购不会重复生成。')
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'account.move',
+            'res_id': created[0].id,
+            'view_mode': 'form',
+            'view_id': self.env.ref('zenlenet_ops.view_vendor_bill_form').id,
+            'target': 'current',
+        }
 
 
 class ZenlenetAsset(models.Model):

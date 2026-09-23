@@ -14,7 +14,7 @@
                                 <div class="text-muted small">
                                     <field name="kind"/>
                                     <t t-if="record.city.raw_value"> · <field name="city"/></t>
-                                    <t t-if="record.supplier.raw_value"> · <field name="supplier"/></t>
+                                    <t t-if="record.supplier_id.raw_value"> · <field name="supplier_id"/></t>
                                 </div>
                             </div>
                             <field name="state" widget="badge" decoration-success="state == 'active'" decoration-muted="state == 'closed'" decoration-info="state == 'planning'"/>
@@ -42,7 +42,7 @@
                 <field name="name"/>
                 <field name="kind"/>
                 <field name="city"/>
-                <field name="supplier"/>
+                <field name="supplier_id"/>
                 <field name="address_count"/>
                 <field name="free_count"/>
                 <field name="line_count"/>
@@ -87,7 +87,7 @@
                             <field name="code"/>
                             <field name="facility"/>
                             <field name="kind"/>
-                            <field name="supplier"/>
+                            <field name="supplier_id" options="{'no_create': True}"/>
                             <field name="usage_percent" widget="progressbar"/>
                         </group>
                         <group string="地点与联系">
@@ -142,7 +142,7 @@
             <search>
                 <field name="name"/>
                 <field name="city"/>
-                <field name="supplier"/>
+                <field name="supplier_id"/>
                 <filter name="active" string="在用" domain="[('state', '=', 'active')]"/>
                 <filter name="closed" string="已退租" domain="[('state', '=', 'closed')]"/>
                 <group>

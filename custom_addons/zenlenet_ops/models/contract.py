@@ -4,6 +4,7 @@ from odoo import api, fields, models
 from odoo.exceptions import UserError
 
 from odoo.addons.zenlenet_ops.billing import (
+    bandwidth_lines,
     bills_this_period,
     clean_label,
     contract_end,
@@ -176,11 +177,33 @@ class ZenlenetContract(models.Model):
         first, last = period_bounds(day)
         footer = self.env['ir.config_parameter'].sudo().get_param('zenlenet.invoice_footer', '')
         lines = []
+        Usage = self.env['zenlenet.usage']
+        label = period_label(day)
         for order in self.order_ids:
+            usage = Usage.for_order(order, day) if order.zenlenet_bill_mode == 'p95' else Usage
+            bandwidth_line = order._zenlenet_bandwidth_line()
             for line in order.order_line.filtered(lambda item: not item.display_type):
+                base_name = clean_label(line.name) or line.product_id.name
+                if order.zenlenet_bill_mode == 'p95' and line == bandwidth_line:
+                    commit = line._zenlenet_commit()
+                    p95 = usage.p95_mbps if usage else None
+                    for kind, mbps, price in bandwidth_lines(commit, p95, line.price_unit, line.zenlenet_overage_price):
+                        if kind == 'commit':
+                            detail = f'保底 {commit:g}M' + (f'，95 值 {p95:g}M' if p95 is not None else '，本期无 95 值按保底')
+                        else:
+                            detail = f'95 值 {p95:g}M 超出保底 {commit:g}M 的部分'
+                        lines.append((0, 0, {
+                            'product_id': line.product_id.id,
+                            'name': f'{base_name}（{label} · {detail}）',
+                            'quantity': mbps,
+                            'price_unit': price,
+                            'tax_ids': [(6, 0, [])],
+                            'sale_line_ids': [(4, line.id)],
+                        }))
+                    continue
                 lines.append((0, 0, {
                     'product_id': line.product_id.id,
-                    'name': f'{clean_label(line.name) or line.product_id.name}（{period_label(day)}）',
+                    'name': f'{base_name}（{label}）',
                     'quantity': line.product_uom_qty,
                     'price_unit': line.price_unit,
                     'tax_ids': [(6, 0, [])],

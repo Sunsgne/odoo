@@ -24,6 +24,8 @@ def param_int(env, key, default):
 class ResConfigSettings(models.TransientModel):
     _inherit = 'res.config.settings'
 
+    zenlenet_brand = fields.Char(string='系统名称', config_parameter='zenlenet.brand', help='左上角和菜单里显示的名字。')
+    zenlenet_usage_token = fields.Char(string='95 值接口 Token', config_parameter='zenlenet.usage_token', help='Cacti 侧脚本 POST /zenlenet/usage 时带的口令。')
     zenlenet_company_name = fields.Char(related='company_id.name', readonly=False, string='公司名称')
     zenlenet_company_vat = fields.Char(related='company_id.vat', readonly=False, string='UEN / 税号')
     zenlenet_company_street = fields.Char(related='company_id.street', readonly=False, string='地址')
@@ -133,6 +135,11 @@ class ResConfigSettings(models.TransientModel):
 
     def set_values(self):
         super().set_values()
+        brand = (self.zenlenet_brand or '').strip()
+        if brand:
+            root = self.env.ref('zenlenet_ops.menu_root', raise_if_not_found=False)
+            if root and root.name != brand:
+                root.sudo().name = brand
         cron = self.env.ref('zenlenet_ops.cron_contract_billing', raise_if_not_found=False)
         if cron:
             cron.sudo().active = bool(self.zenlenet_auto_billing)

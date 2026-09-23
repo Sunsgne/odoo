@@ -1,6 +1,7 @@
 from . import settings
 from . import maintenance
 from . import partner
+from . import supplier
 from . import sale
 from . import users
 from . import records
@@ -10,6 +11,7 @@ from . import netbox
 from . import flow
 from . import ticket
 from . import contract
+from . import usage
 from . import home
 from . import report
 from . import loader

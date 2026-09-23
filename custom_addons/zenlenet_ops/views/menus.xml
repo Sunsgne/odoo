@@ -12,6 +12,9 @@
     <menuitem id="menu_finance" name="财务" parent="menu_root" sequence="20"/>
     <menuitem id="menu_invoices" name="账单" parent="menu_finance" action="action_invoices" sequence="10"/>
     <menuitem id="menu_payments" name="收款" parent="menu_finance" action="action_payments" sequence="20"/>
+    <menuitem id="menu_usage" name="95 值" parent="menu_finance" action="action_usage" sequence="30"/>
+    <menuitem id="menu_vendor_bills" name="供应商账单" parent="menu_finance" action="action_vendor_bills" sequence="40"/>
+    <menuitem id="menu_vendor_payments" name="付款" parent="menu_finance" action="action_vendor_payments" sequence="50"/>
 
     <menuitem id="menu_work" name="工单" parent="menu_root" sequence="30"/>
     <menuitem id="menu_flow" name="交付工单" parent="menu_work" action="action_flow" sequence="10"/>
@@ -29,6 +32,7 @@
     <menuitem id="menu_prefix_export" name="导出地址段" parent="menu_res" action="action_prefix_export" sequence="60"/>
 
     <menuitem id="menu_supply" name="采购与资产" parent="menu_root" sequence="50"/>
+    <menuitem id="menu_suppliers" name="供应商" parent="menu_supply" action="action_suppliers" sequence="5"/>
     <menuitem id="menu_purchases" name="采购" parent="menu_supply" action="action_purchases" sequence="10"/>
     <menuitem id="menu_assets" name="设备资产" parent="menu_supply" action="action_assets" sequence="20"/>
 

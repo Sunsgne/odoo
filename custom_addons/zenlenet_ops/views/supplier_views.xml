@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_supplier_list" model="ir.ui.view">
+        <field name="name">zenlenet.supplier.list</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name" string="供应商"/>
+                <field name="zenlenet_supplier_kind"/>
+                <field name="country_id" string="国家" optional="show"/>
+                <field name="zenlenet_line_count" string="线路"/>
+                <field name="zenlenet_purchase_count" string="采购"/>
+                <field name="zenlenet_payable_amount" string="应付"/>
+                <field name="zenlenet_currency_id" column_invisible="1"/>
+                <field name="phone" optional="hide"/>
+                <field name="email" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_supplier_form" model="ir.ui.view">
+        <field name="name">zenlenet.supplier.form</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_supplier_lines" type="object" class="oe_stat_button" icon="fa-exchange">
+                            <field name="zenlenet_line_count" widget="statinfo" string="线路"/>
+                        </button>
+                        <button name="action_open_supplier_purchases" type="object" class="oe_stat_button" icon="fa-shopping-cart">
+                            <field name="zenlenet_purchase_count" widget="statinfo" string="采购"/>
+                        </button>
+                        <button name="action_open_supplier_bills" type="object" class="oe_stat_button" icon="fa-file-text-o">
+                            <div class="o_stat_info">
+                                <span class="o_stat_value"><field name="zenlenet_payable_amount" widget="monetary" options="{'currency_field': 'zenlenet_currency_id'}"/></span>
+                                <span class="o_stat_text">应付 · <field name="zenlenet_bill_count"/> 张账单</span>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="供应商名称"/></h1>
+                    </div>
+                    <group>
+                        <group string="供应商">
+                            <field name="zenlenet_supplier_kind"/>
+                            <field name="zenlenet_currency_id" string="结算币种" options="{'no_create': True}"/>
+                            <field name="vat" string="税号 / 注册号"/>
+                            <field name="website" widget="url"/>
+                        </group>
+                        <group string="联系">
+                            <field name="zenlenet_commercial_contact" string="商务对接人"/>
+                            <field name="phone" widget="phone"/>
+                            <field name="email" widget="email"/>
+                            <field name="zenlenet_noc_email" string="NOC 邮箱" widget="email"/>
+                            <field name="zenlenet_noc_phone" string="NOC 电话" widget="phone"/>
+                        </group>
+                        <group string="地址">
+                            <field name="street" string="地址"/>
+                            <field name="city" string="城市"/>
+                            <field name="country_id" string="国家"/>
+                        </group>
+                    </group>
+                    <field name="comment" placeholder="账期、开票要求、割接通知渠道"/>
+                    <field name="supplier_rank" invisible="1"/>
+                    <field name="is_company" invisible="1"/>
+                    <field name="company_type" invisible="1"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="view_supplier_search" model="ir.ui.view">
+        <field name="name">zenlenet.supplier.search</field>
+        <field name="model">res.partner</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <searchpanel>
+                    <field name="zenlenet_supplier_kind" string="类型" enable_counters="1" expand="1" icon="fa-tag"/>
+                    <field name="country_id" string="国家" enable_counters="1" icon="fa-globe" limit="40"/>
+                </searchpanel>
+            </search>
+        </field>
+    </record>
+    <record id="action_suppliers" model="ir.actions.act_window">
+        <field name="name">供应商</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('supplier_rank', '&gt;', 0)]</field>
+        <field name="context">{'default_is_company': True, 'default_company_type': 'company', 'default_supplier_rank': 1}</field>
+        <field name="search_view_id" ref="view_supplier_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_supplier_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_supplier_form')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">还没有供应商</p>
+            <p>线路、采购、IP 段、机房都只能从这里选供应商，不再手填。</p>
+        </field>
+    </record>
+
+    <record id="view_vendor_bill_list" model="ir.ui.view">
+        <field name="name">zenlenet.vendor.bill.list</field>
+        <field name="model">account.move</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'draft'" decoration-success="payment_state == 'paid'">
+                <field name="name" string="账单"/>
+                <field name="partner_id" string="供应商"/>
+                <field name="ref" string="对应采购 / 供应商单号"/>
+                <field name="invoice_date" string="日期"/>
+                <field name="invoice_date_due" string="到期" optional="show"/>
+                <field name="amount_total" string="金额" sum="合计"/>
+                <field name="amount_residual" string="未付" sum="合计"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="state" string="状态" widget="badge" decoration-info="state == 'draft'" decoration-success="state == 'posted'"/>
+                <field name="payment_state" string="付款" widget="badge" decoration-success="payment_state == 'paid'" decoration-warning="payment_state in ('not_paid', 'partial')"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_vendor_bill_form" model="ir.ui.view">
+        <field name="name">zenlenet.vendor.bill.form</field>
+        <field name="model">account.move</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_post" type="object" string="确认账单" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_register_payment" type="object" string="登记付款" class="btn-primary" invisible="state != 'posted' or payment_state in ('paid', 'in_payment', 'reversed')"/>
+                    <button name="button_draft" type="object" string="改回草稿" invisible="state != 'posted' or payment_state != 'not_paid'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,posted"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="partner_id" string="供应商" domain="[('supplier_rank', '>', 0)]" options="{'no_create': True}" readonly="state != 'draft'"/>
+                            <field name="ref" string="供应商单号 / 采购单号" readonly="state != 'draft'"/>
+                            <field name="invoice_date" string="账单日期" readonly="state != 'draft'"/>
+                            <field name="invoice_date_due" string="付款期限" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="currency_id" string="币种" readonly="state != 'draft'"/>
+                            <field name="amount_untaxed" string="未税金额"/>
+                            <field name="amount_total" string="合计"/>
+                            <field name="amount_residual" string="未付"/>
+                            <field name="payment_state" string="付款"/>
+                            <field name="move_type" invisible="1"/>
+                            <field name="company_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <field name="invoice_line_ids" readonly="state != 'draft'">
+                        <list editable="bottom">
+                            <field name="name" string="项目"/>
+                            <field name="quantity" string="数量"/>
+                            <field name="price_unit" string="单价"/>
+                            <field name="price_subtotal" string="金额"/>
+                            <field name="tax_ids" column_invisible="1"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <field name="display_type" column_invisible="1"/>
+                        </list>
+                    </field>
+                    <field name="narration" placeholder="说明" readonly="state != 'draft'"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_vendor_bills" model="ir.actions.act_window">
+        <field name="name">供应商账单</field>
+        <field name="res_model">account.move</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('move_type', '=', 'in_invoice'), ('state', '!=', 'cancel')]</field>
+        <field name="context">{'default_move_type': 'in_invoice'}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_vendor_bill_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_vendor_bill_form')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">还没有供应商账单</p>
+            <p>在采购单上点「生成供应商账单」，或直接新建。确认后登记付款。</p>
+        </field>
+    </record>
+    <record id="action_vendor_payments" model="ir.actions.act_window">
+        <field name="name">付款</field>
+        <field name="res_model">account.payment</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_payment_list_zenlenet"/>
+        <field name="domain">[('payment_type', '=', 'outbound')]</field>
+    </record>
+</odoo>

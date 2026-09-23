@@ -7,7 +7,7 @@
             <list decoration-muted="state == 'returned'" decoration-success="state == 'received'">
                 <field name="name"/>
                 <field name="category"/>
-                <field name="supplier"/>
+                <field name="supplier_id"/>
                 <field name="resource"/>
                 <field name="datacenter_id"/>
                 <field name="quantity" optional="hide"/>
@@ -29,6 +29,7 @@
                 <header>
                     <button name="action_order" type="object" string="已下单" class="btn-primary" invisible="state != 'draft'"/>
                     <button name="action_receive" type="object" string="已到货" class="btn-primary" invisible="state != 'ordered'"/>
+                    <button name="action_make_bill" type="object" string="生成供应商账单" invisible="bill_id or state not in ('ordered', 'received')"/>
                     <button name="action_return" type="object" string="退回供应商" invisible="state != 'received'"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,ordered,received"/>
                 </header>
@@ -40,8 +41,9 @@
                     <group>
                         <group string="采购">
                             <field name="category"/>
-                            <field name="supplier"/>
+                            <field name="supplier_id" options="{'no_create': True}"/>
                             <field name="datacenter_id"/>
+                            <field name="bill_id" invisible="not bill_id"/>
                             <field name="user_id" widget="many2one_avatar_user"/>
                         </group>
                         <group string="费用">
@@ -71,17 +73,18 @@
         <field name="arch" type="xml">
             <search>
                 <field name="name"/>
-                <field name="supplier"/>
+                <field name="supplier_id"/>
                 <field name="resource"/>
                 <filter name="open" string="进行中" domain="[('state', 'in', ('draft', 'ordered'))]"/>
                 <filter name="received" string="已到货" domain="[('state', '=', 'received')]"/>
                 <group>
                     <filter name="group_category" string="类别" context="{'group_by': 'category'}"/>
-                    <filter name="group_supplier" string="供应商" context="{'group_by': 'supplier'}"/>
+                    <filter name="group_supplier" string="供应商" context="{'group_by': 'supplier_id'}"/>
                     <filter name="group_state" string="状态" context="{'group_by': 'state'}"/>
                 </group>
                 <searchpanel>
                     <field name="category" string="采购类别" enable_counters="1" expand="1" icon="fa-tags"/>
+                    <field name="supplier_id" string="供应商" enable_counters="1" icon="fa-truck" limit="40"/>
                     <field name="state" string="状态" enable_counters="1" expand="1" icon="fa-flag"/>
                     <field name="datacenter_id" string="数据中心" enable_counters="1" icon="fa-building" limit="60"/>
                 </searchpanel>

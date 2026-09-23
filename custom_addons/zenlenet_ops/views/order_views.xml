@@ -55,6 +55,15 @@
             <xpath expr="//button[@name='action_update_prices']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="zenlenet_bill_mode"/>
+                <field name="zenlenet_graph_ref" invisible="zenlenet_bill_mode != 'p95'"/>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/list/field[@name='product_uom_qty']" position="after">
+                <field name="zenlenet_sku" optional="show"/>
+                <field name="zenlenet_commit_mbps" optional="show"/>
+                <field name="zenlenet_overage_price" optional="show"/>
+            </xpath>
             <xpath expr="//field[@name='tax_totals']" position="replace">
                 <field name="amount_untaxed" string="月费"/>
             </xpath>

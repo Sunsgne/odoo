@@ -22,7 +22,7 @@ def _path(kind):
 
 
 def next_state(kind, state):
-    if kind == 'test' and state == 'decide':
+    if kind == 'test' and state in ('accept', 'decide'):
         return None
     path = _path(kind)
     if state not in path:

@@ -57,6 +57,10 @@ class ResPartner(models.Model):
     zenlenet_line_count = fields.Integer(compute='_compute_zenlenet_counts')
     zenlenet_mrr = fields.Monetary(string='月费合计', compute='_compute_zenlenet_counts', currency_field='zenlenet_currency_id')
     zenlenet_since = fields.Date(string='首次开通', compute='_compute_zenlenet_counts')
+    zenlenet_contract_ids = fields.One2many('zenlenet.contract', 'partner_id', string='合同')
+    zenlenet_ticket_ids = fields.One2many('zenlenet.ticket', 'partner_id', string='服务工单')
+    zenlenet_prefix_ids = fields.One2many('zenlenet.prefix', 'partner_id', string='地址段')
+    zenlenet_invoice_ids = fields.One2many('account.move', 'partner_id', string='账单', domain=[('move_type', '=', 'out_invoice'), ('state', '!=', 'cancel')])
 
 
     # ------------------------------------------------------------------ pricing

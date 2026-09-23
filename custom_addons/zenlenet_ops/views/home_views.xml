@@ -9,37 +9,6 @@
                     <field name="currency_id" invisible="1"/>
                     <field name="name" invisible="1"/>
 
-                    <div class="o_zl_section_title">业务流程</div>
-                    <div class="o_zl_flow">
-                        <button type="action" name="%(zenlenet_ops.action_customers)d" class="o_zl_step">
-                            <i class="fa fa-building-o" title="客户"/><span>客户</span><small>录入公司</small>
-                        </button>
-                        <i class="fa fa-angle-right o_zl_arrow" title="下一步"/>
-                        <button type="action" name="%(zenlenet_ops.action_quotes)d" class="o_zl_step">
-                            <i class="fa fa-calculator" title="报价"/><span>报价</span><small>打印报价单</small>
-                        </button>
-                        <i class="fa fa-angle-right o_zl_arrow" title="下一步"/>
-                        <button type="action" name="%(zenlenet_ops.action_contracts)d" class="o_zl_step">
-                            <i class="fa fa-handshake-o" title="合同"/><span>合同</span><small>签约、定出账周期</small>
-                        </button>
-                        <i class="fa fa-angle-right o_zl_arrow" title="下一步"/>
-                        <button type="action" name="%(zenlenet_ops.action_flow)d" class="o_zl_step">
-                            <i class="fa fa-random" title="开通交付"/><span>交付</span><small>分配资源、验收</small>
-                        </button>
-                        <i class="fa fa-angle-right o_zl_arrow" title="下一步"/>
-                        <button type="action" name="%(zenlenet_ops.action_orders)d" class="o_zl_step">
-                            <i class="fa fa-plug" title="在网服务"/><span>在网服务</span><small>订单在网 / 测试 / 退租</small>
-                        </button>
-                        <i class="fa fa-angle-right o_zl_arrow" title="下一步"/>
-                        <button type="action" name="%(zenlenet_ops.action_invoices)d" class="o_zl_step">
-                            <i class="fa fa-money" title="出账收款"/><span>出账收款</span><small>每月自动出账</small>
-                        </button>
-                        <i class="fa fa-angle-right o_zl_arrow" title="下一步"/>
-                        <button type="action" name="%(zenlenet_ops.action_tickets)d" class="o_zl_step">
-                            <i class="fa fa-life-ring" title="售后"/><span>售后</span><small>服务工单、维护通告</small>
-                        </button>
-                    </div>
-
                     <div class="o_zl_section_title">待办提醒</div>
                     <div class="o_zl_kpis">
                         <button type="object" name="action_open_my_flows" class="o_zl_kpi o_zl_kpi_primary">

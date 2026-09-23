@@ -26,6 +26,7 @@ class ZenlenetDatacenter(models.Model):
     netbox_id = fields.Integer(string='NetBox ID', index=True, copy=False)
     netbox_synced = fields.Datetime(string='上次同步')
     facility = fields.Char(string='机房设施', help='运营商机房的正式名称或楼栋编号，对应 NetBox 的 Facility。')
+    supplier_id = fields.Many2one('res.partner', string='机房供应商', domain=[('supplier_rank', '>', 0)], index=True)
     prefix_ids = fields.One2many('zenlenet.prefix', 'datacenter_id', string='地址段')
     prefix_count = fields.Integer(string='地址段数', compute='_compute_counts')
     sequence = fields.Integer(default=10)
@@ -197,6 +198,7 @@ class ZenlenetAddress(models.Model):
 
     datacenter_id = fields.Many2one('zenlenet.datacenter', string='数据中心', index=True, ondelete='set null')
     prefix_id = fields.Many2one('zenlenet.prefix', string='地址段', index=True, ondelete='set null')
+    supplier_id = fields.Many2one('res.partner', string='供应商', domain=[('supplier_rank', '>', 0)], index=True)
     netbox_id = fields.Integer(string='NetBox ID', index=True, copy=False)
     netbox_synced = fields.Datetime(string='上次同步')
 
@@ -242,7 +244,8 @@ class ZenlenetLine(models.Model):
     status = fields.Selection(LINE_STATUSES, string='状态', default='active', required=True, index=True)
     commit_rate = fields.Integer(string='签约速率 (Mbps)')
     partner_id = fields.Many2one('res.partner', string='客户', index=True, domain=[('is_company', '=', True)])
-    supplier = fields.Char(string='供应商')
+    supplier = fields.Char(string='供应商（旧）')
+    supplier_id = fields.Many2one('res.partner', string='供应商', domain=[('supplier_rank', '>', 0)], index=True)
     monthly_cost = fields.Monetary(string='月成本', currency_field='currency_id')
     currency_id = fields.Many2one('res.currency', default=lambda self: self.env.company.currency_id)
     start_date = fields.Date(string='开通日期')

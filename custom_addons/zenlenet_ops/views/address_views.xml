@@ -21,7 +21,7 @@
                 <field name="net_attr"/>
                 <field name="dc_type" optional="show"/>
                 <field name="role" optional="show"/>
-                <field name="supplier" optional="hide"/>
+                <field name="supplier_id" optional="hide"/>
                 <field name="usage" optional="hide"/>
                 <field name="expires_on" optional="hide"/>
             </list>
@@ -51,7 +51,7 @@
                             <field name="net_attr"/>
                             <field name="dc_type"/>
                             <field name="role"/>
-                            <field name="supplier"/>
+                            <field name="supplier_id" options="{'no_create': True}"/>
                             <field name="usage"/>
                             <field name="expires_on"/>
                         </group>
@@ -95,7 +95,8 @@
                 <filter name="public_net" string="公网" domain="[('net_attr','=','公网')]"/>
                 <filter name="private_net" string="内网" domain="[('net_attr','=','内网')]"/>
                 <group>
-                    <filter name="group_block" string="IP段" context="{'group_by': 'block'}"/>
+                    <filter name="group_prefix" string="地址段" context="{'group_by': 'prefix_id'}"/>
+                    <filter name="group_block" string="IP段（旧）" context="{'group_by': 'block'}"/>
                     <filter name="group_pop" string="机房" context="{'group_by': 'pop'}"/>
                     <filter name="group_status" string="分配状态" context="{'group_by': 'status'}"/>
                     <filter name="group_dc" string="数据中心类型" context="{'group_by': 'dc_type'}"/>
@@ -114,6 +115,7 @@
         <field name="res_model">zenlenet.address</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_address_search"/>
+        <field name="context">{'search_default_group_prefix': 1}</field>
             </record>
     <record id="action_blocks" model="ir.actions.act_window">
         <field name="name">按地址段查看</field>

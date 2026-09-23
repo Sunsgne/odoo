@@ -12,6 +12,10 @@
                         <setting id="zenlenet_company_setting" string="抬头信息" help="公司名称、UEN、地址和账务联系方式。">
                             <div class="content-group">
                                 <div class="row mt8">
+                                    <label for="zenlenet_brand" class="col-lg-4 o_light_label"/>
+                                    <field name="zenlenet_brand" placeholder="尊领"/>
+                                </div>
+                                <div class="row">
                                     <label for="zenlenet_company_name" class="col-lg-4 o_light_label"/>
                                     <field name="zenlenet_company_name"/>
                                 </div>
@@ -61,6 +65,15 @@
                         </setting>
                         <setting id="zenlenet_invoice_footer_setting" string="账单备注" help="收款账户、付款说明，打印在每张账单底部。">
                             <field name="zenlenet_invoice_footer" placeholder="例如：DBS Bank 账户 xxx-xxxxxx-x，请在到期日前付款"/>
+                        </setting>
+                    </block>
+
+                    <block title="95 值计费" name="zenlenet_usage" help="Cacti 采集的 95 值按订单和账期入库，出账时保底之上按超量单价计。">
+                        <setting id="zenlenet_usage_setting" string="Cacti 接口" help="Cacti 侧脚本每月初 POST JSON 到 /zenlenet/usage：{token, period, items:[{order, p95_mbps, max_mbps, avg_mbps, graph_id}]}。order 填订单号或订单上登记的 Cacti 图 ID。也可以在「财务 → 95 值」手工导入 CSV。">
+                            <div class="row mt8">
+                                <label for="zenlenet_usage_token" class="col-lg-4 o_light_label"/>
+                                <field name="zenlenet_usage_token" password="True"/>
+                            </div>
                         </setting>
                     </block>
 
@@ -221,7 +234,7 @@
         <field name="model">product.template</field>
         <field name="arch" type="xml">
             <list editable="bottom">
-                <field name="default_code" string="编码"/>
+                <field name="default_code" string="SKU" required="1"/>
                 <field name="name" string="业务"/>
                 <field name="list_price" string="单价（月）"/>
                 <field name="currency_id" column_invisible="1"/>

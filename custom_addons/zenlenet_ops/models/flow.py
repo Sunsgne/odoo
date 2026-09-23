@@ -34,7 +34,8 @@ SERVICE_TYPES = [
     ('vm', '云主机'),
     ('colo', '托管'),
     ('resale', '转售'),
-    ('ip', 'IP地址'),
+    ('ip', 'IP 地址段'),
+    ('ip_single', '单个 IP'),
     ('line', '线路'),
 ]
 
@@ -187,15 +188,16 @@ class ZenlenetFlow(models.Model):
 
     def _linked_addresses(self):
         self.ensure_one()
-        picked = self.resource_ids.filtered(lambda item: item.service_type == 'ip').mapped('address_id')
-        return picked | self.address_ids
+        picked = self.resource_ids.filtered(lambda item: item.service_type in ('ip', 'ip_single')).mapped('address_id')
+        blocks = self.resource_ids.filtered(lambda item: item.service_type == 'ip').mapped('prefix_id')
+        return picked | blocks.mapped('address_ids') | self.address_ids
 
     def _has_allocation(self):
         self.ensure_one()
         if (self.resource_note or '').strip() or self.address_ids or self.line_ids:
             return True
         return any(
-            item.order_id or item.address_id or item.line_id or (item.spec or '').strip()
+            item.order_id or item.address_id or item.prefix_id or item.line_id or (item.spec or '').strip()
             for item in self.resource_ids
         )
 
@@ -207,7 +209,7 @@ class ZenlenetFlow(models.Model):
                 if address.id not in have_addresses:
                     Resource.create({
                         'flow_id': flow.id,
-                        'service_type': 'ip',
+                        'service_type': 'ip_single',
                         'address_id': address.id,
                     })
             have_lines = set(flow.resource_ids.mapped('line_id').ids)
@@ -243,9 +245,17 @@ class ZenlenetFlow(models.Model):
     def _apply_resources(self):
         for record in self:
             addresses = record._linked_addresses()
-            if not addresses:
+            blocks = record.resource_ids.filtered(lambda item: item.service_type == 'ip').mapped('prefix_id')
+            if not addresses and not blocks:
                 continue
             partner = record.partner_id.id or False
+            if blocks:
+                if record.kind == 'test' and record.state in ('reclaim', 'done'):
+                    blocks.write({'partner_id': False})
+                elif record.state in ('allocate', 'deliver', 'accept', 'decide', 'done'):
+                    blocks.write({'partner_id': partner})
+            if not addresses:
+                continue
             if record.kind == 'test' and record.state == 'reclaim':
                 addresses.write({'status': 'returning', 'partner_id': False})
             elif record.kind == 'test' and record.state == 'done':
@@ -330,7 +340,8 @@ class ZenlenetFlowResource(models.Model):
     flow_id = fields.Many2one('zenlenet.flow', required=True, ondelete='cascade')
     service_type = fields.Selection(SERVICE_TYPES, string='业务类型', required=True)
     order_id = fields.Many2one('sale.order', string='订单')
-    address_id = fields.Many2one('zenlenet.address', string='IP地址')
+    prefix_id = fields.Many2one('zenlenet.prefix', string='IP 地址段')
+    address_id = fields.Many2one('zenlenet.address', string='单个 IP')
     line_id = fields.Many2one('zenlenet.line', string='线路')
     spec = fields.Char(string='规格')
 
@@ -342,6 +353,6 @@ class ZenlenetFlowResource(models.Model):
 
     def write(self, vals):
         result = super().write(vals)
-        if {'address_id', 'service_type'} & set(vals):
+        if {'address_id', 'prefix_id', 'service_type'} & set(vals):
             self.flow_id._apply_resources()
         return result
