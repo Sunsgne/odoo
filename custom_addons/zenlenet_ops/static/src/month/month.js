@@ -44,11 +44,16 @@ export class ZenlenetMonth extends Component {
     }
 
     async load(period, shift) {
+        const token = (this.loadToken || 0) + 1;
+        this.loadToken = token;
         this.state.loading = true;
         try {
             const board = await this.orm.call("zenlenet.contract", "month_board", [
                 period || false, shift || 0, this.state.includeHolders,
             ]);
+            if (token !== this.loadToken) {
+                return;
+            }
             this.state.period = board.period;
             this.state.title = board.title;
             this.state.todayPeriod = board.today_period;
@@ -66,7 +71,9 @@ export class ZenlenetMonth extends Component {
                 this.state.detail = null;
             }
         } finally {
-            this.state.loading = false;
+            if (token === this.loadToken) {
+                this.state.loading = false;
+            }
         }
     }
 
@@ -124,8 +131,14 @@ export class ZenlenetMonth extends Component {
     }
 
     async select(id) {
+        const token = (this.selectToken || 0) + 1;
+        this.selectToken = token;
         this.state.selectedId = id;
-        this.state.detail = await this.orm.call("zenlenet.contract", "month_customer", [id, this.state.period]);
+        const detail = await this.orm.call("zenlenet.contract", "month_customer", [id, this.state.period]);
+        if (token !== this.selectToken) {
+            return;
+        }
+        this.state.detail = detail;
     }
 
     async bill(partnerId) {
