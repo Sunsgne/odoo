@@ -115,6 +115,18 @@ def _credit(snap):
     return None
 
 
+def _purchase_device(snap):
+    if snap.get('state') == 'accepted':
+        return '设备已经验收，不要删除。'
+    return None
+
+
+def _asset_task(snap):
+    if snap.get('state') == 'done':
+        return '任务已经完成，不要删除。'
+    return None
+
+
 def _maintenance(snap):
     if snap.get('state') not in ('draft', 'cancel'):
         return '维护通告已进入评审或已通知客户，请「取消」，不要删除。'
@@ -135,13 +147,18 @@ RULES = {
     'zenlenet.vm': _vm,
     'zenlenet.datacenter': _datacenter,
     'zenlenet.purchase': _purchase,
+    'zenlenet.purchase.device': _purchase_device,
     'zenlenet.asset': _asset,
+    'zenlenet.asset.task': _asset_task,
     'zenlenet.credit': _credit,
     'zenlenet.maintenance': _maintenance,
 }
 
 # Line items the owning role may delete itself (still subject to the state rules above).
-ROLE_DELETABLE = {'zenlenet.contract.item', 'zenlenet.flow.task', 'zenlenet.flow.resource'}
+ROLE_DELETABLE = {
+    'zenlenet.contract.item', 'zenlenet.flow.task', 'zenlenet.flow.resource',
+    'zenlenet.purchase.device', 'zenlenet.asset.task',
+}
 
 def blocked_reason(model, snap):
     """Return a Chinese explanation when the record must not be deleted, otherwise None."""

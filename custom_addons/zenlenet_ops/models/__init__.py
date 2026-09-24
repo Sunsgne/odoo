@@ -7,6 +7,8 @@ from . import sale
 from . import users
 from . import records
 from . import datacenter
+from . import itam
+from . import spam
 from . import fabric
 from . import prefix
 from . import ipam

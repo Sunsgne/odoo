@@ -2,12 +2,30 @@ $zl-primary: #00b0d0;
 
 .zl-ipam {
     display: flex !important;
-    flex-direction: row !important;
+    flex-direction: column !important;
     height: 100%;
     min-height: 0;
     overflow: hidden;
     background: #f5f6f8;
     font-size: 13px;
+
+    .zl-ipam-find {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: #fff;
+        border-bottom: 1px solid #e6eaee;
+        label { margin: 0; color: #626466; white-space: nowrap; }
+        input { width: 220px; }
+        select { width: 160px; }
+    }
+    .zl-ipam-body {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+    }
 
     .font-monospace { font-family: SFMono-Regular, Menlo, Consolas, "Noto Sans Mono CJK SC", monospace; }
 

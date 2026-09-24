@@ -70,6 +70,17 @@ access_zenlenet_asset_user,zenlenet.asset.user,model_zenlenet_asset,base.group_u
 access_zenlenet_asset_procurement,zenlenet.asset.procurement,model_zenlenet_asset,zenlenet_ops.group_procurement,1,1,1,0
 access_zenlenet_asset_delivery,zenlenet.asset.delivery,model_zenlenet_asset,zenlenet_ops.group_delivery,1,1,1,0
 access_zenlenet_asset_manager,zenlenet.asset.manager,model_zenlenet_asset,zenlenet_ops.group_manager,1,1,1,1
+access_zenlenet_ipam_domain_user,zenlenet.ipam.domain.user,model_zenlenet_ipam_domain,base.group_user,1,0,0,0
+access_zenlenet_ipam_domain_delivery,zenlenet.ipam.domain.delivery,model_zenlenet_ipam_domain,zenlenet_ops.group_delivery,1,1,1,0
+access_zenlenet_ipam_domain_manager,zenlenet.ipam.domain.manager,model_zenlenet_ipam_domain,zenlenet_ops.group_manager,1,1,1,1
+access_zenlenet_purchase_device_user,zenlenet.purchase.device.user,model_zenlenet_purchase_device,base.group_user,1,0,0,0
+access_zenlenet_purchase_device_procurement,zenlenet.purchase.device.procurement,model_zenlenet_purchase_device,zenlenet_ops.group_procurement,1,1,1,1
+access_zenlenet_purchase_device_delivery,zenlenet.purchase.device.delivery,model_zenlenet_purchase_device,zenlenet_ops.group_delivery,1,1,1,0
+access_zenlenet_purchase_device_manager,zenlenet.purchase.device.manager,model_zenlenet_purchase_device,zenlenet_ops.group_manager,1,1,1,1
+access_zenlenet_asset_task_user,zenlenet.asset.task.user,model_zenlenet_asset_task,base.group_user,1,0,0,0
+access_zenlenet_asset_task_procurement,zenlenet.asset.task.procurement,model_zenlenet_asset_task,zenlenet_ops.group_procurement,1,1,1,1
+access_zenlenet_asset_task_delivery,zenlenet.asset.task.delivery,model_zenlenet_asset_task,zenlenet_ops.group_delivery,1,1,1,0
+access_zenlenet_asset_task_manager,zenlenet.asset.task.manager,model_zenlenet_asset_task,zenlenet_ops.group_manager,1,1,1,1
 access_zenlenet_user_add_manager,zenlenet.user.add.manager,model_zenlenet_user_add,zenlenet_ops.group_manager,1,1,1,1
 access_zenlenet_datacenter_allocator,zenlenet.datacenter.allocator,model_zenlenet_datacenter,zenlenet_ops.group_allocator,1,1,1,0
 access_zenlenet_prefix_allocator,zenlenet.prefix.allocator,model_zenlenet_prefix,zenlenet_ops.group_allocator,1,1,1,0

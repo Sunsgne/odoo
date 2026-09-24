@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="zenlenet_ops.Itam">
+        <div class="o_action zl-itam" t-if="state.board">
+            <div class="zl-itam-top">
+                <div class="zl-itam-total">
+                    <b t-out="state.board.total"/>
+                    <span>资产</span>
+                </div>
+                <div class="zl-itam-split">
+                    <div><b t-out="state.board.owned"/> 自有</div>
+                    <div><b t-out="state.board.other"/> 非自有</div>
+                    <div><b t-out="state.board.in_rack"/> 在架</div>
+                    <div><b t-out="state.board.repairing"/> 维修中</div>
+                </div>
+                <div class="zl-itam-links">
+                    <button class="btn btn-primary btn-sm" t-on-click="openAssets">资产</button>
+                    <button class="btn btn-secondary btn-sm" t-on-click="openTasks">任务</button>
+                </div>
+            </div>
+            <div class="zl-itam-grid">
+                <button t-foreach="state.board.categories" t-as="row" t-key="row.key" class="zl-itam-card" t-on-click="() => this.openCategory(row.key)">
+                    <b t-out="row.count"/>
+                    <span t-out="row.label"/>
+                </button>
+            </div>
+        </div>
+    </t>
+</templates>

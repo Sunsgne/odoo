@@ -1,0 +1,50 @@
+.zl-itam {
+    height: 100%;
+    overflow: auto;
+    background: #f5f8fa;
+    padding: 16px;
+
+    .zl-itam-top {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        background: #fff;
+        border: 1px solid #e6eaee;
+        border-radius: 4px;
+        padding: 16px 20px;
+        margin-bottom: 16px;
+    }
+    .zl-itam-total {
+        display: flex;
+        flex-direction: column;
+        b { font-size: 32px; color: #0c1732; line-height: 1; }
+        span { color: #626466; }
+    }
+    .zl-itam-split {
+        display: flex;
+        gap: 18px;
+        color: #626466;
+        b { color: #313233; margin-right: 4px; }
+    }
+    .zl-itam-links { margin-left: auto; display: flex; gap: 8px; }
+    .zl-itam-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 12px;
+    }
+    .zl-itam-card {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        padding: 14px 16px;
+        background: #fff;
+        border: 1px solid #e6eaee;
+        border-radius: 4px;
+        text-align: left;
+        color: #313233;
+        b { font-size: 22px; color: #0c1732; }
+        span { color: #626466; }
+        &:hover { border-color: #00b0d0; }
+    }
+}

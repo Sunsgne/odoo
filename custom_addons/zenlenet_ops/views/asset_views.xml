@@ -5,13 +5,22 @@
         <field name="model">zenlenet.asset</field>
         <field name="arch" type="xml">
             <list>
+                <field name="code"/>
                 <field name="name"/>
-                <field name="model" optional="show"/>
-                <field name="partner_id"/>
-                <field name="datacenter_id"/>
-                <field name="pop" optional="hide"/>
+                <field name="category"/>
+                <field name="manufacturer"/>
                 <field name="serial"/>
-                <field name="purchased_on" optional="hide"/>
+                <field name="model" optional="show"/>
+                <field name="warranty_end" optional="hide"/>
+                <field name="city" optional="show"/>
+                <field name="datacenter_id"/>
+                <field name="availability" widget="badge"/>
+                <field name="repair_state" optional="show"/>
+                <field name="ownership"/>
+                <field name="role" optional="hide"/>
+                <field name="u_start" optional="hide"/>
+                <field name="u_end" optional="hide"/>
+                <field name="supplier_id" optional="hide"/>
                 <field name="state" widget="badge" decoration-success="state == 'in_use'" decoration-warning="state == 'idle'" decoration-danger="state == 'scrap'"/>
             </list>
         </field>
@@ -22,27 +31,154 @@
         <field name="arch" type="xml">
             <form>
                 <sheet>
+                    <div class="oe_title">
+                        <h1><field name="code" readonly="1"/></h1>
+                        <h2><field name="name"/></h2>
+                    </div>
                     <group>
                         <group>
-                            <field name="name"/>
+                            <field name="category"/>
+                            <field name="manufacturer"/>
                             <field name="model"/>
                             <field name="serial"/>
-                            <field name="state"/>
+                            <field name="warranty_end"/>
+                            <field name="role"/>
                         </group>
                         <group>
-                            <field name="partner_id"/>
+                            <field name="ownership"/>
+                            <field name="availability"/>
+                            <field name="repair_state"/>
+                            <field name="plan_state"/>
+                            <field name="state"/>
                             <field name="datacenter_id"/>
-                            <field name="pop"/>
+                            <field name="city"/>
+                            <field name="u_start"/>
+                            <field name="u_end"/>
+                            <field name="supplier_id"/>
+                            <field name="purchase_id"/>
+                            <field name="partner_id"/>
                             <field name="purchased_on"/>
+                        </group>
+                    </group>
+                    <separator string="任务"/>
+                    <field name="task_ids" nolabel="1">
+                        <list>
+                            <field name="name"/>
+                            <field name="kind"/>
+                            <field name="state" widget="badge"/>
+                            <field name="user_id"/>
+                            <field name="done_on"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_asset_search" model="ir.ui.view">
+        <field name="name">zenlenet.asset.search</field>
+        <field name="model">zenlenet.asset</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="serial"/>
+                <field name="manufacturer"/>
+                <field name="datacenter_id"/>
+                <searchpanel>
+                    <field name="category" string="类别" enable_counters="1" expand="1" icon="fa-server"/>
+                    <field name="ownership" string="归属" enable_counters="1" icon="fa-user"/>
+                    <field name="availability" string="在架状态" enable_counters="1" icon="fa-th"/>
+                </searchpanel>
+            </search>
+        </field>
+    </record>
+    <record id="action_assets" model="ir.actions.act_window">
+        <field name="name">资产</field>
+        <field name="res_model">zenlenet.asset</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_asset_search"/>
+    </record>
+    <record id="action_assets_category" model="ir.actions.act_window">
+        <field name="name">资产</field>
+        <field name="res_model">zenlenet.asset</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_asset_search"/>
+        <field name="domain">[('category', '=', context.get('asset_category'))]</field>
+    </record>
+
+    <record id="view_asset_task_list" model="ir.ui.view">
+        <field name="name">zenlenet.asset.task.list</field>
+        <field name="model">zenlenet.asset.task</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="kind"/>
+                <field name="asset_id"/>
+                <field name="category"/>
+                <field name="quantity"/>
+                <field name="datacenter_id"/>
+                <field name="user_id"/>
+                <field name="state" widget="badge"/>
+                <field name="create_date"/>
+                <button name="action_done" type="object" string="完成" invisible="state != 'open'"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_asset_task_form" model="ir.ui.view">
+        <field name="name">zenlenet.asset.task.form</field>
+        <field name="model">zenlenet.asset.task</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_done" type="object" string="完成" class="btn-primary" invisible="state != 'open'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" readonly="1"/>
+                            <field name="kind"/>
+                            <field name="asset_id"/>
+                            <field name="quantity"/>
+                        </group>
+                        <group>
+                            <field name="category"/>
+                            <field name="manufacturer"/>
+                            <field name="model_name"/>
+                            <field name="serial"/>
+                            <field name="datacenter_id"/>
+                            <field name="user_id"/>
                         </group>
                     </group>
                 </sheet>
             </form>
         </field>
     </record>
-    <record id="action_assets" model="ir.actions.act_window">
-        <field name="name">设备资产</field>
-        <field name="res_model">zenlenet.asset</field>
+    <record id="view_asset_task_search" model="ir.ui.view">
+        <field name="name">zenlenet.asset.task.search</field>
+        <field name="model">zenlenet.asset.task</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="asset_id"/>
+                <field name="serial"/>
+                <filter name="open" string="进行中" domain="[('state', '=', 'open')]"/>
+                <searchpanel>
+                    <field name="kind" string="类型" enable_counters="1" expand="1" icon="fa-tasks"/>
+                    <field name="state" enable_counters="1" icon="fa-flag"/>
+                </searchpanel>
+            </search>
+        </field>
+    </record>
+    <record id="action_asset_tasks" model="ir.actions.act_window">
+        <field name="name">资产任务</field>
+        <field name="res_model">zenlenet.asset.task</field>
         <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_asset_task_search"/>
+        <field name="context">{'search_default_open': 1}</field>
+    </record>
+    <record id="action_itam" model="ir.actions.client">
+        <field name="name">资产总览</field>
+        <field name="tag">zenlenet_itam</field>
     </record>
 </odoo>

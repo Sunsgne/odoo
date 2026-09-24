@@ -26,6 +26,10 @@ export class ZenlenetIpam extends Component {
             byParent: {},
             expanded: {},
             search: "",
+            domains: [],
+            domainId: false,
+            addressQuery: "",
+            objectQuery: "",
             selectedId: null,
             detail: null,
             loading: false,
@@ -45,6 +49,7 @@ export class ZenlenetIpam extends Component {
             bulkCustomers: [],
         });
         onWillStart(async () => {
+            this.state.domains = await this.orm.call("zenlenet.prefix", "ipam_domains", []);
             await this.loadTree();
             const first = this.roots[0];
             const wanted = this.props.action?.context?.ipam_prefix_id;
@@ -58,7 +63,7 @@ export class ZenlenetIpam extends Component {
 
     // ---------------------------------------------------------------- tree
     async loadTree() {
-        const nodes = await this.orm.call("zenlenet.prefix", "ipam_tree", [this.state.search]);
+        const nodes = await this.orm.call("zenlenet.prefix", "ipam_tree", [this.state.search, this.state.domainId || false]);
         const byParent = {};
         const ids = new Set(nodes.map((node) => node.id));
         for (const node of nodes) {
@@ -122,6 +127,34 @@ export class ZenlenetIpam extends Component {
     async onSearch(ev) {
         this.state.search = ev.target.value;
         await this.loadTree();
+    }
+
+    async onDomain(ev) {
+        this.state.domainId = ev.target.value ? parseInt(ev.target.value, 10) : false;
+        await this.loadTree();
+    }
+
+    async onFindKey(ev) {
+        if (ev.key === "Enter") {
+            await this.runFind();
+        }
+    }
+
+    async runFind() {
+        const found = await this.orm.call("zenlenet.prefix", "ipam_lookup", [], {
+            address: this.state.addressQuery,
+            obj: this.state.objectQuery,
+            domain_id: this.state.domainId || false,
+        });
+        if (!found.prefix_id) {
+            this.notification.add("没有匹配", { type: "warning" });
+            return;
+        }
+        await this.select(found.prefix_id);
+    }
+
+    openDomains() {
+        this.action.doAction("zenlenet_ops.action_ipam_domains");
     }
 
     // -------------------------------------------------------------- detail

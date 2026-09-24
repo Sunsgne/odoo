@@ -52,6 +52,7 @@
                     </div>
                     <group>
                         <group string="分配">
+                            <field name="domain_id"/>
                             <field name="region"/>
                             <field name="asn"/>
                             <field name="top_id" string="IP 段"/>
@@ -149,6 +150,21 @@
     <record id="action_ipam" model="ir.actions.client">
         <field name="name">地址管理</field>
         <field name="tag">zenlenet_ipam</field>
+    </record>
+    <record id="view_ipam_domain_list" model="ir.ui.view">
+        <field name="name">zenlenet.ipam.domain.list</field>
+        <field name="model">zenlenet.ipam.domain</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="name"/>
+                <field name="prefix_count"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_ipam_domains" model="ir.actions.act_window">
+        <field name="name">管理域</field>
+        <field name="res_model">zenlenet.ipam.domain</field>
+        <field name="view_mode">list,form</field>
     </record>
     <record id="view_prefix_split_form" model="ir.ui.view">
         <field name="name">zenlenet.prefix.split.form</field>

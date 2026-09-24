@@ -16,6 +16,7 @@ export class ZenlenetDatacenter extends Component {
             sites: [],
             loose: 0,
             search: "",
+            siteState: "",
             selectedId: null,
             detail: null,
             filter: "free",
@@ -45,9 +46,14 @@ export class ZenlenetDatacenter extends Component {
         await this.refresh();
     }
 
+    setSiteState(state) {
+        this.state.siteState = state;
+    }
+
     get regions() {
         const groups = {};
-        for (const site of this.state.sites) {
+        const sites = this.state.sites.filter((site) => !this.state.siteState || site.state === this.state.siteState);
+        for (const site of sites) {
             const name = site.region || "未分地区";
             groups[name] = groups[name] || { name, sites: [] };
             groups[name].sites.push(site);

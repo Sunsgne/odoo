@@ -68,6 +68,8 @@
                             <field name="state"/>
                             <field name="region"/>
                             <field name="facility"/>
+                            <field name="power_kw"/>
+                            <field name="power_used_kw"/>
                             <field name="asn"/>
                             <field name="supplier_id" options="{'no_create': True}"/>
                         </group>

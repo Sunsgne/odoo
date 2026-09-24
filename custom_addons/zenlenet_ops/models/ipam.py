@@ -17,19 +17,102 @@ STATUS_LABELS = {
 MAX_GRID_BLOCKS = 16
 
 
+class ZenlenetIpamDomain(models.Model):
+    _name = 'zenlenet.ipam.domain'
+    _description = '管理域'
+    _order = 'name'
+
+    name = fields.Char(string='管理域', required=True)
+    prefix_ids = fields.One2many('zenlenet.prefix', 'domain_id', string='地址段')
+    prefix_count = fields.Integer(string='地址段', compute='_compute_prefix_count')
+
+    _name_unique = models.Constraint('unique(name)', '这个管理域已经存在。')
+
+    @api.depends('prefix_ids')
+    def _compute_prefix_count(self):
+        for record in self:
+            record.prefix_count = len(record.prefix_ids)
+
+
 class ZenlenetPrefixIpam(models.Model):
     _inherit = 'zenlenet.prefix'
 
+    domain_id = fields.Many2one('zenlenet.ipam.domain', string='管理域', index=True, ondelete='set null')
+
     @api.model
-    def ipam_tree(self, search=''):
+    def ipam_domains(self):
+        rows = self.env['zenlenet.ipam.domain'].search_read([], ['name', 'prefix_count'], order='name')
+        return [{'id': row['id'], 'name': row['name'], 'count': row['prefix_count']} for row in rows]
+
+    @api.model
+    def ipam_lookup(self, address='', obj='', domain_id=False):
+        """Find the tightest prefix for an address, range or CIDR, or for a customer, host or device."""
+        Prefix = self
+        scope = [('domain_id', '=', int(domain_id))] if domain_id else []
+        prefix_id = False
+        hit_ip = ''
+        text = (address or '').strip()
+        if text:
+            start = text.split('-', 1)[0].strip()
+            try:
+                if '/' in start:
+                    network = ipaddress.ip_network(parse_prefix(start), strict=False)
+                else:
+                    host = ipaddress.ip_address(start)
+                    network = ipaddress.ip_network(f'{host}/{32 if host.version == 4 else 128}', strict=False)
+                    hit_ip = str(host)
+            except ValueError as error:
+                raise UserError('地址格式不对。') from error
+            best = None
+            for record in Prefix.search(scope):
+                try:
+                    current = ipaddress.ip_network(parse_prefix(record.prefix), strict=False)
+                except ValueError:
+                    continue
+                if network.version == current.version and (network.subnet_of(current) or network == current):
+                    if best is None or current.prefixlen > best[0]:
+                        best = (current.prefixlen, record.id)
+            prefix_id = best[1] if best else False
+        query = (obj or '').strip()
+        if query:
+            address_row = self.env['zenlenet.address'].search([
+                '|', '|', '|',
+                ('address', 'ilike', query),
+                ('usage', 'ilike', query),
+                ('partner_id.name', 'ilike', query),
+                ('remark', 'ilike', query),
+            ], limit=1)
+            if address_row.prefix_id and (not domain_id or address_row.prefix_id.domain_id.id == int(domain_id)):
+                prefix_id = address_row.prefix_id.id
+                hit_ip = address_row.address.split('/')[0]
+            elif not prefix_id:
+                found = Prefix.search(scope + [
+                    '|', '|', '|',
+                    ('description', 'ilike', query),
+                    ('role', 'ilike', query),
+                    ('partner_id.name', 'ilike', query),
+                    ('prefix', 'ilike', query),
+                ], limit=1)
+                prefix_id = found.id or False
+            if not prefix_id:
+                device = self.env['zenlenet.device'].search([('name', 'ilike', query)], limit=1)
+                if device.datacenter_id:
+                    found = Prefix.search(scope + [('datacenter_id', '=', device.datacenter_id.id)], limit=1)
+                    prefix_id = found.id or False
+        return {'prefix_id': prefix_id, 'ip': hit_ip}
+
+    @api.model
+    def ipam_tree(self, search='', domain_id=False):
         domain = []
+        if domain_id:
+            domain.append(('domain_id', '=', int(domain_id)))
         if search:
-            domain = ['|', '|', ('prefix', 'ilike', search), ('description', 'ilike', search), ('partner_id.name', 'ilike', search)]
+            domain += ['|', '|', ('prefix', 'ilike', search), ('description', 'ilike', search), ('partner_id.name', 'ilike', search)]
         fields_list = ['prefix', 'parent_id', 'status', 'partner_id', 'datacenter_id', 'utilization', 'child_count',
-                       'family', 'prefixlen', 'description', 'region', 'asn']
+                       'family', 'prefixlen', 'description', 'region', 'asn', 'domain_id']
         rows = self.search_read(domain, fields_list, order='family, prefix')
         wanted = {row['id'] for row in rows}
-        if search:
+        if search or domain_id:
             # keep ancestors so matches stay attached to their branch
             ancestors = self.browse([row['parent_id'][0] for row in rows if row['parent_id']])
             while ancestors:

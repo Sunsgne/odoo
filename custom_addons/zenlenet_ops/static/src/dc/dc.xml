@@ -8,6 +8,11 @@
                     <input type="search" class="form-control form-control-sm" t-att-value="state.search" t-on-input="onSearch"/>
                     <button class="btn btn-primary btn-sm" t-on-click="() => this.editSite(false)" title="新机房"><i class="fa fa-plus"/></button>
                 </div>
+                <div class="zl-dc-state">
+                    <button type="button" t-attf-class="btn btn-sm #{state.siteState ? 'btn-light' : 'btn-primary'}" t-on-click="() => this.setSiteState('')">全部</button>
+                    <button type="button" t-attf-class="btn btn-sm #{state.siteState === 'active' ? 'btn-primary' : 'btn-light'}" t-on-click="() => this.setSiteState('active')">在用</button>
+                    <button type="button" t-attf-class="btn btn-sm #{state.siteState === 'planning' ? 'btn-primary' : 'btn-light'}" t-on-click="() => this.setSiteState('planning')">规划中</button>
+                </div>
                 <ul class="zl-dc-regions">
                     <li t-foreach="regions" t-as="region" t-key="region.name">
                         <div class="zl-dc-region"><i class="fa fa-globe"/> <t t-out="region.name"/> <span t-out="region.sites.length"/></div>
@@ -35,7 +40,8 @@
                             <t t-if="state.detail.facility"> · <t t-out="state.detail.facility"/></t>
                             <t t-if="state.detail.asn"> · AS<t t-out="state.detail.asn"/></t>
                         </div>
-                        <div class="zl-dc-summary">可售地址段 <b t-out="state.detail.sellable_prefixes"/> · 可售线路 <b t-out="state.detail.sellable_lines"/> · 可售云主机 <b t-out="state.detail.sellable_vms"/></div>
+                        <div class="zl-dc-summary">可售地址段 <b t-out="state.detail.sellable_prefixes"/> · 可售线路 <b t-out="state.detail.sellable_lines"/> · 可售云主机 <b t-out="state.detail.sellable_vms"/> · 设备 <b t-out="state.detail.device_count"/></div>
+                        <div class="zl-dc-summary" t-if="state.detail.power_kw">电力 <b t-out="state.detail.power_used_kw"/> / <b t-out="state.detail.power_kw"/> kW</div>
                     </div>
                     <div class="zl-dc-actions" t-if="state.detail.can_write &amp;&amp; !state.detail.loose">
                         <button class="btn btn-primary btn-sm" t-on-click="() => this.openTicket('in')">资源进库</button>

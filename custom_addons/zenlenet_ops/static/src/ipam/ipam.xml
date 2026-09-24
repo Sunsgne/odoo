@@ -23,6 +23,22 @@
 
     <t t-name="zenlenet_ops.Ipam">
         <div class="o_action zl-ipam">
+            <div class="zl-ipam-find">
+                <label>管理域</label>
+                <select class="form-select form-select-sm" t-att-value="state.domainId || ''" t-on-change="onDomain">
+                    <option value="">全部</option>
+                    <option t-foreach="state.domains" t-as="domain" t-key="domain.id" t-att-value="domain.id">
+                        <t t-out="domain.name"/>
+                    </option>
+                </select>
+                <label>地址</label>
+                <input type="search" class="form-control form-control-sm" t-att-value="state.addressQuery" t-on-input="(ev) => this.state.addressQuery = ev.target.value" t-on-keydown="onFindKey"/>
+                <label>对象</label>
+                <input type="search" class="form-control form-control-sm" t-att-value="state.objectQuery" t-on-input="(ev) => this.state.objectQuery = ev.target.value" t-on-keydown="onFindKey"/>
+                <button class="btn btn-primary btn-sm" t-on-click="runFind">搜索</button>
+                <button class="btn btn-secondary btn-sm" t-on-click="openDomains">管理域</button>
+            </div>
+            <div class="zl-ipam-body">
             <aside class="zl-ipam-tree">
                 <div class="zl-ipam-tree-head">
                     <input type="search" class="form-control form-control-sm" t-att-value="state.search" t-on-input="onSearch"/>
@@ -231,6 +247,7 @@
             <section class="zl-ipam-main d-flex align-items-center justify-content-center text-muted" t-else="">
                 <t t-if="state.loading">加载中…</t>
             </section>
+            </div>
         </div>
     </t>
 </templates>

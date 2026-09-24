@@ -1,6 +1,6 @@
 {
     'name': '运营后台',
-    'version': '19.0.4.17.0',
+    'version': '19.0.4.18.0',
     'category': 'Sales',
     'summary': '数据中心、线路、IP；客户、报价、合同、出账；业务流转与工单',
     'author': 'ZENLENET PTE. LTD.',
@@ -55,6 +55,9 @@
             'zenlenet_ops/static/src/month/month.scss',
             'zenlenet_ops/static/src/month/month.js',
             'zenlenet_ops/static/src/month/month.xml',
+            'zenlenet_ops/static/src/itam/itam.scss',
+            'zenlenet_ops/static/src/itam/itam.js',
+            'zenlenet_ops/static/src/itam/itam.xml',
         ],
         'web.report_assets_common': [
             'zenlenet_ops/static/src/scss/report.scss',

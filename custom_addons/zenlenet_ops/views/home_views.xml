@@ -50,10 +50,11 @@
                         <button type="action" name="%(zenlenet_ops.action_flow)d" class="o_zl_app"><i class="fa fa-random" title="资源工单"/><b>资源工单</b></button>
                         <button type="action" name="%(zenlenet_ops.action_tickets)d" class="o_zl_app"><i class="fa fa-life-ring" title="服务工单"/><b>服务工单</b></button>
                         <button type="action" name="%(zenlenet_ops.action_maintenance)d" class="o_zl_app"><i class="fa fa-wrench" title="维护通告"/><b>维护通告</b></button>
-                        <button type="action" name="%(zenlenet_ops.action_datacenter_board)d" class="o_zl_app"><i class="fa fa-building" title="数据中心"/><b>数据中心</b></button>
+                        <button type="action" name="%(zenlenet_ops.action_datacenter_board)d" class="o_zl_app"><i class="fa fa-building" title="园区"/><b>园区</b></button>
                         <button type="action" name="%(zenlenet_ops.action_allocation_queue)d" class="o_zl_app" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_allocator,zenlenet_ops.group_manager"><i class="fa fa-magic" title="资源分配"/><b>资源分配</b></button>
                         <button type="action" name="%(zenlenet_ops.action_ipam)d" class="o_zl_app"><i class="fa fa-sitemap" title="地址管理"/><b>地址管理</b></button>
-                        <button type="action" name="%(zenlenet_ops.action_assets)d" class="o_zl_app"><i class="fa fa-server" title="采购与设备"/><b>采购与设备</b></button>
+                        <button type="action" name="%(zenlenet_ops.action_purchases)d" class="o_zl_app" groups="zenlenet_ops.group_procurement,zenlenet_ops.group_delivery,zenlenet_ops.group_manager"><i class="fa fa-shopping-cart" title="采购计划"/><b>采购计划</b></button>
+                        <button type="action" name="%(zenlenet_ops.action_itam)d" class="o_zl_app" groups="zenlenet_ops.group_procurement,zenlenet_ops.group_delivery,zenlenet_ops.group_manager"><i class="fa fa-server" title="资产"/><b>资产</b></button>
                     </div>
                 </sheet>
             </form>

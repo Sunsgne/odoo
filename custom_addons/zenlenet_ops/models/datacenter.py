@@ -54,6 +54,8 @@ class ZenlenetDatacenter(models.Model):
         ('closed', '已退租'),
     ], string='状态', default='active', required=True, index=True)
     note = fields.Text(string='备注')
+    power_kw = fields.Float(string='电力容量 (kW)')
+    power_used_kw = fields.Float(string='已用电力 (kW)')
     address_ids = fields.One2many('zenlenet.address', 'datacenter_id', string='IP资源')
     line_ids = fields.One2many('zenlenet.line', 'datacenter_id', string='线路')
     site_line_ids = fields.Many2many('zenlenet.line', compute='_compute_site_lines', string='线路')
@@ -134,6 +136,20 @@ class ZenlenetDatacenter(models.Model):
                 ['datacenter_id'], ['__count'],
             )
         }
+        Device = self.env['zenlenet.device']
+        Asset = self.env['zenlenet.asset']
+        device_count = {
+            record.id: count
+            for record, count in Device._read_group(
+                [('datacenter_id', 'in', sites.ids)], ['datacenter_id'], ['__count'],
+            )
+        }
+        asset_count = {
+            record.id: count
+            for record, count in Asset._read_group(
+                [('datacenter_id', 'in', sites.ids)], ['datacenter_id'], ['__count'],
+            )
+        }
         Vm = self.env['zenlenet.vm']
         sellable_vm = {
             record.id: count
@@ -151,6 +167,9 @@ class ZenlenetDatacenter(models.Model):
             'sellable_prefixes': sellable_prefix.get(site.id, 0),
             'sellable_lines': sellable_line.get(site.id, 0),
             'sellable_vms': sellable_vm.get(site.id, 0),
+            'device_count': device_count.get(site.id, 0) + asset_count.get(site.id, 0),
+            'power_kw': site.power_kw or 0,
+            'power_used_kw': site.power_used_kw or 0,
         } for site in sites]
 
     def dc_site(self):
@@ -217,6 +236,9 @@ class ZenlenetDatacenter(models.Model):
             'facility': self.facility or '',
             'asn': self.asn or 0,
             'city': self.city or '',
+            'power_kw': self.power_kw or 0,
+            'power_used_kw': self.power_used_kw or 0,
+            'device_count': len(self.device_ids) + len(self.asset_ids),
             'address': self.address or '',
             'supplier': self.supplier_id.name or self.supplier or '',
             'contact': self.contact or '',
@@ -309,6 +331,9 @@ class ZenlenetDatacenter(models.Model):
             'sellable_prefixes': 0,
             'sellable_lines': sum(1 for row in lines if row['sellable']),
             'sellable_vms': 0,
+            'device_count': 0,
+            'power_kw': 0,
+            'power_used_kw': 0,
             'loose': True,
         }
 
