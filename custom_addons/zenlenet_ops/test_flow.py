@@ -2,7 +2,8 @@ import unittest
 
 from flow import (
     can_convert, can_reclaim, next_state, normalize_assignment, prev_state,
-    resource_reference, resource_slot, step_label, team_for, team_for_move, transition_allowed,
+    resource_reference, resource_slot, step_label, team_for, team_for_move, track_tasks,
+    transition_allowed,
 )
 
 
@@ -101,6 +102,28 @@ class FlowTests(unittest.TestCase):
         self.assertEqual(team_for_move('in', 'company'), 'delivery')
         self.assertEqual(team_for_move('back', 'reclaim'), 'delivery')
         self.assertEqual(team_for_move('cutover', 'deliver'), 'service')
+
+    def test_each_service_has_its_own_outbound_path(self):
+        self.assertEqual(
+            [next_state('business', state, 'out', 'ipt') for state in ('company', 'allocate', 'deliver', 'accept')],
+            ['allocate', 'deliver', 'accept', 'done'],
+        )
+        self.assertEqual(next_state('business', 'company', 'out', 'vm'), 'deliver')
+        self.assertIsNone(next_state('business', 'allocate', 'out', 'vm'))
+        self.assertFalse(transition_allowed('business', 'company', 'business', 'allocate', 'out', 'out', 'vm', 'vm'))
+        self.assertTrue(transition_allowed('business', 'company', 'business', 'deliver', 'out', 'out', 'vm', 'vm'))
+        self.assertFalse(transition_allowed('business', 'company', 'business', 'accept', 'out', 'out', 'colo', 'colo'))
+        self.assertEqual(step_label('out', 'allocate', 'ipt'), '端口与地址')
+        self.assertEqual(step_label('out', 'deliver', 'vm'), '开通实例')
+        self.assertEqual(step_label('out', 'allocate', 'resale'), '供应商下单')
+        self.assertEqual(step_label('out', 'deliver', 'pl'), '端口开通')
+        self.assertEqual(team_for_move('out', 'company', 'sdwan'), 'sales')
+        self.assertEqual(team_for_move('out', 'deliver', 'colo'), 'delivery')
+        self.assertTrue(track_tasks('ipt'))
+        self.assertFalse(any(stage == 'allocate' for stage, *_rest in track_tasks('vm')))
+        self.assertEqual(next_state('test', 'company', 'out', 'vm'), 'allocate')
+        self.assertTrue(transition_allowed('business', 'company', 'business', 'company', 'out', 'out', 'ipt', 'vm'))
+        self.assertFalse(transition_allowed('business', 'allocate', 'business', 'allocate', 'out', 'out', 'ipt', 'vm'))
 
 
 if __name__ == '__main__':

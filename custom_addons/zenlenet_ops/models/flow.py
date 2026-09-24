@@ -9,12 +9,14 @@ from odoo.addons.zenlenet_ops.flow import (
     can_reclaim,
     next_state,
     normalize_assignment,
+    path_for,
     prev_state,
     resource_reference,
     resource_slot,
     step_label,
     team_for,
     team_for_move,
+    track_tasks,
     transition_allowed,
 )
 
@@ -58,6 +60,7 @@ class ZenlenetFlow(models.Model):
         ('test', '测试'),
         ('business', '商务'),
     ], string='类型', required=True, default='business', tracking=True)
+    service_type = fields.Selection(SERVICE_TYPES, string='业务', tracking=True)
     move = fields.Selection([
         ('out', '出：开通'),
         ('in', '进：入库'),
@@ -148,12 +151,12 @@ class ZenlenetFlow(models.Model):
     @api.depends('state', 'move')
     def _compute_step_name(self):
         for record in self:
-            record.step_name = step_label(record.move, record.state)
+            record.step_name = step_label(record.move, record.state, record.service_type)
 
-    @api.depends('state', 'move')
+    @api.depends('state', 'move', 'service_type')
     def _compute_team(self):
         for record in self:
-            record.team = team_for_move(record.move, record.state) or False
+            record.team = team_for_move(record.move, record.state, record.service_type) or False
 
     @api.depends('resource_ids.resource_ref', 'resource_ids.spec', 'resource_ids.service_type')
     def _compute_pending(self):
@@ -220,7 +223,10 @@ class ZenlenetFlow(models.Model):
             if not record.partner_id:
                 record.partner_id = record.order_id.partner_id.commercial_partner_id
             have = set(record.resource_ids.mapped('order_line_id').ids)
-            for line in record.order_id.order_line.filtered(lambda item: not item.display_type):
+            lines = record.order_id.order_line.filtered(lambda item: not item.display_type)
+            if record.service_type:
+                lines = lines.filtered(lambda item: item._zenlenet_service_type() == record.service_type)
+            for line in lines:
                 if line.id in have:
                     continue
                 Resource.create({
@@ -273,10 +279,26 @@ class ZenlenetFlow(models.Model):
         Template = self.env['zenlenet.task.template']
         for record in self:
             types = set(service_types or record.resource_ids.mapped('service_type'))
-            templates = Template.search([('service_type', 'in', list(types | {'all'}))]) if types else Template.search([('service_type', '=', 'all')])
+            if record.service_type:
+                types.add(record.service_type)
+            use_track = (record.move or 'out') == 'out' and record.kind != 'test' and bool(track_tasks(record.service_type))
+            on_path = set(path_for(record.move, record.kind, record.service_type if use_track else None))
+            if use_track:
+                templates = Template.browse()
+            else:
+                templates = Template.search([('service_type', 'in', list(types | {'all'}))]) if types else Template.search([('service_type', '=', 'all')])
             have = {(task.stage, task.name) for task in record.task_ids}
             start = record.planned_date or fields.Date.context_today(self)
-            rows = [(template.stage, template.name, template.team, template.days, template.estimate_hours, template.priority) for template in templates]
+            rows = [
+                (stage, name, team, days, 0.0, '0')
+                for stage, name, team, days in (track_tasks(record.service_type) if use_track else ())
+                if stage in on_path
+            ]
+            rows += [
+                (template.stage, template.name, template.team, template.days, template.estimate_hours, template.priority)
+                for template in templates
+                if not on_path or template.stage in on_path
+            ]
             if not rows and not record.task_ids:
                 rows = [(stage, name, team_for(stage), 1, 0.0, '0') for stage, name in DEFAULT_TASKS]
             cursor = start
@@ -298,15 +320,19 @@ class ZenlenetFlow(models.Model):
                 have.add((stage, name))
 
     def write(self, vals):
-        if {'state', 'kind', 'move'} & set(vals):
+        if {'state', 'kind', 'move', 'service_type'} & set(vals):
             for record in self:
                 new_state = vals.get('state', record.state)
                 new_kind = vals.get('kind', record.kind)
                 new_move = vals.get('move', record.move)
-                if not transition_allowed(record.kind, record.state, new_kind, new_state, record.move, new_move):
+                new_service = vals.get('service_type', record.service_type)
+                if not transition_allowed(
+                    record.kind, record.state, new_kind, new_state, record.move, new_move,
+                    record.service_type, new_service,
+                ):
                     raise UserError('请按顺序推进，不能跳步。')
         result = super().write(vals)
-        if {'state', 'move', 'sales_user_id', 'delivery_user_id', 'service_user_id'} & set(vals):
+        if {'state', 'move', 'service_type', 'sales_user_id', 'delivery_user_id', 'service_user_id'} & set(vals):
             self._sync_assignee()
         if {'state', 'kind', 'move', 'address_ids', 'partner_id', 'resource_ids', 'return_to'} & set(vals):
             self._apply_resources()
@@ -314,7 +340,7 @@ class ZenlenetFlow(models.Model):
 
     def _person_for(self, state):
         self.ensure_one()
-        team = team_for_move(self.move, state)
+        team = team_for_move(self.move, state, self.service_type)
         return {
             'sales': self.sales_user_id,
             'delivery': self.delivery_user_id,
@@ -369,7 +395,7 @@ class ZenlenetFlow(models.Model):
     }
 
     def _ensure_role(self, state):
-        team = team_for_move(self.move, state)
+        team = team_for_move(self.move, state, self.service_type)
         role = self.ROLE_BY_TEAM.get(team)
         if not role:
             return
@@ -382,7 +408,7 @@ class ZenlenetFlow(models.Model):
             return
         if user.has_group('zenlenet_ops.group_pm') and (self.pm_user_id == user or not self.pm_user_id):
             return
-        raise UserError(f'这一步（{step_label(self.move, state)}）由{role[1]}岗位操作，你的岗位没有权限。')
+        raise UserError(f'这一步（{step_label(self.move, state, self.service_type)}）由{role[1]}岗位操作，你的岗位没有权限。')
 
     def _check_exit(self):
         self.ensure_one()
@@ -435,7 +461,17 @@ class ZenlenetFlow(models.Model):
         if self.state == 'allocate':
             if not self.delivery_user_id:
                 raise UserError('请指定交付。')
-            if not self._has_allocation():
+            service = self.service_type
+            slot = resource_slot(service) if service else None
+            if slot:
+                missing = self.resource_ids.filtered(lambda item: item.needs_resource and not item.resource_ref)
+                if missing or not self.resource_ids.filtered('needs_resource'):
+                    raise UserError('这一步要先选定资源。')
+            elif service == 'colo' and not self.datacenter_id:
+                raise UserError('托管要先选园区。')
+            elif service == 'resale' and not self.supplier_id:
+                raise UserError('转售要先选供应商。')
+            elif not service and not self._has_allocation():
                 raise UserError('请先按业务类型分配资源，或写上资源说明。')
         if self.state == 'deliver' and not self.service_user_id:
             raise UserError('请指定售后。')
@@ -553,7 +589,7 @@ class ZenlenetFlow(models.Model):
 
     def action_next(self):
         for record in self:
-            nxt = next_state(record.kind, record.state, record.move)
+            nxt = next_state(record.kind, record.state, record.move, record.service_type)
             if not nxt:
                 if (record.move or 'out') == 'out' and record.kind == 'test' and record.state == 'decide':
                     raise UserError('测试单请选择回收或转商务。')
@@ -562,7 +598,7 @@ class ZenlenetFlow(models.Model):
             record.state = nxt
             if record.move == 'cutover' and nxt == 'deliver' and not record.notice_body:
                 record._fill_cutover_notice()
-            record._post(f'进入{step_label(record.move, nxt)}')
+            record._post(f'进入{step_label(record.move, nxt, record.service_type)}')
             if nxt == 'done':
                 record.actual_date = fields.Date.context_today(self)
             if nxt == 'done' and (record.move or 'out') == 'out' and record.kind == 'business' and record.order_id:
@@ -589,11 +625,11 @@ class ZenlenetFlow(models.Model):
 
     def action_prev(self):
         for record in self:
-            previous = prev_state(record.kind, record.state, record.move)
+            previous = prev_state(record.kind, record.state, record.move, record.service_type)
             if not previous or record.state in ('done', 'cancel'):
                 continue
             record.state = previous
-            record._post(f'退回{step_label(record.move, record.state)}')
+            record._post(f'退回{step_label(record.move, record.state, record.service_type)}')
 
     def action_reclaim(self):
         for record in self:

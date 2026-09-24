@@ -5,6 +5,8 @@
 
     <menuitem id="menu_customer" name="客户" parent="menu_root" sequence="10"/>
     <menuitem id="menu_customers" name="客户" parent="menu_customer" action="action_customers" sequence="10"/>
+    <menuitem id="menu_quotes" name="报价" parent="menu_customer" action="action_quotes" sequence="20" groups="zenlenet_ops.group_sales,zenlenet_ops.group_manager"/>
+    <menuitem id="menu_contracts" name="合同" parent="menu_customer" action="action_contracts" sequence="30" groups="zenlenet_ops.group_sales,zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
 
     <menuitem id="menu_finance" name="财务" parent="menu_root" sequence="20" groups="zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
     <menuitem id="menu_fin_ar" name="应收" parent="menu_finance" sequence="10"/>

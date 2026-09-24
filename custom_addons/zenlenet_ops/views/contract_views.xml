@@ -31,6 +31,7 @@
             <form>
                 <header>
                     <button name="action_activate" type="object" string="开始执行" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_to_flows" type="object" string="转工单" class="btn-primary" invisible="state not in ('active', 'expiring')"/>
                     <button name="action_bill_now" type="object" string="出本期账单" class="btn-primary" invisible="state not in ('active', 'expiring')" groups="zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
                     <button name="action_load_items" type="object" string="从订单带入费用" invisible="not order_ids or state not in ('draft', 'active', 'expiring')"/>
                     <button name="%(zenlenet_ops.report_contract)d" type="action" string="打印合同"/>
@@ -104,6 +105,8 @@
                     <field name="flow_ids" readonly="1" nolabel="1">
                         <list limit="20">
                             <field name="name"/>
+                            <field name="service_type"/>
+                            <field name="step_name"/>
                             <field name="order_id"/>
                             <field name="state" widget="badge"/>
                             <field name="datacenter_id"/>

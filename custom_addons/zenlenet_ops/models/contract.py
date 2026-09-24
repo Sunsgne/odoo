@@ -175,6 +175,63 @@ class ZenlenetContract(models.Model):
             self.action_load_items()
         return result
 
+    def action_to_flows(self):
+        """One executing contract opens one outbound ticket per service."""
+        Flow = self.env['zenlenet.flow']
+        opened = Flow.browse()
+        for record in self:
+            if record.state not in ('active', 'expiring'):
+                raise UserError('合同开始执行后才能转工单。')
+            if not record.order_ids:
+                raise UserError('合同里还没有订单。')
+            partner = record.partner_id
+            sales = record.sales_user_id or self.env.user
+            for order in record.order_ids:
+                lines = order.order_line.filtered(lambda item: not item.display_type)
+                services = []
+                for line in lines:
+                    service = line._zenlenet_service_type()
+                    if service not in services:
+                        services.append(service)
+                for service in services:
+                    existing = Flow.search([
+                        ('order_id', '=', order.id),
+                        ('service_type', '=', service),
+                        ('move', '=', 'out'),
+                        ('state', '!=', 'cancel'),
+                    ], limit=1)
+                    if existing:
+                        opened |= existing
+                        continue
+                    flow = Flow.create({
+                        'kind': 'business',
+                        'move': 'out',
+                        'service_type': service,
+                        'partner_id': partner.id,
+                        'order_id': order.id,
+                        'sales_user_id': sales.id,
+                    })
+                    flow.action_load_order()
+                    opened |= flow
+            record.message_post(body=f'已转 {len(opened)} 张工单')
+        if not opened:
+            return False
+        if len(opened) == 1:
+            return {
+                'type': 'ir.actions.act_window',
+                'res_model': 'zenlenet.flow',
+                'res_id': opened.id,
+                'view_mode': 'form',
+                'target': 'current',
+            }
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'zenlenet.flow',
+            'view_mode': 'list,form',
+            'domain': [('id', 'in', opened.ids)],
+            'target': 'current',
+        }
+
     def action_activate(self):
         for record in self:
             if not record.item_ids:

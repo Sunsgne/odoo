@@ -31,6 +31,7 @@
             <form>
                 <header>
                     <button name="action_open_quote" type="object" string="新报价" class="btn-primary"/>
+                    <button name="action_open_contracts" type="object" string="合同"/>
                     <field name="zenlenet_status" widget="statusbar" options="{'clickable': true}"/>
                 </header>
                 <sheet>
