@@ -279,7 +279,7 @@ class ZenlenetPrefixAdd(models.TransientModel):
         Prefix = self.env['zenlenet.prefix']
         if Prefix.search_count([('prefix', '=', cidr)]):
             raise UserError('这个网段已经存在。')
-        prefix = Prefix.create({
+        values = {
             'prefix': cidr,
             'datacenter_id': self.datacenter_id.id or self.parent_id.datacenter_id.id,
             'partner_id': self.partner_id.id,
@@ -288,7 +288,10 @@ class ZenlenetPrefixAdd(models.TransientModel):
             'description': self.description or '',
             'region': self.region or self.parent_id.region or False,
             'asn': self.asn or self.parent_id.asn or 0,
-        })
+        }
+        if self.supplier_id:
+            values['supplier_ids'] = [(4, self.supplier_id.id)]
+        prefix = Prefix.create(values)
         try:
             self.env['zenlenet.netbox'].create_prefixes(prefix)
         except Exception as error:  # noqa: BLE001

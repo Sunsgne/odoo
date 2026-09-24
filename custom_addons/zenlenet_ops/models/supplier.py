@@ -24,7 +24,9 @@ class ResPartnerSupplier(models.Model):
         domain=[('move_type', '=', 'in_invoice'), ('state', '!=', 'cancel')],
     )
     zenlenet_datacenter_ids = fields.One2many('zenlenet.datacenter', 'supplier_id', string='机房')
-    zenlenet_supplied_address_ids = fields.One2many('zenlenet.address', 'supplier_id', string='地址')
+    zenlenet_supplied_prefix_ids = fields.Many2many(
+        'zenlenet.prefix', 'zenlenet_prefix_supplier_rel', 'supplier_id', 'prefix_id', string='地址',
+    )
     zenlenet_return_ids = fields.One2many('zenlenet.supplier.return', 'supplier_id', string='退资源')
 
     def _compute_supplier_counts(self):

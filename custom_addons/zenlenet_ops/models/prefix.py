@@ -31,6 +31,10 @@ class ZenlenetPrefix(models.Model):
     status = fields.Selection(PREFIX_STATUSES, string='状态', default='active', required=True, index=True)
     datacenter_id = fields.Many2one('zenlenet.datacenter', string='数据中心', index=True, ondelete='set null')
     partner_id = fields.Many2one('res.partner', string='客户', index=True, domain=[('is_company', '=', True)])
+    supplier_ids = fields.Many2many(
+        'res.partner', 'zenlenet_prefix_supplier_rel', 'prefix_id', 'supplier_id',
+        string='供应商', domain=[('supplier_rank', '>', 0)],
+    )
     role = fields.Char(string='用途角色')
     vlan = fields.Char(string='VLAN')
     description = fields.Char(string='说明')
@@ -213,6 +217,38 @@ class ZenlenetPrefix(models.Model):
             record.free_count = free.get(record.id, 0)
             base = record.size or record.address_count
             record.utilization = round(record.allocated_count * 100.0 / base, 1) if base else 0.0
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        cleaned = []
+        for vals in vals_list:
+            vals = dict(vals)
+            if vals.get('prefix'):
+                try:
+                    vals['prefix'] = parse_prefix(vals['prefix'])
+                except ValueError as error:
+                    raise UserError('网段格式不对。') from error
+            cleaned.append(vals)
+        return super().create(cleaned)
+
+    @api.model
+    def zenlenet_link_suppliers(self):
+        """Hang each block on the suppliers already written on the addresses inside it."""
+        rows = self.env['zenlenet.address'].sudo()._read_group(
+            [('supplier_id', '!=', False), ('prefix_id', '!=', False)],
+            ['prefix_id', 'supplier_id'],
+            ['__count'],
+        )
+        wanted = {}
+        for prefix, supplier, _count in rows:
+            if prefix and supplier:
+                wanted.setdefault(prefix.id, set()).add(supplier.id)
+        for prefix in self.sudo().browse(list(wanted)):
+            missing = wanted[prefix.id] - set(prefix.supplier_ids.ids)
+            if missing:
+                prefix.with_context(netbox_skip_push=True).write({
+                    'supplier_ids': [(4, supplier_id) for supplier_id in missing],
+                })
 
     def write(self, vals):
         if (

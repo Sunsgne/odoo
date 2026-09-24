@@ -106,13 +106,13 @@
                         </list>
                     </field>
                     <separator string="地址"/>
-                    <field name="zenlenet_supplied_address_ids" nolabel="1" context="{'default_supplier_id': id}">
-                        <list limit="40">
-                            <field name="address" class="font-monospace"/>
+                    <field name="zenlenet_supplied_prefix_ids" nolabel="1">
+                        <list editable="bottom" limit="40">
+                            <field name="prefix" class="font-monospace"/>
                             <field name="datacenter_id"/>
                             <field name="status" widget="badge"/>
-                            <field name="partner_id" string="客户"/>
-                            <field name="usage"/>
+                            <field name="partner_id" string="客户" readonly="1"/>
+                            <field name="role" string="用途"/>
                         </list>
                     </field>
                     <separator string="退资源"/>

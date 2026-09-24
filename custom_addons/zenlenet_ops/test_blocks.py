@@ -17,6 +17,11 @@ class PrefixBlockTests(unittest.TestCase):
         self.assertEqual(parse_prefix('192.0.2.9/24'), '192.0.2.0/24')
         self.assertEqual(parse_prefix('2001:db8::1/64'), '2001:db8::/64')
 
+    def test_supplier_block_keeps_its_length(self):
+        self.assertEqual(parse_prefix('10.1.2.3/16'), '10.1.0.0/16')
+        self.assertEqual(parse_prefix('10.0.0.0/16'), '10.0.0.0/16')
+        self.assertNotEqual(parse_prefix('10.1.2.3/16').rsplit('/', 1)[-1], '32')
+
     def test_prefix_rejects_blank(self):
         with self.assertRaises(ValueError):
             parse_prefix('  ')

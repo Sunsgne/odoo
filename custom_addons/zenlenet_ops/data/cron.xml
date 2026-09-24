@@ -86,4 +86,5 @@
         <field name="padding">5</field>
     </record>
     <function model="zenlenet.flow" name="zenlenet_refresh_teams"/>
+    <function model="zenlenet.prefix" name="zenlenet_link_suppliers"/>
 </odoo>
