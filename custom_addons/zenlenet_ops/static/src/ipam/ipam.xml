@@ -192,7 +192,7 @@
                         <div class="zl-ipam-section-title">基本信息</div>
                         <dl>
                             <dt>地区</dt><dd t-out="state.detail.region || '—'"/>
-                            <dt>AS 号</dt><dd class="font-monospace" t-out="state.detail.asn ? 'AS' + state.detail.asn : '—'"/>
+                            <dt>AS 号</dt><dd class="font-monospace" t-out="state.detail.asn ? 'AS' + state.detail.asn : (state.detail.ip_asn || '—')"/>
                             <dt>IP 段</dt><dd><a href="#" class="font-monospace" t-on-click.prevent="() => this.select(state.detail.top_id)" t-out="state.detail.top"/></dd>
                             <dt>IP 小段</dt><dd class="font-monospace" t-out="state.detail.prefix"/>
                             <dt>CIDR</dt><dd class="font-monospace" t-out="state.detail.prefix"/>
@@ -204,7 +204,8 @@
                             <dt>IP 占用</dt><dd>已用 <b t-out="state.detail.used"/> / <t t-out="state.detail.size_display"/></dd>
                             <dt>IP 类型</dt><dd t-out="state.detail.ip_type || '—'"/>
                             <dt>原生 IP</dt><dd t-out="state.detail.ip_native || '—'"/>
-                            <dt t-if="state.detail.blocks.length === 1">风控</dt><dd t-if="state.detail.blocks.length === 1" t-out="state.detail.ip_type ? state.detail.ip_risk + '%' : '—'"/>
+                            <dt>位置</dt><dd t-out="state.detail.ip_location || '—'"/>
+                            <dt>风控</dt><dd t-out="!state.detail.ip_type || state.detail.ip_risk === null ? '—' : state.detail.ip_risk + '%'"/>
                             <dt>查询</dt><dd t-out="state.detail.ip_checked || '—'"/>
                         </dl>
                         <div t-if="Object.keys(state.detail.counts).length" class="zl-counts">

@@ -196,6 +196,8 @@ class ZenlenetIpProbe(models.Model):
         types, natives = [], []
         latest = False
         single_risk = None
+        single_location = ''
+        single_asn = ''
         for block, key in zip(blocks, rolled):
             row = rows.get(key)
             ip_type = row.ip_type or '' if row else ''
@@ -214,12 +216,17 @@ class ZenlenetIpProbe(models.Model):
             if row and row.checked_at and (not latest or row.checked_at > latest):
                 latest = row.checked_at
                 single_risk = row.ip_risk
+                single_location = row.location or ''
+                single_asn = row.asn or ''
         unique_types = list(dict.fromkeys(types))
         unique_natives = list(dict.fromkeys(natives))
+        one = len(blocks) == 1 and latest
         return {
             'ip_type': '、'.join(unique_types),
             'ip_native': '、'.join(unique_natives),
-            'ip_risk': single_risk if len(blocks) == 1 and latest else None,
+            'ip_risk': single_risk if one else None,
+            'ip_location': single_location if one else '',
+            'ip_asn': single_asn if one else '',
             'ip_checked': fields.Datetime.to_string(latest) if latest else '',
         }
 
