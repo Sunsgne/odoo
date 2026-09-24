@@ -6,7 +6,7 @@ import logging
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
-from odoo.addons.zenlenet_ops.blocks import parse_prefix
+from odoo.addons.zenlenet_ops.blocks import edge_label, parse_prefix
 
 _logger = logging.getLogger(__name__)
 
@@ -172,17 +172,19 @@ class ZenlenetPrefixIpam(models.Model):
                 for host in subnet:
                     key = str(host)
                     row = found.get(key)
-                    # Network and broadcast addresses stay selectable. With no record they read as free, not a gray dead cell.
-                    edge = network.prefixlen < 31 and host in (network.network_address, network.broadcast_address)
+                    # Ends stay selectable. They read as free when empty, and cannot be given to a customer.
+                    label = edge_label(self.prefix, key)
                     cells.append({
                         'ip': key,
                         'last': int(host) & 0xFF,
-                        'status': row['status'] if row else ('free' if edge else 'none'),
+                        'status': row['status'] if row else ('free' if label else 'none'),
                         'partner': row['partner_id'][1] if row and row['partner_id'] else '',
                         'partner_id': row['partner_id'][0] if row and row['partner_id'] else False,
                         'usage': row['usage'] if row else '',
                         'id': row['id'] if row else False,
                         'special': '',
+                        'edge': bool(label),
+                        'edge_label': label,
                     })
                 blocks.append({
                     'label': f'{subnet.network_address} - {subnet.broadcast_address}',
@@ -243,6 +245,13 @@ class ZenlenetPrefixIpam(models.Model):
             'can_write': self.has_access('write'),
         }
 
+    def _reject_edge_allocation(self, ips):
+        """Network and broadcast addresses can be selected, but not given to a customer."""
+        self.ensure_one()
+        for ip in ips or []:
+            if edge_label(self.prefix, ip):
+                raise UserError('网络位和广播位不能分配。')
+
     def ipam_set_address(self, ip, values):
         """Create or update one host inside this prefix from the grid popover."""
         self.ensure_one()
@@ -268,6 +277,8 @@ class ZenlenetPrefixIpam(models.Model):
         partner = payload['partner_id'] if 'partner_id' in payload else (record.partner_id.id if record else False)
         if status == 'reserved' and not partner:
             raise UserError('预分配要先选定客户。')
+        if edge_label(str(network), str(host)) and status in ('allocated', 'reserved'):
+            raise UserError('网络位和广播位不能分配。')
         if record:
             record.write(payload)
         else:
@@ -302,6 +313,7 @@ class ZenlenetPrefixIpam(models.Model):
             raise UserError('分配给客户要挂在一张处于「分配资源」的开通工单上。没有的话先开一张。')
         if not ips:
             raise UserError('请先选地址。')
+        self._reject_edge_allocation(ips)
         Address = self.env['zenlenet.address']
         Resource = self.env['zenlenet.flow.resource']
         have = set(flow.resource_ids.mapped('address_id').ids)
@@ -335,6 +347,7 @@ class ZenlenetPrefixIpam(models.Model):
             raise UserError('请选择要预分配的客户。')
         if not ips:
             raise UserError('请先选地址。')
+        self._reject_edge_allocation(ips)
         Address = self.env['zenlenet.address']
         Resource = self.env['zenlenet.flow.resource']
         for ip in ips:
@@ -379,6 +392,8 @@ class ZenlenetPrefixIpam(models.Model):
             raise UserError('工单类型不对。')
         if not ips:
             raise UserError('请先选地址。')
+        if move == 'out':
+            self._reject_edge_allocation(ips)
         Address = self.env['zenlenet.address']
         addresses = Address
         for ip in ips:
