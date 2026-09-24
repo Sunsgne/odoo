@@ -36,7 +36,6 @@
                 <header>
                     <button name="action_allocate" type="object" string="开开通工单" class="btn-primary" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_sales,zenlenet_ops.group_manager"/>
                     <button name="action_release" type="object" string="开退回工单" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_sales,zenlenet_ops.group_manager"/>
-                    <button name="action_split" type="object" string="切割" invisible="status == 'deprecated'" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_manager"/>
                     <button name="action_add_child" type="object" string="新增下级网段" invisible="status == 'deprecated'" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_manager"/>
                     <button name="action_open_netbox" type="object" string="在 NetBox 中查看" icon="fa-external-link" invisible="not netbox_id"/>
                     <field name="status" widget="statusbar" options="{'clickable': true}"/>
@@ -166,26 +165,7 @@
         <field name="res_model">zenlenet.ipam.domain</field>
         <field name="view_mode">list,form</field>
     </record>
-    <record id="view_prefix_split_form" model="ir.ui.view">
-        <field name="name">zenlenet.prefix.split.form</field>
-        <field name="model">zenlenet.prefix.split</field>
-        <field name="arch" type="xml">
-            <form>
-                <group>
-                    <field name="prefix_id" invisible="1"/>
-                    <field name="current"/>
-                    <field name="new_prefixlen"/>
-                    <field name="count" invisible="keep_remaining"/>
-                    <field name="keep_remaining"/>
-                    <field name="limit" invisible="not keep_remaining"/>
-                </group>
-                <footer>
-                    <button name="action_split" type="object" string="切割" class="btn-primary"/>
-                    <button special="cancel" string="取消"/>
-                </footer>
-            </form>
-        </field>
-    </record>
+    <delete model="ir.ui.view" id="view_prefix_split_form"/>
     <record id="view_price_item_list" model="ir.ui.view">
         <field name="name">zenlenet.price.item.list</field>
         <field name="model">product.pricelist.item</field>

@@ -154,17 +154,6 @@ class ZenlenetPrefix(models.Model):
             if record.parent_id != parent:
                 record.parent_id = parent
 
-    def action_split(self):
-        self.ensure_one()
-        return {
-            'type': 'ir.actions.act_window',
-            'name': f'切割 {self.prefix}',
-            'res_model': 'zenlenet.prefix.split',
-            'view_mode': 'form',
-            'target': 'new',
-            'context': {'default_prefix_id': self.id, 'default_new_prefixlen': min((self.prefixlen or 0) + 1, 32 if self.family == '4' else 64)},
-        }
-
     def action_add_child(self):
         self.ensure_one()
         return {
@@ -304,58 +293,3 @@ class ZenlenetPrefix(models.Model):
                 })
                 known[block] = prefix
             Address.search([('prefix_id', '=', False), ('block', '=', block)]).write({'prefix_id': prefix.id})
-
-
-class ZenlenetPrefixSplit(models.TransientModel):
-    _name = 'zenlenet.prefix.split'
-    _description = '切割网段'
-
-    prefix_id = fields.Many2one('zenlenet.prefix', required=True)
-    current = fields.Char(related='prefix_id.prefix', string='当前网段')
-    new_prefixlen = fields.Integer(string='切成 /', required=True)
-    count = fields.Integer(string='将生成', compute='_compute_count')
-    keep_remaining = fields.Boolean(string='只切前面几段')
-    limit = fields.Integer(string='生成数量', default=4)
-
-    @api.depends('new_prefixlen', 'prefix_id')
-    def _compute_count(self):
-        for wizard in self:
-            current = wizard.prefix_id.prefixlen or 0
-            wizard.count = 2 ** (wizard.new_prefixlen - current) if wizard.new_prefixlen > current else 0
-
-    def action_split(self):
-        self.ensure_one()
-        parent = self.prefix_id
-        try:
-            network = ipaddress.ip_network(parse_prefix(parent.prefix), strict=False)
-        except ValueError as error:
-            raise UserError('网段格式不对。') from error
-        if self.new_prefixlen <= network.prefixlen:
-            raise UserError('新前缀长度要比当前的大，例如 /22 切成 /24。')
-        if self.new_prefixlen - network.prefixlen > 8 and not self.keep_remaining:
-            raise UserError('一次最多切 256 段（前缀长度相差不超过 8），或勾选「只切前面几段」。')
-        Prefix = self.env['zenlenet.prefix']
-        existing = set(Prefix.search([('family', '=', parent.family)]).mapped('prefix'))
-        created = Prefix
-        for index, subnet in enumerate(network.subnets(new_prefix=self.new_prefixlen)):
-            if self.keep_remaining and index >= max(self.limit, 1):
-                break
-            cidr = str(subnet)
-            if cidr in existing:
-                continue
-            created |= Prefix.create({
-                'prefix': cidr,
-                'datacenter_id': parent.datacenter_id.id,
-                'status': 'active',
-                'role': parent.role,
-                'vlan': parent.vlan,
-                'description': f'由 {parent.prefix} 切出',
-            })
-        if parent.status != 'container':
-            parent.status = 'container'
-        try:
-            self.env['zenlenet.netbox'].create_prefixes(created)
-        except Exception as error:  # noqa: BLE001
-            import logging
-            logging.getLogger(__name__).warning('NetBox prefix create skipped: %s', type(error).__name__)
-        return parent.action_open_children()

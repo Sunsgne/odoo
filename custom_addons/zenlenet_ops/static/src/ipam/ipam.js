@@ -486,26 +486,6 @@ export class ZenlenetIpam extends Component {
         });
     }
 
-    async split() {
-        const detail = this.state.detail;
-        await this.action.doAction(
-            {
-                type: "ir.actions.act_window",
-                res_model: "zenlenet.prefix.split",
-                view_mode: "form",
-                views: [[false, "form"]],
-                target: "new",
-                name: `切割 ${detail.prefix}`,
-                context: { default_prefix_id: detail.id, default_new_prefixlen: Math.min((this.selectedNode()?.prefixlen || 24) + 2, detail.family === "4" ? 32 : 64) },
-            },
-            { onClose: () => this.refresh() },
-        );
-    }
-
-    selectedNode() {
-        return this.state.nodes.find((node) => node.id === this.state.selectedId);
-    }
-
     async openForm() {
         await this.action.doAction({
             type: "ir.actions.act_window",
