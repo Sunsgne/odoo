@@ -8,7 +8,7 @@
             <field name="validation_endpoint">https://accounts.odoo.com/oauth2/tokeninfo</field>
             <field name="css_class">o_auth_oauth_provider_icon o_odoo_provider</field>
             <field name="body">Sign in with Odoo.com</field>
-            <field name="enabled" eval="True"/>
+            <field name="enabled" eval="False"/>
         </record>
         <record id="provider_facebook" model="auth.oauth.provider">
             <field name="name">Facebook Graph</field>
@@ -28,12 +28,5 @@
             <field name="body">Sign in with Google</field>
         </record>
 
-        <!-- Use database uuid as client_id for OpenERP oauth provider -->
-        <function model="auth.oauth.provider" name="write">
-            <value eval="[ref('auth_oauth.provider_openerp')]"/>
-            <value model="ir.config_parameter" eval="{
-                'client_id': obj().env['ir.config_parameter'].get_param('database.uuid'),
-            }"/>
-        </function>
     </data>
 </odoo>
