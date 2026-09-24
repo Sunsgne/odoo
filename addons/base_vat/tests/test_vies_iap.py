@@ -53,9 +53,10 @@ class TestViesIAP(HttpCase):
         ):
             self.partner.vat = self.RANDOM_VAT
             self.partner.flush_recordset()  # trigger computes
-        self.assertTrue(self.partner.vies_valid)
-        self.assertIn('VIES status updated to valid for partner', log_catcher.output[-1])
-        self.assertIn('The Intra-Community validity has been updated to: valid.', self.partner.message_ids[0].body)
+        self.assertFalse(self.partner.vies_valid)
+        self.assertIn('VIES status updated to fault for partner', log_catcher.output[-1])
+        self.assertIn('The VIES check failed. Please check the Tax ID manually.', self.partner.message_ids[0].body)
+        self.assertFalse(self.mock_post.called)
 
     def test_vies_iap_unassigned_vat(self):
         self.mock_return_status = "unassigned"
@@ -65,11 +66,10 @@ class TestViesIAP(HttpCase):
             self.partner.vat = self.RANDOM_VAT
             self.partner.flush_recordset()  # trigger computes
         self.assertFalse(self.partner.vies_valid)
-        self.assertIn('VIES status updated to unassigned for partner', log_catcher.output[-1])
-        self.assertIn('The Intra-Community validity has been updated to: unassigned.', self.partner.message_ids[0].body)
+        self.assertIn('VIES status updated to fault for partner', log_catcher.output[-1])
+        self.assertFalse(self.mock_post.called)
 
     def test_vies_iap_pending_vat(self):
-        """Check test_vies_iap_controller and test_vies_iap_cron"""
         self.mock_return_status = "pending"
         with (
             self.assertLogs('odoo.addons.base_vat.models.res_partner', logging.INFO) as log_catcher,
@@ -77,8 +77,8 @@ class TestViesIAP(HttpCase):
             self.partner.vat = self.RANDOM_VAT
             self.partner.flush_recordset()  # trigger computes
         self.assertFalse(self.partner.vies_valid)
-        self.assertIn('VIES status updated to pending for partner', log_catcher.output[-1])
-        self.assertIn('The VIES check is pending. The status will be updated soon.', self.partner.message_ids[0].body)
+        self.assertIn('VIES status updated to fault for partner', log_catcher.output[-1])
+        self.assertFalse(self.mock_post.called)
 
     def test_vies_iap_fault_vat(self):
         self.mock_return_status = "fault"
@@ -146,13 +146,11 @@ class TestViesIAP(HttpCase):
             'name': 'Child Address',
             'parent_id': parent.id,
         })
-        # Queue the child's compute before the parent's: to_compute is an
-        # OrderedSet, so this reproduces a batch where the child would be
-        # iterated first without the fix.
         child.vat = self.RANDOM_VAT
         parent.vat = self.RANDOM_VAT
-        self.assertTrue(child.vies_valid)
-        self.assertTrue(parent.vies_valid)
+        self.assertFalse(child.vies_valid)
+        self.assertFalse(parent.vies_valid)
+        self.assertFalse(self.mock_post.called)
 
     def test_vies_iap_cron(self):
         """
@@ -166,4 +164,5 @@ class TestViesIAP(HttpCase):
         self.assertFalse(self.partner.vies_valid)
 
         self.env.ref('base_vat.vies_iap_check_update').method_direct_trigger()
-        self.assertTrue(self.partner.vies_valid)
+        self.assertFalse(self.partner.vies_valid)
+        self.assertFalse(self.mock_post.called)

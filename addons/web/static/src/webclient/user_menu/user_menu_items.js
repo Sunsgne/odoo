@@ -3,23 +3,8 @@ import { isMacOS } from "@web/core/browser/feature_detection";
 import { _t } from "@web/core/l10n/translation";
 import { rpc } from "@web/core/network/rpc";
 import { user } from "@web/core/user";
-import { session } from "@web/session";
 import { browser } from "../../core/browser/browser";
 import { registry } from "../../core/registry";
-
-function supportItem(env) {
-    const url = session.support_url;
-    return {
-        type: "item",
-        id: "support",
-        description: _t("Help"),
-        href: url,
-        callback: () => {
-            browser.open(url, "_blank");
-        },
-        sequence: 20,
-    };
-}
 
 class ShortcutsFooterComponent extends Component {
     static template = "web.UserMenu.ShortcutsFooterComponent";
@@ -75,13 +60,11 @@ export function odooAccountItem(env) {
         id: "account",
         description: _t("My Odoo.com Account"),
         callback: () => {
-            rpc("/web/session/account")
-                .then((url) => {
+            rpc("/web/session/account").then((url) => {
+                if (url) {
                     browser.open(url, "_blank");
-                })
-                .catch(() => {
-                    browser.open("https://accounts.odoo.com/account", "_blank");
-                });
+                }
+            });
         },
         sequence: 60,
     };
@@ -136,10 +119,8 @@ function logOutItem(env) {
 
 registry
     .category("user_menuitems")
-    .add("support", supportItem)
     .add("shortcuts", shortCutsItem)
     .add("separator", separator)
     .add("preferences", preferencesItem)
-    .add("odoo_account", odooAccountItem)
     .add("install_pwa", installPWAItem)
     .add("log_out", logOutItem);

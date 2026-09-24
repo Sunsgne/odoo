@@ -17,14 +17,10 @@ from odoo.http import request
 from odoo.tools.image import image_process, image_data_uri, binary_to_image, get_webp_size
 from odoo.tools.mimetypes import guess_mimetype
 from odoo.tools.misc import file_open
-from odoo.addons.iap.tools import iap_tools
 from odoo.addons.mail.tools import link_preview
 from lxml import html, etree
 
 from ..models.ir_attachment import SUPPORTED_IMAGE_MIMETYPES
-
-DEFAULT_LIBRARY_ENDPOINT = 'https://media-api.odoo.com'
-DEFAULT_OLG_ENDPOINT = 'https://olg.api.odoo.com'
 
 # Regex definitions to apply speed modification in SVG files
 # Note : These regex patterns are duplicated on the server side for
@@ -498,54 +494,7 @@ class HTML_Editor(http.Controller):
 
     @http.route(['/web_editor/save_library_media', '/html_editor/save_library_media'], type='jsonrpc', auth='user', methods=['POST'])
     def save_library_media(self, media):
-        """
-        Saves images from the media library as new attachments, making them
-        dynamic SVGs if needed.
-            media = {
-                <media_id>: {
-                    'query': 'space separated search terms',
-                    'is_dynamic_svg': True/False,
-                    'dynamic_colors': maps color names to their color,
-                }, ...
-            }
-        """
-        attachments = []
-        ICP = request.env['ir.config_parameter'].sudo()
-        library_endpoint = ICP.get_param('html_editor.media_library_endpoint', DEFAULT_LIBRARY_ENDPOINT)
-
-        media_ids = ','.join(media.keys())
-        params = {
-            'dbuuid': ICP.get_param('database.uuid'),
-            'media_ids': media_ids,
-        }
-        response = requests.post('%s/media-library/1/download_urls' % library_endpoint, data=params)
-        if response.status_code != requests.codes.ok:
-            raise Exception(_("ERROR: couldn't get download urls from media library."))
-
-        slug = request.env['ir.http']._slug
-        for id, url in response.json().items():
-            req = requests.get(url)
-            name = '_'.join([media[id]['query'], url.split('/')[-1]])
-            IrAttachment = request.env['ir.attachment']
-            attachment_data = {
-                'name': name,
-                'mimetype': req.headers['content-type'],
-                'public': True,
-                'raw': req.content,
-                'res_model': 'ir.ui.view',
-                'res_id': 0,
-            }
-            attachment = get_existing_attachment(IrAttachment, attachment_data)
-            # Need to bypass security check to write image with mimetype image/svg+xml
-            # ok because svgs come from whitelisted origin
-            if not attachment:
-                attachment = IrAttachment.with_user(SUPERUSER_ID).create(attachment_data)
-            if media[id]['is_dynamic_svg']:
-                colorParams = werkzeug.urls.url_encode(media[id]['dynamic_colors'])
-                attachment['url'] = '/html_editor/shape/illustration/%s?%s' % (slug(attachment), colorParams)
-            attachments.append(attachment._get_media_info())
-
-        return attachments
+        return []
 
     @http.route(['/web_editor/shape/<module>/<path:filename>', '/html_editor/shape/<module>/<path:filename>'], type='http', auth="public", website=True)
     def shape(self, module, filename, **kwargs):
@@ -645,25 +594,7 @@ class HTML_Editor(http.Controller):
 
     @http.route(["/web_editor/generate_text", "/html_editor/generate_text"], type="jsonrpc", auth="user")
     def generate_text(self, prompt, conversation_history):
-        try:
-            IrConfigParameter = request.env['ir.config_parameter'].sudo()
-            olg_api_endpoint = IrConfigParameter.get_param('html_editor.olg_api_endpoint', DEFAULT_OLG_ENDPOINT)
-            database_id = IrConfigParameter.get_param('database.uuid')
-            response = iap_tools.iap_jsonrpc(olg_api_endpoint + "/api/olg/1/chat", params={
-                'prompt': prompt,
-                'conversation_history': conversation_history or [],
-                'database_id': database_id,
-            }, timeout=30)
-            if response['status'] == 'success':
-                return response['content']
-            elif response['status'] == 'error_prompt_too_long':
-                raise UserError(_("Sorry, your prompt is too long. Try to say it in fewer words."))
-            elif response['status'] == 'limit_call_reached':
-                raise UserError(_("You have reached the maximum number of requests for this service. Try again later."))
-            else:
-                raise UserError(_("Sorry, we could not generate a response. Please try again later."))
-        except AccessError:
-            raise AccessError(_("Oops, it looks like our AI is unreachable!"))
+        raise UserError(_("未启用。"))
 
     @http.route(["/web_editor/get_ice_servers", "/html_editor/get_ice_servers"], type='jsonrpc', auth="user")
     def get_ice_servers(self):
@@ -751,11 +682,4 @@ class HTML_Editor(http.Controller):
 
     @http.route(['/html_editor/media_library_search'], type='jsonrpc', auth="user", website=True)
     def media_library_search(self, **params):
-        ICP = request.env['ir.config_parameter'].sudo()
-        endpoint = ICP.get_param('html_editor.media_library_endpoint', DEFAULT_LIBRARY_ENDPOINT)
-        params['dbuuid'] = ICP.get_param('database.uuid')
-        response = requests.post('%s/media-library/1/search' % endpoint, data=params, timeout=5)
-        if response.status_code == requests.codes.ok and response.headers['content-type'] == 'application/json':
-            return response.json()
-        else:
-            return {'error': response.status_code}
+        return {}

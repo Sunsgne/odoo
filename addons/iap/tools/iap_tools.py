@@ -4,6 +4,7 @@
 import logging
 import requests
 import uuid
+from urllib.parse import urlparse
 
 from odoo import exceptions, modules, _
 from odoo.tools import email_normalize, exception_to_unicode
@@ -106,6 +107,9 @@ def iap_jsonrpc(url, method='call', params=None, timeout=15):
     """
     if modules.module.current_test:
         raise exceptions.AccessError("Unavailable during tests.")  # pylint: disable=missing-gettext
+    host = (urlparse(url).hostname or '').lower().rstrip('.')
+    if host == 'odoo.com' or host.endswith('.odoo.com'):
+        raise exceptions.UserError(_('未启用。'))
 
     payload = {
         'jsonrpc': '2.0',

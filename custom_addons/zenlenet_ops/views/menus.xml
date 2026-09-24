@@ -5,7 +5,6 @@
 
     <menuitem id="menu_customer" name="客户" parent="menu_root" sequence="10"/>
     <menuitem id="menu_customers" name="客户" parent="menu_customer" action="action_customers" sequence="10"/>
-    <menuitem id="menu_month" name="出账" parent="menu_customer" action="action_month" sequence="20" groups="zenlenet_ops.group_sales,zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
 
     <menuitem id="menu_finance" name="财务" parent="menu_root" sequence="20" groups="zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
     <menuitem id="menu_fin_ar" name="应收" parent="menu_finance" sequence="10"/>

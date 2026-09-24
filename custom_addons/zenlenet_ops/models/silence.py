@@ -19,4 +19,7 @@ class PublisherWarrantyContract(models.AbstractModel):
         provider = self.env.ref('auth_oauth.provider_openerp', raise_if_not_found=False)
         if provider and (provider.enabled or provider.client_id):
             provider.sudo().write({'enabled': False, 'client_id': False})
+        vies = self.env.ref('base_vat.vies_iap_check_update', raise_if_not_found=False)
+        if vies and (vies.active or 'vies' in (vies.code or '')):
+            vies.sudo().write({'active': False, 'code': 'pass'})
         return super()._register_hook()
