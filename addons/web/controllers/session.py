@@ -67,10 +67,6 @@ class Session(http.Controller):
     def check(self):
         return  # ir.http@_authenticate does the job
 
-    @http.route('/web/session/account', type='jsonrpc', auth='user', readonly=True)
-    def account(self):
-        return False
-
     @http.route('/web/session/destroy', type='jsonrpc', auth='user', readonly=True)
     def destroy(self):
         request.session.logout()

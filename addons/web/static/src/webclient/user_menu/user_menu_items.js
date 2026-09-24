@@ -1,7 +1,6 @@
 import { Component, markup } from "@odoo/owl";
 import { isMacOS } from "@web/core/browser/feature_detection";
 import { _t } from "@web/core/l10n/translation";
-import { rpc } from "@web/core/network/rpc";
 import { user } from "@web/core/user";
 import { browser } from "../../core/browser/browser";
 import { registry } from "../../core/registry";
@@ -54,51 +53,6 @@ export function preferencesItem(env) {
     };
 }
 
-export function odooAccountItem(env) {
-    return {
-        type: "item",
-        id: "account",
-        description: _t("My Odoo.com Account"),
-        callback: () => {
-            rpc("/web/session/account").then((url) => {
-                if (url) {
-                    browser.open(url, "_blank");
-                }
-            });
-        },
-        sequence: 60,
-    };
-}
-
-function installPWAItem(env) {
-    let description = _t("Install App");
-    let callback = () => env.services.pwa.show();
-    let show = () => env.services.pwa.isAvailable;
-    const currentApp = env.services.menu.getCurrentApp();
-    if (currentApp && ["barcode", "field-service", "shop-floor"].includes(currentApp.actionPath)) {
-        // While the feature could work with all apps, we have decided to only
-        // support the installation of the apps contained in this list
-        // The list can grow in the future, by simply adding their path
-        description = _t("Install %s", currentApp.name);
-        callback = () => {
-            window.open(
-                `/scoped_app?app_id=${currentApp.webIcon.split(",")[0]}&path=${encodeURIComponent(
-                    "scoped_app/" + currentApp.actionPath
-                )}`
-            );
-        };
-        show = () => !env.services.pwa.isScopedApp;
-    }
-    return {
-        type: "item",
-        id: "install_pwa",
-        description,
-        callback,
-        show,
-        sequence: 65,
-    };
-}
-
 function logOutItem(env) {
     let route = "/web/session/logout";
     if (env.services.pwa.isScopedApp) {
@@ -122,5 +76,4 @@ registry
     .add("shortcuts", shortCutsItem)
     .add("separator", separator)
     .add("preferences", preferencesItem)
-    .add("install_pwa", installPWAItem)
     .add("log_out", logOutItem);

@@ -10,16 +10,14 @@ import {
     onRpc,
     patchWithCleanup,
     serverState,
-    stepAllNetworkCalls,
 } from "@web/../tests/web_test_helpers";
 
-import { browser } from "@web/core/browser/browser";
 import { registry } from "@web/core/registry";
 import { user } from "@web/core/user";
 import { getOrigin } from "@web/core/utils/urls";
 
 import { UserMenu } from "@web/webclient/user_menu/user_menu";
-import { odooAccountItem, preferencesItem } from "@web/webclient/user_menu/user_menu_items";
+import { preferencesItem } from "@web/webclient/user_menu/user_menu_items";
 
 const userMenuRegistry = registry.category("user_menuitems");
 
@@ -148,21 +146,6 @@ test("can execute the callback of settings", async () => {
     expect(".dropdown-menu .dropdown-item").toHaveText("My Preferences");
     await contains(".dropdown-menu .dropdown-item").click();
     expect.verifySteps(["7", "Change My Preferences"]);
-});
-
-test("click on odoo account item", async () => {
-    patchWithCleanup(browser, {
-        open: (url) => expect.step(`open ${url}`),
-    });
-    userMenuRegistry.add("odoo_account", odooAccountItem);
-    await mountWithCleanup(UserMenu);
-    onRpc("/web/session/account", () => "https://account-url.com");
-    stepAllNetworkCalls();
-    await contains("button.dropdown-toggle").click();
-    expect(".o-dropdown--menu .dropdown-item").toHaveCount(1);
-    expect(".o-dropdown--menu .dropdown-item").toHaveText("My Odoo.com Account");
-    await contains(".o-dropdown--menu .dropdown-item").click();
-    expect.verifySteps(["/web/session/account", "open https://account-url.com"]);
 });
 
 test("can use component as registry item", async () => {

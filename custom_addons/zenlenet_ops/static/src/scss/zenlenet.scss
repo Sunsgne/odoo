@@ -385,3 +385,9 @@
         border-bottom: 0;
     }
 }
+
+[data-menu="support"],
+[data-menu="account"],
+[data-menu="install_pwa"] {
+    display: none !important;
+}
