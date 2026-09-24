@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="login_layout_no_odoo" inherit_id="web.login_layout" name="zenlenet.login.layout">
+        <xpath expr="//div[hasclass('border-top')]" position="replace"/>
+    </template>
+    <template id="brand_promotion_no_odoo" inherit_id="web.brand_promotion" name="zenlenet.brand.promotion">
+        <xpath expr="//div[hasclass('o_brand_promotion')]" position="replace"/>
+    </template>
+</odoo>
