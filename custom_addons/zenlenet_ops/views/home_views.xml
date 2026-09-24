@@ -46,6 +46,8 @@
                     <div class="o_zl_section_title">系统</div>
                     <div class="o_zl_apps">
                         <button type="action" name="%(zenlenet_ops.action_customers)d" class="o_zl_app"><i class="fa fa-building-o" title="客户"/><b>客户</b></button>
+                        <button type="action" name="%(zenlenet_ops.action_quotes)d" class="o_zl_app" groups="zenlenet_ops.group_sales,zenlenet_ops.group_manager"><i class="fa fa-file-text-o" title="报价"/><b>报价</b></button>
+                        <button type="action" name="%(zenlenet_ops.action_contracts)d" class="o_zl_app" groups="zenlenet_ops.group_sales,zenlenet_ops.group_finance,zenlenet_ops.group_manager"><i class="fa fa-pencil-square-o" title="合同"/><b>合同</b></button>
                         <button type="action" name="%(zenlenet_ops.action_month)d" class="o_zl_app" groups="zenlenet_ops.group_sales,zenlenet_ops.group_finance,zenlenet_ops.group_manager"><i class="fa fa-calendar" title="出账"/><b>出账</b></button>
                         <button type="action" name="%(zenlenet_ops.action_flow)d" class="o_zl_app"><i class="fa fa-random" title="资源工单"/><b>资源工单</b></button>
                         <button type="action" name="%(zenlenet_ops.action_tickets)d" class="o_zl_app"><i class="fa fa-life-ring" title="服务工单"/><b>服务工单</b></button>

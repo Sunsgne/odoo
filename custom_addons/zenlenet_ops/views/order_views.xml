@@ -9,7 +9,8 @@
                 <header>
                     <button name="action_print_quote" type="object" string="打印报价单" invisible="state == 'cancel'"/>
                     <button name="action_quotation_send" type="object" string="发送给客户" invisible="state not in ('draft', 'sent')"/>
-                    <button name="action_confirm" type="object" string="客户已确认" class="btn-primary" invisible="state not in ('draft', 'sent')" confirm="确认后会生成合同草稿和交付工单，报价不能再改。继续？"/>
+                    <button name="action_confirm" type="object" string="客户已确认" class="btn-primary" invisible="state not in ('draft', 'sent')"/>
+                    <button name="action_open_contract" type="object" string="合同" invisible="state != 'sale'"/>
                     <button name="action_new_version" type="object" string="复制为新版本" invisible="state == 'cancel'"/>
                     <button name="action_mark_active" type="object" string="标为在网" invisible="state != 'sale' or zenlenet_stage == 'active'"/>
                     <button name="action_mark_testing" type="object" string="标为测试" invisible="state != 'sale' or zenlenet_stage == 'testing'"/>

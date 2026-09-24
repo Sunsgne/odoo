@@ -106,16 +106,7 @@ class SaleOrder(models.Model):
                 'sales_user_id': self.user_id.id,
                 'title': f'{partner.name} 网络服务协议',
             })
-        Flow = self.env['zenlenet.flow']
-        if not Flow.search_count([('order_id', '=', self.id), ('state', 'not in', ('done', 'cancel'))]):
-            flow = Flow.create({
-                'kind': 'business',
-                'partner_id': partner.id,
-                'order_id': self.id,
-                'sales_user_id': self.user_id.id,
-            })
-            flow.action_load_order()
-        self.message_post(body=f'已确认。合同 {contract.name}（草稿）和交付工单已创建。')
+        self.message_post(body=f'合同 {contract.name}')
 
     def action_open_flows(self):
         self.ensure_one()
