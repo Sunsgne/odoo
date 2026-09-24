@@ -13,7 +13,6 @@ access_zenlenet_datacenter_manager,zenlenet.datacenter.manager,model_zenlenet_da
 access_zenlenet_prefix_user,zenlenet.prefix.user,model_zenlenet_prefix,base.group_user,1,0,0,0
 access_zenlenet_prefix_delivery,zenlenet.prefix.delivery,model_zenlenet_prefix,zenlenet_ops.group_delivery,1,1,1,0
 access_zenlenet_prefix_manager,zenlenet.prefix.manager,model_zenlenet_prefix,zenlenet_ops.group_manager,1,1,1,1
-access_zenlenet_prefix_split_delivery,zenlenet.prefix.split.delivery,model_zenlenet_prefix_split,zenlenet_ops.group_delivery,1,1,1,1
 access_zenlenet_prefix_add_delivery,zenlenet.prefix.add.delivery,model_zenlenet_prefix_add,zenlenet_ops.group_delivery,1,1,1,1
 access_zenlenet_address_user,zenlenet.address.user,model_zenlenet_address,base.group_user,1,0,0,0
 access_zenlenet_address_delivery,zenlenet.address.delivery,model_zenlenet_address,zenlenet_ops.group_delivery,1,1,1,0
@@ -87,7 +86,6 @@ access_zenlenet_asset_task_manager,zenlenet.asset.task.manager,model_zenlenet_as
 access_zenlenet_user_add_manager,zenlenet.user.add.manager,model_zenlenet_user_add,zenlenet_ops.group_manager,1,1,1,1
 access_zenlenet_datacenter_allocator,zenlenet.datacenter.allocator,model_zenlenet_datacenter,zenlenet_ops.group_allocator,1,1,1,0
 access_zenlenet_prefix_allocator,zenlenet.prefix.allocator,model_zenlenet_prefix,zenlenet_ops.group_allocator,1,1,1,0
-access_zenlenet_prefix_split_allocator,zenlenet.prefix.split.allocator,model_zenlenet_prefix_split,zenlenet_ops.group_allocator,1,1,1,1
 access_zenlenet_prefix_add_allocator,zenlenet.prefix.add.allocator,model_zenlenet_prefix_add,zenlenet_ops.group_allocator,1,1,1,1
 access_zenlenet_address_allocator,zenlenet.address.allocator,model_zenlenet_address,zenlenet_ops.group_allocator,1,1,1,0
 access_zenlenet_ipset_allocator,zenlenet.ipset.allocator,model_zenlenet_ipset,zenlenet_ops.group_allocator,1,1,1,1

@@ -87,7 +87,6 @@
                     </div>
                     <div class="zl-ipam-actions" t-if="state.detail.can_write">
                         <button class="btn btn-primary btn-sm" t-on-click="() => this.addPrefix(state.detail)"><i class="fa fa-plus"/> 添加网段</button>
-                        <button class="btn btn-secondary btn-sm" t-on-click="split"><i class="fa fa-scissors"/> 切割</button>
                         <button class="btn btn-secondary btn-sm" t-on-click="() => this.openPrefixTicket('out')"><i class="fa fa-user-plus"/> 整段开通</button>
                         <button class="btn btn-secondary btn-sm" t-on-click="() => this.openPrefixTicket('back')">整段退回</button>
                         <button class="btn btn-secondary btn-sm" t-on-click="() => this.openPrefixTicket('cutover')">整段割接</button>

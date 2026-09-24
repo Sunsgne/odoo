@@ -813,7 +813,7 @@ class ZenlenetFlowResource(models.Model):
                     base.append(('prefixlen', '=', wanted))
                 candidates = Prefix.search(base + dc, limit=1, order='prefix') or Prefix.search(base, limit=1, order='prefix')
                 if not candidates:
-                    raise UserError(f'没有空闲的 /{wanted or "任意"} 网段，请先切割或录入。')
+                    raise UserError(f'没有空闲的 /{wanted or "任意"} 网段，请先录入。')
                 record.prefix_id = candidates
             else:
                 raise UserError('这项业务不需要分配网段、IP 或线路。')

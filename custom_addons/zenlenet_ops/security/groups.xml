@@ -29,7 +29,7 @@
         <field name="name">资源分配</field>
         <field name="sequence">25</field>
         <field name="privilege_id" ref="privilege_zenlenet"/>
-        <field name="comment">专门分资源的人：处理待分配队列，给交付工单挂网段、IP、线路，可切割和回收网段。</field>
+        <field name="comment">专门分资源的人：处理待分配队列，给交付工单挂网段、IP、线路，可回收网段。</field>
         <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
     </record>
     <record id="group_pm" model="res.groups">
