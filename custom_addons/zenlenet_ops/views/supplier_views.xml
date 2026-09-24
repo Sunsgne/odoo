@@ -23,20 +23,12 @@
         <field name="arch" type="xml">
             <form>
                 <sheet>
-                    <div class="oe_button_box" name="button_box">
-                        <button name="action_open_supplier_lines" type="object" class="oe_stat_button" icon="fa-exchange">
-                            <field name="zenlenet_line_count" widget="statinfo" string="线路"/>
-                        </button>
-                        <button name="action_open_supplier_purchases" type="object" class="oe_stat_button" icon="fa-shopping-cart">
-                            <field name="zenlenet_purchase_count" widget="statinfo" string="采购"/>
-                        </button>
-                        <button name="action_open_supplier_bills" type="object" class="oe_stat_button" icon="fa-file-text-o">
-                            <div class="o_stat_info">
-                                <span class="o_stat_value"><field name="zenlenet_payable_amount" widget="monetary" options="{'currency_field': 'zenlenet_currency_id'}"/></span>
-                                <span class="o_stat_text">应付 · <field name="zenlenet_bill_count"/> 张账单</span>
-                            </div>
-                        </button>
+                    <div class="o_zl_chain">
+                        <div class="o_zl_chain_step"><b><field name="zenlenet_line_count"/></b><span>线路</span></div>
+                        <div class="o_zl_chain_step"><b><field name="zenlenet_purchase_count"/></b><span>采购</span></div>
+                        <div class="o_zl_chain_step"><b><field name="zenlenet_payable_amount" widget="monetary" options="{'currency_field': 'zenlenet_currency_id'}"/></b><span>应付 · <field name="zenlenet_bill_count"/> 张账单</span></div>
                     </div>
+                    <div class="text-muted small mb-2">线路、采购、账单、机房和地址都在这一页，不用再点去别的菜单。</div>
                     <div class="oe_title">
                         <h1><field name="name" placeholder="供应商名称"/></h1>
                     </div>
@@ -61,6 +53,77 @@
                         </group>
                     </group>
                     <field name="comment" placeholder="账期、开票要求、割接通知渠道"/>
+                    <separator string="线路"/>
+                    <field name="zenlenet_supplied_line_ids" nolabel="1" context="{'default_supplier_id': id}">
+                        <list limit="40">
+                            <field name="name" class="font-monospace"/>
+                            <field name="kind"/>
+                            <field name="status" widget="badge"/>
+                            <field name="datacenter_id"/>
+                            <field name="a_site_id"/>
+                            <field name="z_site_id"/>
+                            <field name="bandwidth"/>
+                            <field name="commit_rate"/>
+                            <field name="partner_id"/>
+                            <field name="monthly_cost"/>
+                            <field name="currency_id" column_invisible="1"/>
+                        </list>
+                    </field>
+                    <separator string="采购"/>
+                    <field name="zenlenet_purchase_ids" nolabel="1" context="{'default_supplier_id': id}">
+                        <list limit="40">
+                            <field name="name"/>
+                            <field name="category"/>
+                            <field name="resource"/>
+                            <field name="datacenter_id"/>
+                            <field name="monthly_cost"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <field name="state" widget="badge"/>
+                        </list>
+                    </field>
+                    <separator string="供应商账单"/>
+                    <field name="zenlenet_bill_ids" nolabel="1" context="{'default_partner_id': id, 'default_move_type': 'in_invoice'}">
+                        <list limit="40">
+                            <field name="name" string="账单"/>
+                            <field name="ref" string="对应采购"/>
+                            <field name="invoice_date" string="日期"/>
+                            <field name="amount_total" string="金额" sum="合计"/>
+                            <field name="amount_residual" string="未付" sum="合计"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <field name="state" widget="badge"/>
+                            <field name="payment_state" string="付款" widget="badge"/>
+                            <field name="move_type" column_invisible="1"/>
+                        </list>
+                    </field>
+                    <separator string="机房"/>
+                    <field name="zenlenet_datacenter_ids" nolabel="1" context="{'default_supplier_id': id}">
+                        <list limit="40">
+                            <field name="name"/>
+                            <field name="city"/>
+                            <field name="region"/>
+                            <field name="state" widget="badge"/>
+                            <field name="prefix_count" string="地址段"/>
+                            <field name="line_count" string="线路"/>
+                        </list>
+                    </field>
+                    <separator string="地址"/>
+                    <field name="zenlenet_supplied_address_ids" nolabel="1" context="{'default_supplier_id': id}">
+                        <list limit="40">
+                            <field name="address" class="font-monospace"/>
+                            <field name="datacenter_id"/>
+                            <field name="status" widget="badge"/>
+                            <field name="partner_id" string="客户"/>
+                            <field name="usage"/>
+                        </list>
+                    </field>
+                    <separator string="退资源"/>
+                    <field name="zenlenet_return_ids" nolabel="1" context="{'default_supplier_id': id}">
+                        <list limit="40">
+                            <field name="resource"/>
+                            <field name="when_text" string="时间"/>
+                            <field name="note"/>
+                        </list>
+                    </field>
                     <field name="supplier_rank" invisible="1"/>
                     <field name="is_company" invisible="1"/>
                     <field name="company_type" invisible="1"/>

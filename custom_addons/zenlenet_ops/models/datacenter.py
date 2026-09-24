@@ -56,6 +56,9 @@ class ZenlenetDatacenter(models.Model):
     note = fields.Text(string='备注')
     address_ids = fields.One2many('zenlenet.address', 'datacenter_id', string='IP资源')
     line_ids = fields.One2many('zenlenet.line', 'datacenter_id', string='线路')
+    site_line_ids = fields.Many2many('zenlenet.line', compute='_compute_site_lines', string='线路')
+    device_ids = fields.One2many('zenlenet.device', 'datacenter_id', string='物理机')
+    vm_ids = fields.One2many('zenlenet.vm', 'datacenter_id', string='云主机')
     asset_ids = fields.One2many('zenlenet.asset', 'datacenter_id', string='固定资产')
     address_count = fields.Integer(string='地址数', compute='_compute_counts')
     allocated_count = fields.Integer(string='已分配', compute='_compute_counts')
@@ -72,6 +75,12 @@ class ZenlenetDatacenter(models.Model):
                            ('line_count', 'zenlenet.line'), ('asset_count', 'zenlenet.asset')):
             counts[key] = self.env[model].search_count([('datacenter_id', '=', self.id)])
         return counts
+
+    @api.depends('region')
+    def _compute_site_lines(self):
+        Line = self.env['zenlenet.line']
+        for record in self:
+            record.site_line_ids = Line.search(site_line_domain(record.id, record.region))
 
     def _grouped(self, model, domain):
         return {

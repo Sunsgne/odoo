@@ -17,6 +17,15 @@ class ResPartnerSupplier(models.Model):
     zenlenet_purchase_count = fields.Integer(compute='_compute_supplier_counts')
     zenlenet_bill_count = fields.Integer(compute='_compute_supplier_counts')
     zenlenet_payable_amount = fields.Monetary(compute='_compute_supplier_counts', currency_field='zenlenet_currency_id')
+    zenlenet_supplied_line_ids = fields.One2many('zenlenet.line', 'supplier_id', string='线路')
+    zenlenet_purchase_ids = fields.One2many('zenlenet.purchase', 'supplier_id', string='采购')
+    zenlenet_bill_ids = fields.One2many(
+        'account.move', 'partner_id', string='供应商账单',
+        domain=[('move_type', '=', 'in_invoice'), ('state', '!=', 'cancel')],
+    )
+    zenlenet_datacenter_ids = fields.One2many('zenlenet.datacenter', 'supplier_id', string='机房')
+    zenlenet_supplied_address_ids = fields.One2many('zenlenet.address', 'supplier_id', string='地址')
+    zenlenet_return_ids = fields.One2many('zenlenet.supplier.return', 'supplier_id', string='退资源')
 
     def _compute_supplier_counts(self):
         ids = self.ids

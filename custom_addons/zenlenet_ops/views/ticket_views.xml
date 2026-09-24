@@ -103,43 +103,36 @@
                             <field name="overdue" invisible="1"/>
                         </group>
                     </group>
-                    <notebook>
-                        <page string="问题描述">
-                            <field name="description" placeholder="现象、开始时间、影响范围、客户已做的排查"/>
-                        </page>
-                        <page string="处理结果">
-                            <field name="resolution" placeholder="根因、处理动作、是否需要后续跟进"/>
-                        </page>
-                        <page string="故障减免" invisible="kind != 'fault'">
-                            <field name="credit_ids">
-                                <list>
-                                    <field name="name"/>
-                                    <field name="method"/>
-                                    <field name="amount"/>
-                                    <field name="state" widget="badge"/>
-                                    <field name="currency_id" column_invisible="1"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="交付资源" invisible="not flow_id">
-                            <field name="flow_resource_ids" readonly="1">
-                                <list>
-                                    <field name="service_type"/>
-                                    <field name="spec"/>
-                                    <field name="prefix_id"/>
-                                    <field name="address_id"/>
-                                    <field name="line_id"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="涉及资源">
-                            <group>
-                                <field name="datacenter_id"/>
-                            </group>
-                            <field name="address_ids" widget="many2many_tags"/>
-                            <field name="line_ids" widget="many2many_tags"/>
-                        </page>
-                    </notebook>
+                    <separator string="问题描述"/>
+                    <field name="description" nolabel="1" placeholder="现象、开始时间、影响范围、客户已做的排查"/>
+                    <separator string="处理结果"/>
+                    <field name="resolution" nolabel="1" placeholder="根因、处理动作、是否需要后续跟进"/>
+                    <separator string="涉及资源"/>
+                    <group>
+                        <field name="datacenter_id"/>
+                    </group>
+                    <field name="address_ids" widget="many2many_tags" nolabel="1"/>
+                    <field name="line_ids" widget="many2many_tags" nolabel="1"/>
+                    <separator string="交付资源" invisible="not flow_id"/>
+                    <field name="flow_resource_ids" readonly="1" nolabel="1" invisible="not flow_id">
+                        <list limit="20">
+                            <field name="service_type"/>
+                            <field name="spec"/>
+                            <field name="prefix_id"/>
+                            <field name="address_id"/>
+                            <field name="line_id"/>
+                        </list>
+                    </field>
+                    <separator string="故障减免" invisible="kind != 'fault'"/>
+                    <field name="credit_ids" nolabel="1" invisible="kind != 'fault'">
+                        <list limit="20">
+                            <field name="name"/>
+                            <field name="method"/>
+                            <field name="amount"/>
+                            <field name="state" widget="badge"/>
+                            <field name="currency_id" column_invisible="1"/>
+                        </list>
+                    </field>
                 </sheet>
                 <chatter/>
             </form>

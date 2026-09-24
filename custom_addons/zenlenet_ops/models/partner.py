@@ -63,7 +63,11 @@ class ResPartner(models.Model):
     zenlenet_address_ids = fields.One2many('zenlenet.address', 'partner_id', string='IP 地址')
     zenlenet_flow_ids = fields.One2many('zenlenet.flow', 'partner_id', string='交付工单')
     zenlenet_line_ids = fields.One2many('zenlenet.line', 'partner_id', string='线路')
+    zenlenet_vm_ids = fields.One2many('zenlenet.vm', 'partner_id', string='云主机')
     zenlenet_invoice_ids = fields.One2many('account.move', 'partner_id', string='账单', domain=[('move_type', '=', 'out_invoice'), ('state', '!=', 'cancel')])
+    zenlenet_price_item_ids = fields.Many2many(
+        'product.pricelist.item', compute='_compute_price_items', string='专属价格',
+    )
 
 
     # ------------------------------------------------------------------ pricing
@@ -164,6 +168,18 @@ class ResPartner(models.Model):
         records.filtered(lambda partner: partner.is_company and partner.customer_rank > 0)._assign_codes()
         return records
 
+    @api.depends('name', 'property_product_pricelist')
+    def _compute_price_items(self):
+        Pricelist = self.env['product.pricelist'].sudo()
+        empty = self.env['product.pricelist.item']
+        for record in self:
+            name = f'{record.name} · 专属价目' if record.name else ''
+            current = record.property_product_pricelist
+            own = current if name and current and current.name == name else Pricelist.browse()
+            if name and not own:
+                own = Pricelist.search([('name', '=', name)], limit=1)
+            record.zenlenet_price_item_ids = own.item_ids if own else empty
+
     def _assign_codes(self):
         sequence = self.env['ir.sequence'].sudo()
         for record in self.filtered(lambda partner: not partner.zenlenet_code):
@@ -201,7 +217,7 @@ class ResPartner(models.Model):
             'res_model': 'sale.order',
             'view_mode': 'form',
             'view_id': self.env.ref('zenlenet_ops.view_quote_form').id,
-            'target': 'current',
+            'target': 'new',
             'context': {
                 'default_partner_id': self.id,
                 'default_user_id': self.zenlenet_manager_id.id,

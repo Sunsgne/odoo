@@ -19,19 +19,16 @@
                             <field name="netbox_synced"/>
                         </group>
                     </group>
-                    <notebook>
-                        <page string="上面的云主机">
-                            <field name="vm_ids" readonly="1">
-                                <list>
-                                    <field name="name"/>
-                                    <field name="address_id"/>
-                                    <field name="bandwidth_mbps"/>
-                                    <field name="partner_id"/>
-                                    <field name="status"/>
-                                </list>
-                            </field>
-                        </page>
-                    </notebook>
+                    <separator string="上面的云主机"/>
+                    <field name="vm_ids" readonly="1" nolabel="1">
+                        <list limit="40">
+                            <field name="name"/>
+                            <field name="address_id" string="IP"/>
+                            <field name="bandwidth_mbps" string="带宽"/>
+                            <field name="partner_id" string="客户"/>
+                            <field name="status" widget="badge"/>
+                        </list>
+                    </field>
                 </sheet>
             </form>
         </field>

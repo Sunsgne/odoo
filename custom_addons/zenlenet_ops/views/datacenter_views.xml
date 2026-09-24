@@ -79,6 +79,49 @@
                         </group>
                     </group>
                     <field name="note" placeholder="销售需要知道的话：电力、机柜、进出流程"/>
+                    <separator string="地址段"/>
+                    <field name="prefix_ids" nolabel="1">
+                        <list limit="40">
+                            <field name="prefix" class="font-monospace"/>
+                            <field name="status" widget="badge"/>
+                            <field name="partner_id" string="客户"/>
+                            <field name="size_display" string="容量"/>
+                            <field name="free_count" string="空闲"/>
+                        </list>
+                    </field>
+                    <separator string="线路"/>
+                    <field name="site_line_ids" nolabel="1">
+                        <list limit="40">
+                            <field name="name" class="font-monospace"/>
+                            <field name="kind"/>
+                            <field name="status" widget="badge"/>
+                            <field name="bandwidth"/>
+                            <field name="a_site_id"/>
+                            <field name="z_site_id"/>
+                            <field name="partner_id" string="客户"/>
+                            <field name="supplier_id"/>
+                        </list>
+                    </field>
+                    <separator string="物理机"/>
+                    <field name="device_ids" nolabel="1" context="{'default_datacenter_id': id}">
+                        <list limit="40">
+                            <field name="name"/>
+                            <field name="role"/>
+                            <field name="status" widget="badge"/>
+                            <field name="serial"/>
+                        </list>
+                    </field>
+                    <separator string="云主机"/>
+                    <field name="vm_ids" nolabel="1" context="{'default_datacenter_id': id}">
+                        <list limit="40">
+                            <field name="name"/>
+                            <field name="device_id" string="物理机"/>
+                            <field name="address_id" string="IP"/>
+                            <field name="bandwidth_mbps" string="带宽"/>
+                            <field name="partner_id" string="客户"/>
+                            <field name="status" widget="badge"/>
+                        </list>
+                    </field>
                 </sheet>
             </form>
         </field>

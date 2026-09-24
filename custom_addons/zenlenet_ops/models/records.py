@@ -325,6 +325,9 @@ class ZenlenetPurchase(models.Model):
     supplier_id = fields.Many2one('res.partner', string='供应商', domain=[('supplier_rank', '>', 0)], index=True)
     resource = fields.Char(string='采购内容', required=True)
     bill_id = fields.Many2one('account.move', string='供应商账单', readonly=True, copy=False)
+    bill_line_ids = fields.One2many(related='bill_id.invoice_line_ids', string='账单明细')
+    bill_residual = fields.Monetary(related='bill_id.amount_residual', string='未付', currency_field='currency_id')
+    bill_payment_state = fields.Selection(related='bill_id.payment_state', string='付款')
     datacenter_id = fields.Many2one('zenlenet.datacenter', string='数据中心', index=True)
     pop = fields.Char(string='机房（旧）')
     quantity = fields.Float(string='数量', default=1.0)
@@ -403,14 +406,7 @@ class ZenlenetPurchase(models.Model):
             created |= bill
         if not created:
             raise UserError('请先选择供应商；已经生成过账单的采购不会重复生成。')
-        return {
-            'type': 'ir.actions.act_window',
-            'res_model': 'account.move',
-            'res_id': created[0].id,
-            'view_mode': 'form',
-            'view_id': self.env.ref('zenlenet_ops.view_vendor_bill_form').id,
-            'target': 'current',
-        }
+        return True
 
 
 class ZenlenetAsset(models.Model):

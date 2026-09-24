@@ -134,83 +134,76 @@
                             <field name="note"/>
                         </group>
                     </group>
-                    <notebook>
-                        <page string="这笔订单" invisible="not order_id">
-                            <div class="text-muted mb-2">销售报的内容。按这些行分配下面的资源，不用另开订单。</div>
-                            <field name="order_line_ids" readonly="1">
-                                <list>
-                                    <field name="product_id" string="业务"/>
-                                    <field name="name" string="规格"/>
-                                    <field name="product_uom_qty" string="数量"/>
-                                    <field name="price_unit" string="单价 / 月"/>
-                                    <field name="price_subtotal" string="月费"/>
-                                    <field name="zenlenet_setup_fee" string="一次性"/>
-                                    <field name="currency_id" column_invisible="1"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="资源">
-                            <div class="text-muted mb-2" invisible="move != 'out'">先选服务订单，点「从订单带入」。IPT / IP 段填「网段」，单个 IP 填「IP」，专线 / SD-WAN 填「线路」。</div>
-                            <div class="text-muted mb-2" invisible="move != 'in'">填要入库的网段、IP 或线路。确认入库后它们不挂客户，可以再卖。</div>
-                            <div class="text-muted mb-2" invisible="move != 'back'">填要退的资源。确认退回后才会从客户名下拿掉。</div>
-                            <div class="text-muted mb-2" invisible="move != 'cutover'">每一行写原资源，以及换成的新资源。点「更换资源」之后才对调。</div>
-                            <field name="resource_ids">
-                                <list editable="bottom">
-                                    <field name="service_type" string="业务"/>
-                                    <field name="flow_move" column_invisible="1"/>
-                                    <field name="order_line_id" column_invisible="1"/>
-                                    <field name="order_id" string="订单" optional="hide"/>
-                                    <field name="spec" string="规格 / 说明"/>
-                                    <field name="from_prefix_id" string="原网段" options="{'no_create': True}" column_invisible="parent.move != 'cutover'" invisible="service_type not in ('ipt', 'ip')"/>
-                                    <field name="from_address_id" string="原 IP" options="{'no_create': True}" column_invisible="parent.move != 'cutover'" invisible="service_type != 'ip_single'"/>
-                                    <field name="from_line_id" string="原线路" options="{'no_create': True}" column_invisible="parent.move != 'cutover'" invisible="service_type not in ('pl', 'sdwan', 'line')"/>
-                                    <field name="prefix_id" string="网段" options="{'no_create': True}" invisible="service_type not in ('ipt', 'ip')"/>
-                                    <field name="address_id" string="IP" options="{'no_create': True}" invisible="service_type != 'ip_single'"/>
-                                    <field name="line_id" string="线路" options="{'no_create': True}" invisible="service_type not in ('pl', 'sdwan', 'line')"/>
-                                    <field name="resource_ref" column_invisible="1"/>
-                                </list>
-                            </field>
-                            <field name="resource_note" placeholder="整单说明"/>
-                        </page>
-                        <page string="割接通知" invisible="move != 'cutover'">
-                            <group>
-                                <field name="reason"/>
-                                <field name="impact"/>
-                                <field name="notice_subject"/>
-                                <field name="notice_body"/>
-                            </group>
-                        </page>
-                        <page string="交付任务">
-                            <div class="d-flex align-items-center gap-3 mb-2">
-                                <span class="text-muted">每个阶段的任务完成或跳过，才能推进到下一步。任务模板在 设置 → 交付任务模板 里维护。</span>
-                                <field name="task_progress" widget="progressbar" class="flex-grow-1"/>
-                                <button name="action_open_tasks" type="object" string="任务看板" class="btn btn-secondary btn-sm" icon="fa-th"/>
-                            </div>
-                            <field name="task_ids" context="{'default_flow_id': id}">
-                                <list editable="bottom" decoration-success="state == 'done'" decoration-muted="state == 'skipped'" decoration-danger="state == 'blocked' or overdue" decoration-info="state == 'doing'">
-                                    <field name="sequence" widget="handle"/>
-                                    <field name="stage"/>
-                                    <field name="name"/>
-                                    <field name="priority" widget="priority"/>
-                                    <field name="user_id" widget="many2one_avatar_user"/>
-                                    <field name="planned_start" optional="hide"/>
-                                    <field name="due_date"/>
-                                    <field name="state" widget="badge" decoration-success="state == 'done'" decoration-info="state == 'doing'" decoration-danger="state == 'blocked'" decoration-muted="state in ('todo', 'skipped')"/>
-                                    <field name="depends_on_id" optional="hide"/>
-                                    <field name="blocker" optional="show"/>
-                                    <field name="estimate_hours" optional="hide" sum="合计"/>
-                                    <field name="actual_start" optional="hide"/>
-                                    <field name="done_at" optional="hide"/>
-                                    <field name="overdue" column_invisible="1"/>
-                                    <field name="done" column_invisible="1"/>
-                                    <button name="action_start" type="object" icon="fa-play" title="开始" invisible="state != 'todo'"/>
-                                    <button name="action_done" type="object" icon="fa-check" title="完成" invisible="state in ('done', 'skipped')"/>
-                                    <button name="action_block" type="object" icon="fa-ban" title="阻塞" invisible="state in ('blocked', 'done', 'skipped')"/>
-                                    <button name="action_reopen" type="object" icon="fa-undo" title="重开" invisible="state not in ('done', 'skipped', 'blocked')"/>
-                                </list>
-                            </field>
-                        </page>
-                    </notebook>
+                    <separator string="这笔订单" invisible="not order_id"/>
+                    <div class="text-muted mb-2" invisible="not order_id">销售报的内容。按这些行分配下面的资源，不用另开订单。</div>
+                    <field name="order_line_ids" readonly="1" nolabel="1" invisible="not order_id">
+                        <list limit="20">
+                            <field name="product_id" string="业务"/>
+                            <field name="name" string="规格"/>
+                            <field name="product_uom_qty" string="数量"/>
+                            <field name="price_unit" string="单价 / 月"/>
+                            <field name="price_subtotal" string="月费"/>
+                            <field name="zenlenet_setup_fee" string="一次性"/>
+                            <field name="currency_id" column_invisible="1"/>
+                        </list>
+                    </field>
+                    <separator string="资源"/>
+                    <div class="text-muted mb-2" invisible="move != 'out'">先选服务订单，点「从订单带入」。IPT / IP 段填「网段」，单个 IP 填「IP」，专线 / SD-WAN 填「线路」。</div>
+                    <div class="text-muted mb-2" invisible="move != 'in'">填要入库的网段、IP 或线路。确认入库后它们不挂客户，可以再卖。</div>
+                    <div class="text-muted mb-2" invisible="move != 'back'">填要退的资源。确认退回后才会从客户名下拿掉。</div>
+                    <div class="text-muted mb-2" invisible="move != 'cutover'">每一行写原资源，以及换成的新资源。点「更换资源」之后才对调。</div>
+                    <field name="resource_ids" nolabel="1">
+                        <list editable="bottom">
+                            <field name="service_type" string="业务"/>
+                            <field name="flow_move" column_invisible="1"/>
+                            <field name="order_line_id" column_invisible="1"/>
+                            <field name="order_id" string="订单" optional="hide"/>
+                            <field name="spec" string="规格 / 说明"/>
+                            <field name="from_prefix_id" string="原网段" options="{'no_create': True}" column_invisible="parent.move != 'cutover'" invisible="service_type not in ('ipt', 'ip')"/>
+                            <field name="from_address_id" string="原 IP" options="{'no_create': True}" column_invisible="parent.move != 'cutover'" invisible="service_type != 'ip_single'"/>
+                            <field name="from_line_id" string="原线路" options="{'no_create': True}" column_invisible="parent.move != 'cutover'" invisible="service_type not in ('pl', 'sdwan', 'line')"/>
+                            <field name="prefix_id" string="网段" options="{'no_create': True}" invisible="service_type not in ('ipt', 'ip')"/>
+                            <field name="address_id" string="IP" options="{'no_create': True}" invisible="service_type != 'ip_single'"/>
+                            <field name="line_id" string="线路" options="{'no_create': True}" invisible="service_type not in ('pl', 'sdwan', 'line')"/>
+                            <field name="resource_ref" column_invisible="1"/>
+                        </list>
+                    </field>
+                    <field name="resource_note" placeholder="整单说明"/>
+                    <separator string="割接通知" invisible="move != 'cutover'"/>
+                    <group invisible="move != 'cutover'">
+                        <field name="reason"/>
+                        <field name="impact"/>
+                        <field name="notice_subject"/>
+                        <field name="notice_body"/>
+                    </group>
+                    <separator string="交付任务"/>
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <span class="text-muted">每个阶段的任务完成或跳过，才能推进到下一步。任务就在下面。</span>
+                        <field name="task_progress" widget="progressbar" class="flex-grow-1"/>
+                    </div>
+                    <field name="task_ids" nolabel="1" context="{'default_flow_id': id}">
+                        <list editable="bottom" decoration-success="state == 'done'" decoration-muted="state == 'skipped'" decoration-danger="state == 'blocked' or overdue" decoration-info="state == 'doing'">
+                            <field name="sequence" widget="handle"/>
+                            <field name="stage"/>
+                            <field name="name"/>
+                            <field name="priority" widget="priority"/>
+                            <field name="user_id" widget="many2one_avatar_user"/>
+                            <field name="planned_start" optional="hide"/>
+                            <field name="due_date"/>
+                            <field name="state" widget="badge" decoration-success="state == 'done'" decoration-info="state == 'doing'" decoration-danger="state == 'blocked'" decoration-muted="state in ('todo', 'skipped')"/>
+                            <field name="depends_on_id" optional="hide"/>
+                            <field name="blocker" optional="show"/>
+                            <field name="estimate_hours" optional="hide" sum="合计"/>
+                            <field name="actual_start" optional="hide"/>
+                            <field name="done_at" optional="hide"/>
+                            <field name="overdue" column_invisible="1"/>
+                            <field name="done" column_invisible="1"/>
+                            <button name="action_start" type="object" icon="fa-play" title="开始" invisible="state != 'todo'"/>
+                            <button name="action_done" type="object" icon="fa-check" title="完成" invisible="state in ('done', 'skipped')"/>
+                            <button name="action_block" type="object" icon="fa-ban" title="阻塞" invisible="state in ('blocked', 'done', 'skipped')"/>
+                            <button name="action_reopen" type="object" icon="fa-undo" title="重开" invisible="state not in ('done', 'skipped', 'blocked')"/>
+                        </list>
+                    </field>
                 </sheet>
                 <chatter/>
             </form>

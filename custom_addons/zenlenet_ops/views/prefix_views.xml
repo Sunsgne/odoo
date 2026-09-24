@@ -38,19 +38,10 @@
                     <button name="action_release" type="object" string="开退回工单" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_sales,zenlenet_ops.group_manager"/>
                     <button name="action_split" type="object" string="切割" invisible="status == 'deprecated'" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_manager"/>
                     <button name="action_add_child" type="object" string="新增下级网段" invisible="status == 'deprecated'" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_manager"/>
-                    <button name="action_open_ipam" type="object" string="在地址管理中查看" icon="fa-sitemap"/>
                     <button name="action_open_netbox" type="object" string="在 NetBox 中查看" icon="fa-external-link" invisible="not netbox_id"/>
                     <field name="status" widget="statusbar" options="{'clickable': true}"/>
                 </header>
                 <sheet>
-                    <div class="oe_button_box" name="button_box">
-                        <button name="action_open_children" type="object" class="oe_stat_button" icon="fa-th-large" invisible="not child_count">
-                            <field name="child_count" widget="statinfo" string="下级网段"/>
-                        </button>
-                        <button name="action_open_addresses" type="object" class="oe_stat_button" icon="fa-sitemap">
-                            <field name="address_count" widget="statinfo" string="IP 地址"/>
-                        </button>
-                    </div>
                     <div class="oe_title">
                         <div class="text-muted small" invisible="not parent_id">上级 <field name="parent_id" readonly="1" class="d-inline w-auto"/></div>
                         <h1><field name="prefix" placeholder="例如 203.0.113.0/24" class="font-monospace"/></h1>
@@ -80,47 +71,42 @@
                             <field name="netbox_synced" invisible="not netbox_id"/>
                         </group>
                     </group>
-                    <notebook>
-                        <page string="交付记录">
-                            <field name="allocation_ids" readonly="1">
-                                <list>
-                                    <field name="flow_id"/>
-                                    <field name="order_id"/>
-                                    <field name="partner_id"/>
-                                    <field name="service_type"/>
-                                    <field name="spec"/>
-                                    <field name="flow_state"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="下级网段">
-                            <field name="child_ids" readonly="1">
-                                <list decoration-muted="status == 'deprecated'">
-                                    <field name="prefix" class="font-monospace"/>
-                                    <field name="status" widget="badge" decoration-success="status == 'active'" decoration-info="status == 'container'" decoration-warning="status == 'reserved'"/>
-                                    <field name="partner_id" string="分配给"/>
-                                    <field name="size_display" string="容量"/>
-                                    <field name="allocated_count"/>
-                                    <field name="free_count"/>
-                                    <field name="utilization" widget="progressbar"/>
-                                    <field name="description"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="IP 地址">
-                            <field name="address_ids" context="{'default_block': prefix, 'default_datacenter_id': datacenter_id}">
-                                <list editable="bottom" limit="256" decoration-success="status == 'allocated'" decoration-muted="status == 'free'" decoration-warning="status in ('reserved', 'transferring', 'returning')">
-                                    <field name="address" class="font-monospace"/>
-                                    <field name="status" widget="badge" decoration-success="status == 'allocated'" decoration-info="status == 'free'" decoration-warning="status in ('reserved', 'transferring', 'returning')"/>
-                                    <field name="partner_id" string="分配给"/>
-                                    <field name="net_attr"/>
-                                    <field name="usage"/>
-                                    <field name="expires_on" optional="hide"/>
-                                    <field name="netbox_id" column_invisible="1"/>
-                                </list>
-                            </field>
-                        </page>
-                    </notebook>
+                    <separator string="下级网段"/>
+                    <field name="child_ids" readonly="1" nolabel="1">
+                        <list decoration-muted="status == 'deprecated'" limit="40">
+                            <field name="prefix" class="font-monospace"/>
+                            <field name="status" widget="badge" decoration-success="status == 'active'" decoration-info="status == 'container'" decoration-warning="status == 'reserved'"/>
+                            <field name="partner_id" string="分配给"/>
+                            <field name="size_display" string="容量"/>
+                            <field name="allocated_count"/>
+                            <field name="free_count"/>
+                            <field name="utilization" widget="progressbar"/>
+                            <field name="description"/>
+                        </list>
+                    </field>
+                    <separator string="IP 地址"/>
+                    <field name="address_ids" nolabel="1" context="{'default_block': prefix, 'default_datacenter_id': datacenter_id}">
+                        <list editable="bottom" limit="80" decoration-success="status == 'allocated'" decoration-muted="status == 'free'" decoration-warning="status in ('reserved', 'transferring', 'returning')">
+                            <field name="address" class="font-monospace"/>
+                            <field name="status" widget="badge" decoration-success="status == 'allocated'" decoration-info="status == 'free'" decoration-warning="status in ('reserved', 'transferring', 'returning')"/>
+                            <field name="partner_id" string="分配给"/>
+                            <field name="net_attr"/>
+                            <field name="usage"/>
+                            <field name="expires_on" optional="hide"/>
+                            <field name="netbox_id" column_invisible="1"/>
+                        </list>
+                    </field>
+                    <separator string="交付记录"/>
+                    <field name="allocation_ids" readonly="1" nolabel="1">
+                        <list limit="40">
+                            <field name="flow_id"/>
+                            <field name="order_id"/>
+                            <field name="partner_id"/>
+                            <field name="service_type"/>
+                            <field name="spec"/>
+                            <field name="flow_state"/>
+                        </list>
+                    </field>
                 </sheet>
             </form>
         </field>

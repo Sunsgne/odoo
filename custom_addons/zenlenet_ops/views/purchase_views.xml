@@ -63,6 +63,21 @@
                         </group>
                     </group>
                     <field name="note" placeholder="供应商联系人、合同号、端口信息"/>
+                    <separator string="供应商账单" invisible="not bill_id"/>
+                    <group invisible="not bill_id">
+                        <field name="bill_residual"/>
+                        <field name="bill_payment_state"/>
+                    </group>
+                    <field name="bill_line_ids" nolabel="1" readonly="1" invisible="not bill_id">
+                        <list>
+                            <field name="name" string="项目"/>
+                            <field name="quantity" string="数量"/>
+                            <field name="price_unit" string="单价"/>
+                            <field name="price_subtotal" string="金额"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <field name="display_type" column_invisible="1"/>
+                        </list>
+                    </field>
                 </sheet>
             </form>
         </field>

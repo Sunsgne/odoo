@@ -31,7 +31,6 @@
             <form>
                 <header>
                     <button name="action_open_quote" type="object" string="新报价" class="btn-primary"/>
-                    <button name="action_open_prices" type="object" string="专属价格"/>
                     <field name="zenlenet_status" widget="statusbar" options="{'clickable': true}"/>
                 </header>
                 <sheet>
@@ -44,7 +43,7 @@
                         <div class="o_zl_chain_step"><b><field name="zenlenet_address_count"/></b><span>IP</span></div>
                         <div class="o_zl_chain_step"><b><field name="zenlenet_line_count"/></b><span>线路</span></div>
                     </div>
-                    <div class="text-muted small mb-2">明细都在下面。点一行在当前页打开，不用另开菜单。</div>
+                    <div class="text-muted small mb-2">报价、合同、账单、工单、地址、线路和云主机都在这一页，往下看。</div>
                     <div class="oe_title">
                         <div class="text-muted font-monospace"><field name="zenlenet_code" readonly="1"/></div>
                         <h1><field name="name" placeholder="客户名称"/></h1>
@@ -92,107 +91,123 @@
                         </field>
                     </group>
                     <field name="comment" placeholder="对接情况、付款习惯、特殊约定"/>
-                    <notebook>
-                        <page string="服务订单">
-                            <field name="sale_order_ids" readonly="1" context="{'list_view_ref': 'zenlenet_ops.view_order_list'}">
-                                <list limit="20" default_order="date_order desc">
-                                    <field name="name" string="单号"/>
-                                    <field name="origin" string="业务"/>
-                                    <field name="amount_untaxed" string="月费"/>
-                                    <field name="currency_id" string="币种"/>
-                                    <field name="zenlenet_contract_id" string="合同"/>
-                                    <field name="zenlenet_contract_state" string="合同状态" widget="badge"/>
-                                    <field name="zenlenet_flow_count" string="交付"/>
-                                    <field name="zenlenet_stage" widget="badge"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="合同">
-                            <field name="zenlenet_contract_ids" readonly="1">
-                                <list limit="20">
-                                    <field name="name"/>
-                                    <field name="start_date"/>
-                                    <field name="end_date"/>
-                                    <field name="billing_cycle"/>
-                                    <field name="monthly_amount"/>
-                                    <field name="currency_id" column_invisible="1"/>
-                                    <field name="state" widget="badge"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="账单">
-                            <field name="zenlenet_invoice_ids" readonly="1">
-                                <list limit="20" default_order="invoice_date desc">
-                                    <field name="name" string="账单"/>
-                                    <field name="ref" string="账期"/>
-                                    <field name="invoice_date" string="日期"/>
-                                    <field name="amount_total" string="金额"/>
-                                    <field name="amount_residual" string="未收"/>
-                                    <field name="currency_id" column_invisible="1"/>
-                                    <field name="payment_state" string="收款" widget="badge"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="服务工单">
-                            <field name="zenlenet_ticket_ids" readonly="1">
-                                <list limit="20">
-                                    <field name="name"/>
-                                    <field name="priority" widget="priority"/>
-                                    <field name="subject"/>
-                                    <field name="user_id" widget="many2one_avatar_user"/>
-                                    <field name="due_at"/>
-                                    <field name="state" widget="badge"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="交付工单">
-                            <field name="zenlenet_flow_ids" readonly="1">
-                                <list limit="20">
-                                    <field name="name"/>
-                                    <field name="order_id"/>
-                                    <field name="state"/>
-                                    <field name="datacenter_id"/>
-                                    <field name="pending_count" string="待分配"/>
-                                    <field name="user_id" widget="many2one_avatar_user"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="IP 地址段">
-                            <field name="zenlenet_prefix_ids" readonly="1">
-                                <list limit="20">
-                                    <field name="prefix" class="font-monospace"/>
-                                    <field name="datacenter_id"/>
-                                    <field name="size_display"/>
-                                    <field name="allocated_count"/>
-                                    <field name="utilization" widget="progressbar"/>
-                                    <field name="status" widget="badge"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="IP 地址">
-                            <field name="zenlenet_address_ids" readonly="1">
-                                <list limit="40">
-                                    <field name="address" class="font-monospace"/>
-                                    <field name="status" widget="badge"/>
-                                    <field name="usage"/>
-                                    <field name="datacenter_id"/>
-                                    <field name="prefix_id"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="线路">
-                            <field name="zenlenet_line_ids" readonly="1">
-                                <list limit="20">
-                                    <field name="name"/>
-                                    <field name="kind"/>
-                                    <field name="status"/>
-                                    <field name="datacenter_id"/>
-                                    <field name="bandwidth"/>
-                                    <field name="supplier_id"/>
-                                </list>
-                            </field>
-                        </page>
-                    </notebook>
+                    <separator string="专属价格"/>
+                    <div class="mb-2">
+                        <button name="action_open_prices" type="object" string="改专属价格" class="btn btn-secondary btn-sm"/>
+                    </div>
+                    <field name="zenlenet_price_item_ids" nolabel="1" readonly="1">
+                        <list limit="20">
+                            <field name="product_tmpl_id" string="业务"/>
+                            <field name="min_quantity" string="起订量"/>
+                            <field name="fixed_price" string="客户单价 / 月"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <field name="date_start" string="生效" optional="hide"/>
+                            <field name="date_end" string="失效" optional="hide"/>
+                        </list>
+                    </field>
+                    <separator string="服务订单"/>
+                    <field name="sale_order_ids" readonly="1" nolabel="1" context="{'list_view_ref': 'zenlenet_ops.view_order_list'}">
+                        <list limit="20" default_order="date_order desc">
+                            <field name="name" string="单号"/>
+                            <field name="origin" string="业务"/>
+                            <field name="amount_untaxed" string="月费"/>
+                            <field name="currency_id" string="币种"/>
+                            <field name="zenlenet_contract_id" string="合同"/>
+                            <field name="zenlenet_contract_state" string="合同状态" widget="badge"/>
+                            <field name="zenlenet_flow_count" string="交付"/>
+                            <field name="zenlenet_stage" widget="badge"/>
+                        </list>
+                    </field>
+                    <separator string="合同"/>
+                    <field name="zenlenet_contract_ids" readonly="1" nolabel="1">
+                        <list limit="20">
+                            <field name="name"/>
+                            <field name="start_date"/>
+                            <field name="end_date"/>
+                            <field name="billing_cycle"/>
+                            <field name="monthly_amount"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <field name="state" widget="badge"/>
+                        </list>
+                    </field>
+                    <separator string="账单"/>
+                    <field name="zenlenet_invoice_ids" readonly="1" nolabel="1">
+                        <list limit="20" default_order="invoice_date desc">
+                            <field name="name" string="账单"/>
+                            <field name="ref" string="账期"/>
+                            <field name="invoice_date" string="日期"/>
+                            <field name="amount_total" string="金额"/>
+                            <field name="amount_residual" string="未收"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <field name="payment_state" string="收款" widget="badge"/>
+                            <field name="move_type" column_invisible="1"/>
+                        </list>
+                    </field>
+                    <separator string="服务工单"/>
+                    <field name="zenlenet_ticket_ids" readonly="1" nolabel="1">
+                        <list limit="20">
+                            <field name="name"/>
+                            <field name="priority" widget="priority"/>
+                            <field name="subject"/>
+                            <field name="user_id" widget="many2one_avatar_user"/>
+                            <field name="due_at"/>
+                            <field name="state" widget="badge"/>
+                        </list>
+                    </field>
+                    <separator string="交付工单"/>
+                    <field name="zenlenet_flow_ids" readonly="1" nolabel="1">
+                        <list limit="20">
+                            <field name="name"/>
+                            <field name="order_id"/>
+                            <field name="state"/>
+                            <field name="datacenter_id"/>
+                            <field name="pending_count" string="待分配"/>
+                            <field name="user_id" widget="many2one_avatar_user"/>
+                        </list>
+                    </field>
+                    <separator string="IP 地址段"/>
+                    <field name="zenlenet_prefix_ids" readonly="1" nolabel="1">
+                        <list limit="20">
+                            <field name="prefix" class="font-monospace"/>
+                            <field name="datacenter_id"/>
+                            <field name="size_display"/>
+                            <field name="allocated_count"/>
+                            <field name="utilization" widget="progressbar"/>
+                            <field name="status" widget="badge"/>
+                        </list>
+                    </field>
+                    <separator string="IP 地址"/>
+                    <field name="zenlenet_address_ids" readonly="1" nolabel="1">
+                        <list limit="40">
+                            <field name="address" class="font-monospace"/>
+                            <field name="status" widget="badge"/>
+                            <field name="usage"/>
+                            <field name="datacenter_id"/>
+                            <field name="prefix_id"/>
+                        </list>
+                    </field>
+                    <separator string="线路"/>
+                    <field name="zenlenet_line_ids" readonly="1" nolabel="1">
+                        <list limit="20">
+                            <field name="name"/>
+                            <field name="kind"/>
+                            <field name="status"/>
+                            <field name="datacenter_id"/>
+                            <field name="bandwidth"/>
+                            <field name="supplier_id"/>
+                        </list>
+                    </field>
+                    <separator string="云主机"/>
+                    <field name="zenlenet_vm_ids" readonly="1" nolabel="1">
+                        <list limit="20">
+                            <field name="name"/>
+                            <field name="datacenter_id"/>
+                            <field name="device_id"/>
+                            <field name="address_id" string="IP"/>
+                            <field name="bandwidth_mbps" string="带宽"/>
+                            <field name="status" widget="badge"/>
+                        </list>
+                    </field>
                     <field name="is_company" invisible="1"/>
                     <field name="company_type" invisible="1"/>
                     <field name="customer_rank" invisible="1"/>

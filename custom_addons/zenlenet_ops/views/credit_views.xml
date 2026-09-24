@@ -34,11 +34,6 @@
                     <field name="state" widget="statusbar" statusbar_visible="draft,approved,applied"/>
                 </header>
                 <sheet>
-                    <div class="oe_button_box" name="button_box">
-                        <button name="action_open_invoice" type="object" class="oe_stat_button" icon="fa-file-text-o" invisible="not invoice_id">
-                            <div class="o_stat_info"><span class="o_stat_text">抵扣账单</span><span class="o_stat_value"><field name="invoice_id" readonly="1"/></span></div>
-                        </button>
-                    </div>
                     <div class="oe_title">
                         <h1><field name="name" readonly="1"/></h1>
                     </div>
@@ -60,6 +55,7 @@
                             <field name="cap_percent" readonly="state != 'draft'" invisible="method == 'amount'"/>
                             <field name="amount" class="fw-bold"/>
                             <field name="apply_mode" readonly="state != 'draft'"/>
+                            <field name="invoice_id" string="抵扣账单" readonly="1" invisible="not invoice_id"/>
                             <field name="currency_id" invisible="1"/>
                         </group>
                     </group>

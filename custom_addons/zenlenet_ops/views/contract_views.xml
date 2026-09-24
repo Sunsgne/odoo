@@ -71,72 +71,64 @@
                             <field name="company_id" invisible="1"/>
                         </group>
                     </group>
-                    <notebook>
-                        <page string="费用条款">
-                            <div class="text-muted mb-2">合同按这张表出账：周期费用按周期到期时开票；一次性费用只在开始计费之后的第一张账单收一次。</div>
-                            <field name="item_ids">
-                                <list editable="bottom" decoration-muted="billed">
-                                    <field name="sequence" widget="handle"/>
-                                    <field name="kind"/>
-                                    <field name="name"/>
-                                    <field name="product_id" optional="show"/>
-                                    <field name="cycle" invisible="kind != 'recurring'"/>
-                                    <field name="quantity"/>
-                                    <field name="price_unit"/>
-                                    <field name="amount" sum="合计"/>
-                                    <field name="p95" optional="show" invisible="kind != 'recurring'"/>
-                                    <field name="start_date" optional="show"/>
-                                    <field name="end_date" optional="show"/>
-                                    <field name="billed" invisible="kind != 'one_time'" readonly="1"/>
-                                    <field name="invoice_id" optional="hide" readonly="1"/>
-                                    <field name="order_line_id" column_invisible="1"/>
-                                    <field name="currency_id" column_invisible="1"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="交付">
-                            <field name="flow_ids" readonly="1">
-                                <list>
-                                    <field name="name"/>
-                                    <field name="order_id"/>
-                                    <field name="state" widget="badge"/>
-                                    <field name="datacenter_id"/>
-                                    <field name="pending_count" string="待分配"/>
-                                    <field name="planned_date"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="账单">
-                            <field name="invoice_ids" readonly="1">
-                                <list>
-                                    <field name="name" string="账单"/>
-                                    <field name="ref" string="账期"/>
-                                    <field name="invoice_date" string="日期"/>
-                                    <field name="amount_total" string="金额" sum="合计"/>
-                                    <field name="amount_residual" string="未收" sum="合计"/>
-                                    <field name="currency_id" column_invisible="1"/>
-                                    <field name="state" widget="badge"/>
-                                    <field name="payment_state" string="收款" widget="badge"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="订单">
-                            <field name="order_ids" context="{'list_view_ref': 'zenlenet_ops.view_order_list'}" options="{'no_create': True}">
-                                <list>
-                                    <field name="name" string="单号"/>
-                                    <field name="origin" string="业务"/>
-                                    <field name="amount_untaxed" string="月费"/>
-                                    <field name="zenlenet_stage"/>
-                                </list>
-                            </field>
-                        </page>
-                        <page string="补充条款">
-                            <field name="terms" placeholder="SLA、付款方式、违约责任等补充约定"/>
-                        </page>
-                        <page string="备注">
-                            <field name="note"/>
-                        </page>
-                    </notebook>
+                    <separator string="费用条款"/>
+                    <div class="text-muted mb-2">合同按这张表出账：周期费用按周期到期时开票；一次性费用只在开始计费之后的第一张账单收一次。</div>
+                    <field name="item_ids" nolabel="1">
+                        <list editable="bottom" decoration-muted="billed">
+                            <field name="sequence" widget="handle"/>
+                            <field name="kind"/>
+                            <field name="name"/>
+                            <field name="product_id" optional="show"/>
+                            <field name="cycle" invisible="kind != 'recurring'"/>
+                            <field name="quantity"/>
+                            <field name="price_unit"/>
+                            <field name="amount" sum="合计"/>
+                            <field name="p95" optional="show" invisible="kind != 'recurring'"/>
+                            <field name="start_date" optional="show"/>
+                            <field name="end_date" optional="show"/>
+                            <field name="billed" invisible="kind != 'one_time'" readonly="1"/>
+                            <field name="invoice_id" optional="hide" readonly="1"/>
+                            <field name="order_line_id" column_invisible="1"/>
+                            <field name="currency_id" column_invisible="1"/>
+                        </list>
+                    </field>
+                    <separator string="订单"/>
+                    <field name="order_ids" nolabel="1" context="{'list_view_ref': 'zenlenet_ops.view_order_list'}" options="{'no_create': True}">
+                        <list limit="20">
+                            <field name="name" string="单号"/>
+                            <field name="origin" string="业务"/>
+                            <field name="amount_untaxed" string="月费"/>
+                            <field name="zenlenet_stage"/>
+                        </list>
+                    </field>
+                    <separator string="交付"/>
+                    <field name="flow_ids" readonly="1" nolabel="1">
+                        <list limit="20">
+                            <field name="name"/>
+                            <field name="order_id"/>
+                            <field name="state" widget="badge"/>
+                            <field name="datacenter_id"/>
+                            <field name="pending_count" string="待分配"/>
+                            <field name="planned_date"/>
+                        </list>
+                    </field>
+                    <separator string="账单"/>
+                    <field name="invoice_ids" readonly="1" nolabel="1">
+                        <list limit="20">
+                            <field name="name" string="账单"/>
+                            <field name="ref" string="账期"/>
+                            <field name="invoice_date" string="日期"/>
+                            <field name="amount_total" string="金额" sum="合计"/>
+                            <field name="amount_residual" string="未收" sum="合计"/>
+                            <field name="currency_id" column_invisible="1"/>
+                            <field name="state" widget="badge"/>
+                            <field name="payment_state" string="收款" widget="badge"/>
+                        </list>
+                    </field>
+                    <separator string="补充条款"/>
+                    <field name="terms" nolabel="1" placeholder="SLA、付款方式、违约责任等补充约定"/>
+                    <separator string="备注"/>
+                    <field name="note" nolabel="1"/>
                 </sheet>
                 <chatter/>
             </form>

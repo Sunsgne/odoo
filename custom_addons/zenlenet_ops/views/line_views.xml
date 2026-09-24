@@ -74,19 +74,16 @@
                         <field name="a_end" readonly="1"/>
                         <field name="z_end" readonly="1"/>
                     </group>
-                    <notebook>
-                        <page string="交付记录">
-                            <field name="allocation_ids" readonly="1">
-                                <list>
-                                    <field name="flow_id"/>
-                                    <field name="order_id"/>
-                                    <field name="partner_id"/>
-                                    <field name="spec"/>
-                                    <field name="flow_state"/>
-                                </list>
-                            </field>
-                        </page>
-                    </notebook>
+                    <separator string="交付记录"/>
+                    <field name="allocation_ids" readonly="1" nolabel="1">
+                        <list limit="20">
+                            <field name="flow_id"/>
+                            <field name="order_id"/>
+                            <field name="partner_id"/>
+                            <field name="spec"/>
+                            <field name="flow_state"/>
+                        </list>
+                    </field>
                     <group string="NetBox" invisible="not netbox_id">
                         <field name="netbox_id"/>
                         <field name="netbox_synced"/>
