@@ -4,7 +4,6 @@ import hashlib
 import logging
 import secrets
 import uuid
-import werkzeug.urls
 
 from odoo import api, fields, models, _
 from odoo.addons.iap.tools import iap_tools
@@ -199,20 +198,7 @@ class IapAccount(models.Model):
 
     @api.model
     def get_credits_url(self, service_name, account_token=None):
-        """ Called notably by: buy more widget, partner_autocomplete, snailmail, ... """
-        dbuuid = self.env['ir.config_parameter'].sudo().get_param('database.uuid')
-        endpoint = iap_tools.iap_get_endpoint(self.env)
-        route = '/iap/1/credit'
-        base_url = url_join(endpoint, route)
-        account_token = account_token or self.get(service_name).sudo().account_token
-        hashed_account_token = self._hash_iap_token(account_token)
-        d = {
-            'dbuuid': dbuuid,
-            'service_name': service_name,
-            'account_token': hashed_account_token,
-            'hashed': 1,
-        }
-        return '%s?%s' % (base_url, werkzeug.urls.url_encode(d))
+        return ''
 
     @api.model
     def _hash_iap_token(self, key):

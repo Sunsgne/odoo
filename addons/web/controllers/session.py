@@ -1,12 +1,9 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-import json
 import logging
 import operator
 
 from contextlib import ExitStack
-
-from werkzeug.urls import url_encode
 
 import odoo
 import odoo.modules.registry
@@ -72,14 +69,7 @@ class Session(http.Controller):
 
     @http.route('/web/session/account', type='jsonrpc', auth='user', readonly=True)
     def account(self):
-        ICP = request.env['ir.config_parameter'].sudo()
-        params = {
-            'response_type': 'token',
-            'client_id': ICP.get_param('database.uuid') or '',
-            'state': json.dumps({'d': request.db, 'u': ICP.get_param('web.base.url')}),
-            'scope': 'userinfo',
-        }
-        return 'https://accounts.odoo.com/oauth2/auth?' + url_encode(params)
+        return False
 
     @http.route('/web/session/destroy', type='jsonrpc', auth='user', readonly=True)
     def destroy(self):
