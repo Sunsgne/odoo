@@ -12,6 +12,7 @@ from . import spam
 from . import fabric
 from . import prefix
 from . import ipam
+from . import ping0
 from . import netbox
 from . import flow
 from . import ticket

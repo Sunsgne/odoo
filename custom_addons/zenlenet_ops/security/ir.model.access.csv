@@ -70,6 +70,9 @@ access_zenlenet_asset_user,zenlenet.asset.user,model_zenlenet_asset,base.group_u
 access_zenlenet_asset_procurement,zenlenet.asset.procurement,model_zenlenet_asset,zenlenet_ops.group_procurement,1,1,1,0
 access_zenlenet_asset_delivery,zenlenet.asset.delivery,model_zenlenet_asset,zenlenet_ops.group_delivery,1,1,1,0
 access_zenlenet_asset_manager,zenlenet.asset.manager,model_zenlenet_asset,zenlenet_ops.group_manager,1,1,1,1
+access_zenlenet_ip_probe_user,zenlenet.ip.probe.user,model_zenlenet_ip_probe,base.group_user,1,0,0,0
+access_zenlenet_ip_probe_delivery,zenlenet.ip.probe.delivery,model_zenlenet_ip_probe,zenlenet_ops.group_delivery,1,1,1,0
+access_zenlenet_ip_probe_manager,zenlenet.ip.probe.manager,model_zenlenet_ip_probe,zenlenet_ops.group_manager,1,1,1,1
 access_zenlenet_ipam_domain_user,zenlenet.ipam.domain.user,model_zenlenet_ipam_domain,base.group_user,1,0,0,0
 access_zenlenet_ipam_domain_delivery,zenlenet.ipam.domain.delivery,model_zenlenet_ipam_domain,zenlenet_ops.group_delivery,1,1,1,0
 access_zenlenet_ipam_domain_manager,zenlenet.ipam.domain.manager,model_zenlenet_ipam_domain,zenlenet_ops.group_manager,1,1,1,1

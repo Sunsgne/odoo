@@ -186,6 +186,22 @@ export class ZenlenetIpam extends Component {
         }
     }
 
+    async refreshPing() {
+        if (!this.state.selectedId) {
+            return;
+        }
+        this.state.loading = true;
+        try {
+            const result = await this.orm.call("zenlenet.prefix", "ipam_ping0", [[this.state.selectedId]]);
+            await this.select(this.state.selectedId);
+            this.notification.add(`已更新 ${result.checked} 段`, { type: "success" });
+        } catch (error) {
+            this.notification.add(error.data?.message || String(error), { type: "danger" });
+        } finally {
+            this.state.loading = false;
+        }
+    }
+
     prefixStatus(status) {
         return { active: "在用", container: "容器", reserved: "预留", deprecated: "已弃用" }[status] || status;
     }
@@ -197,7 +213,7 @@ export class ZenlenetIpam extends Component {
 
     cellTitle(cell) {
         const label = Object.fromEntries(STATUSES)[cell.status] || "未登记";
-        return [cell.ip, label, cell.partner, cell.usage].filter(Boolean).join(" · ");
+        return [cell.ip, label, cell.ip_type, cell.ip_native, cell.partner, cell.usage].filter(Boolean).join(" · ");
     }
 
     // ------------------------------------------------------------ drag select

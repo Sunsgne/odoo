@@ -234,6 +234,7 @@ class ZenlenetPrefixIpam(models.Model):
             'create_date': fields.Datetime.to_string(self.create_date) if self.create_date else '',
             'blocks': blocks,
             'truncated': truncated,
+            **self.env['zenlenet.ip.probe'].attach(blocks),
             'children': [{
                 'id': child['id'], 'prefix': child['prefix'], 'status': child['status'],
                 'partner': child['partner_id'][1] if child['partner_id'] else '',

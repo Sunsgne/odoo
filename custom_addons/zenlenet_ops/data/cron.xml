@@ -33,6 +33,15 @@
         <field name="interval_type">hours</field>
         <field name="active" eval="True"/>
     </record>
+    <record id="cron_ping0_daily" model="ir.cron">
+        <field name="name">尊领：IP 类型查询</field>
+        <field name="model_id" ref="model_zenlenet_ip_probe"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_daily()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active" eval="True"/>
+    </record>
     <record id="cron_netbox_push" model="ir.cron">
         <field name="name">尊领：NetBox 写回</field>
         <field name="model_id" ref="model_zenlenet_netbox"/>

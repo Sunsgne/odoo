@@ -92,6 +92,8 @@
                             <field name="status" widget="badge" decoration-success="status == 'allocated'" decoration-info="status == 'free'" decoration-warning="status in ('reserved', 'transferring', 'returning')"/>
                             <field name="partner_id" string="分配给"/>
                             <field name="net_attr"/>
+                            <field name="ip_type" readonly="1"/>
+                            <field name="ip_native" readonly="1"/>
                             <field name="usage"/>
                             <field name="expires_on" optional="hide"/>
                             <field name="netbox_id" column_invisible="1"/>

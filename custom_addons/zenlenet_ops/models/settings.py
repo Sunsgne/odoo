@@ -54,6 +54,8 @@ class ResConfigSettings(models.TransientModel):
     zenlenet_sla_normal = fields.Integer(string='普通（小时）', config_parameter='zenlenet.sla_normal', default=24)
     zenlenet_sla_low = fields.Integer(string='低（小时）', config_parameter='zenlenet.sla_low', default=72)
 
+    zenlenet_ping0_key = fields.Char(string='Ping0 Key', config_parameter='zenlenet.ping0_key')
+    zenlenet_ping0_last = fields.Char(string='上次查询', compute='_compute_counts')
     zenlenet_netbox_url = fields.Char(string='NetBox 网址', config_parameter='zenlenet.netbox_url')
     zenlenet_netbox_api_url = fields.Char(string='API 地址', config_parameter='zenlenet.netbox_api_url')
     zenlenet_netbox_host = fields.Char(string='Host 头', config_parameter='zenlenet.netbox_host')
@@ -94,6 +96,10 @@ class ResConfigSettings(models.TransientModel):
             record.zenlenet_netbox_last_sync = icp.get_param('zenlenet.netbox_last_sync') or '还没同步过'
             record.zenlenet_netbox_last_stats = icp.get_param('zenlenet.netbox_last_stats') or ''
             record.zenlenet_netbox_ready = self.env['zenlenet.netbox'].is_configured()
+            last = self.env['zenlenet.ip.probe'].sudo().search(
+                [('checked_at', '!=', False)], order='checked_at desc', limit=1,
+            )
+            record.zenlenet_ping0_last = fields.Datetime.to_string(last.checked_at) if last else ''
 
     def _compute_currencies(self):
         active = self.env['res.currency'].search([('active', '=', True)])

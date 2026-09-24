@@ -202,6 +202,18 @@
                                 </div>
                             </div>
                         </setting>
+                        <setting id="zenlenet_ping0_setting" string="Ping0">
+                            <div class="content-group">
+                                <div class="row mt8">
+                                    <label for="zenlenet_ping0_key" class="col-lg-4 o_light_label"/>
+                                    <field name="zenlenet_ping0_key" password="True"/>
+                                </div>
+                                <div class="row">
+                                    <label for="zenlenet_ping0_last" class="col-lg-4 o_light_label"/>
+                                    <field name="zenlenet_ping0_last" readonly="1"/>
+                                </div>
+                            </div>
+                        </setting>
                         <setting id="zenlenet_netbox_setting" string="NetBox">
                             <div class="content-group">
                                 <div class="row mt8">

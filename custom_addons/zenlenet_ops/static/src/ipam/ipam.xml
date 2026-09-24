@@ -98,7 +98,10 @@
 
                 <div class="zl-ipam-body">
                     <div class="zl-ipam-grid-wrap">
-                        <div class="zl-ipam-section-title">IP 地址分布</div>
+                        <div class="zl-ipam-section-title d-flex justify-content-between">
+                            <span>IP 地址分布</span>
+                            <button t-if="state.detail.can_write" class="btn btn-link btn-sm p-0" t-on-click="refreshPing">查类型</button>
+                        </div>
                         <div class="zl-legend">
                             <t t-foreach="statuses" t-as="status" t-key="status[0]">
                                 <span><i t-attf-class="zl-cell zl-cell-#{status[0]} zl-legend-dot"/> <t t-out="status[1]"/></span>
@@ -151,7 +154,15 @@
                         <t t-if="state.detail.blocks.length">
                             <div t-foreach="state.detail.blocks" t-as="block" t-key="block.prefix" class="zl-block">
                                 <div class="zl-block-title d-flex justify-content-between">
-                                    <span><i class="fa fa-angle-down"/> <span class="font-monospace" t-out="block.label"/> <span class="text-muted small">（<t t-out="block.cells.length"/> 个 · 已用 <t t-out="block.used"/>）</span></span>
+                                    <span>
+                                        <i class="fa fa-angle-down"/>
+                                        <span class="font-monospace" t-out="block.label"/>
+                                        <span class="text-muted small">
+                                            （<t t-out="block.cells.length"/> 个 · 已用 <t t-out="block.used"/>
+                                            <t t-if="block.ip_type"> · <t t-out="block.ip_type"/> · <t t-out="block.ip_native"/></t>
+                                            <t t-if="block.ip_checked"> · <t t-out="block.ip_risk"/>%</t>）
+                                        </span>
+                                    </span>
                                     <button class="btn btn-sm btn-link p-0" t-on-click="() => this.selectAllFree(block)">选中全部空闲</button>
                                 </div>
                                 <div class="zl-grid" t-on-mouseup="(ev) => this.onGridUp(block, ev)" t-on-mouseleave="() => this.onGridUp(block, {})">
@@ -193,6 +204,10 @@
                             <dt>起始 IP</dt><dd class="font-monospace" t-out="state.detail.first_ip"/>
                             <dt>结束 IP</dt><dd class="font-monospace" t-out="state.detail.last_ip"/>
                             <dt>IP 占用</dt><dd>已用 <b t-out="state.detail.used"/> / <t t-out="state.detail.size_display"/></dd>
+                            <dt>IP 类型</dt><dd t-out="state.detail.ip_type || '—'"/>
+                            <dt>原生 IP</dt><dd t-out="state.detail.ip_native || '—'"/>
+                            <dt t-if="state.detail.blocks.length === 1">风控</dt><dd t-if="state.detail.blocks.length === 1" t-out="state.detail.ip_checked ? state.detail.ip_risk + '%' : '—'"/>
+                            <dt>查询</dt><dd t-out="state.detail.ip_checked || '—'"/>
                         </dl>
                         <div t-if="Object.keys(state.detail.counts).length" class="zl-counts">
                             <span t-foreach="Object.entries(state.detail.counts)" t-as="entry" t-key="entry[0]"><t t-out="entry[0]"/> <b t-out="entry[1]"/></span>
@@ -222,6 +237,7 @@
                 <div t-if="state.cell" class="zl-cell-pop">
                     <div class="zl-cell-pop-head">
                         <span class="font-monospace fw-bold" t-out="state.cell.ip"/>
+                        <span class="text-muted small" t-if="state.cell.ip_type" t-out="state.cell.ip_type + ' · ' + state.cell.ip_native"/>
                         <button class="btn btn-sm btn-link" t-on-click="closeCell"><i class="fa fa-times"/></button>
                     </div>
                     <label>状态</label>

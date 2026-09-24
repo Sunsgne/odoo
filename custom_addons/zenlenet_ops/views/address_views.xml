@@ -19,6 +19,10 @@
                 <field name="partner_id"/>
                 <field name="status" widget="badge" decoration-success="status == 'allocated'" decoration-info="status == 'free'" decoration-warning="status in ('reserved', 'transferring', 'returning')" decoration-muted="status == 'internal'"/>
                 <field name="net_attr"/>
+                <field name="ip_type" optional="show"/>
+                <field name="ip_native" optional="show"/>
+                <field name="ip_risk" optional="hide"/>
+                <field name="ip_checked" optional="hide"/>
                 <field name="dc_type" optional="show"/>
                 <field name="role" optional="show"/>
                 <field name="supplier_id" optional="hide"/>
@@ -49,6 +53,10 @@
                         </group>
                         <group>
                             <field name="net_attr"/>
+                            <field name="ip_type" readonly="1"/>
+                            <field name="ip_native" readonly="1"/>
+                            <field name="ip_risk" readonly="1"/>
+                            <field name="ip_checked" readonly="1"/>
                             <field name="dc_type"/>
                             <field name="role"/>
                             <field name="supplier_id" options="{'no_create': True}"/>
@@ -104,6 +112,11 @@
                 <filter name="fastfiber" string="FastFiber" domain="[('net_attr','=','FastFiber')]"/>
                 <filter name="public_net" string="公网" domain="[('net_attr','=','公网')]"/>
                 <filter name="private_net" string="内网" domain="[('net_attr','=','内网')]"/>
+                <separator/>
+                <filter name="home_ip" string="家庭宽带" domain="[('ip_type','=','家庭宽带 IP')]"/>
+                <filter name="idc_ip" string="IDC机房" domain="[('ip_type','=','IDC机房 IP')]"/>
+                <filter name="native_ip" string="原生 IP" domain="[('ip_native','=','原生 IP')]"/>
+                <filter name="broadcast_ip" string="广播 IP" domain="[('ip_native','=','广播 IP')]"/>
                 <group>
                     <filter name="group_prefix" string="地址段" context="{'group_by': 'prefix_id'}"/>
                     <filter name="group_block" string="IP段（旧）" context="{'group_by': 'block'}"/>
@@ -111,6 +124,8 @@
                     <filter name="group_status" string="分配状态" context="{'group_by': 'status'}"/>
                     <filter name="group_partner" string="留给客户" context="{'group_by': 'partner_id'}"/>
                     <filter name="group_dc" string="数据中心类型" context="{'group_by': 'dc_type'}"/>
+                    <filter name="group_ip_type" string="IP 类型" context="{'group_by': 'ip_type'}"/>
+                    <filter name="group_ip_native" string="原生 IP" context="{'group_by': 'ip_native'}"/>
                 </group>
                 <searchpanel>
                     <field name="datacenter_id" string="数据中心" enable_counters="1" icon="fa-building" limit="60"/>
