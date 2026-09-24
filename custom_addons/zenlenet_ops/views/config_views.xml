@@ -80,7 +80,12 @@
                     <block title="币种" name="zenlenet_currency">
                         <setting id="zenlenet_currency_setting" string="可用币种">
                             <field name="zenlenet_currency_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <div class="mt8" invisible="not zenlenet_rate_pulled">
+                                <label for="zenlenet_rate_pulled" class="o_light_label"/>
+                                <field name="zenlenet_rate_pulled" readonly="1" class="w-auto"/>
+                            </div>
                             <div class="mt8">
+                                <button name="action_pull_rates" type="object" string="拉取汇率" icon="oi-arrow-right" class="btn-link"/>
                                 <button name="action_open_currencies" type="object" string="维护汇率" icon="oi-arrow-right" class="btn-link"/>
                             </div>
                         </setting>

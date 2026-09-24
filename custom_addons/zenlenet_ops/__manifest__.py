@@ -12,6 +12,7 @@
         'data/sequence.xml',
         'data/flow_sequence.xml',
         'data/cron.xml',
+        'data/currencies.xml',
         'data/oauth_provider.xml',
         'data/task_templates.xml',
         'reports/report_templates.xml',
