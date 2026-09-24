@@ -94,9 +94,9 @@ TRACKS = {
     'ipt': {
         'path': _NET,
         'labels': {'company': '客户与 ASN', 'allocate': '端口与地址', 'deliver': 'BGP 开通', 'accept': '验收', 'done': '完成'},
-        'teams': {'company': 'sales', 'allocate': 'delivery', 'deliver': 'delivery', 'accept': 'service', 'done': 'service'},
+        'teams': {'company': 'sales', 'allocate': 'allocator', 'deliver': 'delivery', 'accept': 'service', 'done': 'service'},
         'tasks': (
-            ('allocate', '分配端口和地址段', 'delivery', 1),
+            ('allocate', '分配端口和地址段', 'allocator', 1),
             ('deliver', 'BGP 会话与路由宣告', 'delivery', 1),
             ('deliver', '接入 95 值监控', 'delivery', 0),
             ('accept', '客户验收', 'service', 2),
@@ -105,9 +105,9 @@ TRACKS = {
     'ip': {
         'path': _NET,
         'labels': {'company': '客户确认', 'allocate': '划出地址段', 'deliver': '路由宣告', 'accept': '验收', 'done': '完成'},
-        'teams': {'company': 'sales', 'allocate': 'delivery', 'deliver': 'delivery', 'accept': 'service', 'done': 'service'},
+        'teams': {'company': 'sales', 'allocate': 'allocator', 'deliver': 'delivery', 'accept': 'service', 'done': 'service'},
         'tasks': (
-            ('allocate', '从地址池划出', 'delivery', 1),
+            ('allocate', '从地址池划出', 'allocator', 1),
             ('deliver', '路由宣告', 'delivery', 1),
             ('accept', '客户验收', 'service', 1),
         ),
@@ -115,9 +115,9 @@ TRACKS = {
     'ip_single': {
         'path': _NET,
         'labels': {'company': '客户确认', 'allocate': '划出地址', 'deliver': '交付地址', 'accept': '验收', 'done': '完成'},
-        'teams': {'company': 'sales', 'allocate': 'delivery', 'deliver': 'delivery', 'accept': 'service', 'done': 'service'},
+        'teams': {'company': 'sales', 'allocate': 'allocator', 'deliver': 'delivery', 'accept': 'service', 'done': 'service'},
         'tasks': (
-            ('allocate', '从地址池划出', 'delivery', 1),
+            ('allocate', '从地址池划出', 'allocator', 1),
             ('deliver', '写入客户资料', 'delivery', 0),
             ('accept', '客户验收', 'service', 1),
         ),
@@ -125,9 +125,9 @@ TRACKS = {
     'pl': {
         'path': _NET,
         'labels': {'company': '客户确认', 'allocate': '两端核查', 'deliver': '端口开通', 'accept': '时延验收', 'done': '完成'},
-        'teams': {'company': 'sales', 'allocate': 'delivery', 'deliver': 'delivery', 'accept': 'service', 'done': 'service'},
+        'teams': {'company': 'sales', 'allocate': 'allocator', 'deliver': 'delivery', 'accept': 'service', 'done': 'service'},
         'tasks': (
-            ('allocate', '核对两端资源', 'delivery', 1),
+            ('allocate', '核对两端资源', 'allocator', 1),
             ('deliver', '端口与 VLAN 开通', 'delivery', 2),
             ('deliver', '时延与丢包测试', 'delivery', 1),
             ('accept', '客户验收', 'service', 2),
@@ -136,9 +136,9 @@ TRACKS = {
     'line': {
         'path': _NET,
         'labels': {'company': '客户确认', 'allocate': '两端核查', 'deliver': '线路开通', 'accept': '验收', 'done': '完成'},
-        'teams': {'company': 'sales', 'allocate': 'delivery', 'deliver': 'delivery', 'accept': 'service', 'done': 'service'},
+        'teams': {'company': 'sales', 'allocate': 'allocator', 'deliver': 'delivery', 'accept': 'service', 'done': 'service'},
         'tasks': (
-            ('allocate', '核对线路', 'delivery', 1),
+            ('allocate', '核对线路', 'allocator', 1),
             ('deliver', '线路开通', 'delivery', 2),
             ('accept', '客户验收', 'service', 1),
         ),
@@ -146,9 +146,9 @@ TRACKS = {
     'sdwan': {
         'path': _NET,
         'labels': {'company': '客户确认', 'allocate': '站点与设备', 'deliver': '隧道策略', 'accept': '体验验收', 'done': '完成'},
-        'teams': {'company': 'sales', 'allocate': 'delivery', 'deliver': 'delivery', 'accept': 'service', 'done': 'service'},
+        'teams': {'company': 'sales', 'allocate': 'allocator', 'deliver': 'delivery', 'accept': 'service', 'done': 'service'},
         'tasks': (
-            ('allocate', '确认站点和设备', 'delivery', 1),
+            ('allocate', '确认站点和设备', 'allocator', 1),
             ('deliver', 'CPE 上线', 'delivery', 3),
             ('deliver', '隧道与选路', 'delivery', 1),
             ('accept', '客户验收', 'service', 2),
@@ -167,9 +167,9 @@ TRACKS = {
     'colo': {
         'path': _NET,
         'labels': {'company': '客户确认', 'allocate': '机柜与电力', 'deliver': '上架加电', 'accept': '验收', 'done': '完成'},
-        'teams': {'company': 'sales', 'allocate': 'delivery', 'deliver': 'delivery', 'accept': 'service', 'done': 'service'},
+        'teams': {'company': 'sales', 'allocate': 'allocator', 'deliver': 'delivery', 'accept': 'service', 'done': 'service'},
         'tasks': (
-            ('allocate', '确认机柜和电力', 'delivery', 1),
+            ('allocate', '确认机柜和电力', 'allocator', 1),
             ('deliver', '上架与交叉连接', 'delivery', 3),
             ('accept', '加电验收', 'service', 1),
         ),
@@ -177,9 +177,9 @@ TRACKS = {
     'resale': {
         'path': _NET,
         'labels': {'company': '客户确认', 'allocate': '供应商下单', 'deliver': '上游交付', 'accept': '转交客户', 'done': '完成'},
-        'teams': {'company': 'sales', 'allocate': 'delivery', 'deliver': 'delivery', 'accept': 'service', 'done': 'service'},
+        'teams': {'company': 'sales', 'allocate': 'allocator', 'deliver': 'delivery', 'accept': 'service', 'done': 'service'},
         'tasks': (
-            ('allocate', '向供应商下单', 'delivery', 1),
+            ('allocate', '向供应商下单', 'allocator', 1),
             ('deliver', '供应商交付', 'delivery', 3),
             ('accept', '转交客户', 'service', 1),
         ),
@@ -287,15 +287,17 @@ def track_tasks(service):
 def team_for(state):
     if state == 'company':
         return 'sales'
-    if state in ('allocate', 'deliver'):
+    if state in ('allocate', 'reclaim'):
+        return 'allocator'
+    if state == 'deliver':
         return 'delivery'
-    if state in ('accept', 'decide', 'reclaim', 'done'):
+    if state in ('accept', 'decide', 'done'):
         return 'service'
     return None
 
 
 def team_for_move(move, state, service=None):
-    """Who presses the button at this step. 出 keeps the sales → delivery → service handoff."""
+    """Which group may approve the ticket out of this step."""
     move = move or 'out'
     if move == 'out':
         track = track_for(service)
@@ -303,16 +305,24 @@ def team_for_move(move, state, service=None):
             return track['teams'][state]
         return team_for(state)
     if move == 'in':
-        return 'delivery' if state in ('company', 'allocate', 'deliver') else None
+        if state == 'company':
+            return 'procurement'
+        if state == 'allocate':
+            return 'allocator'
+        if state == 'deliver':
+            return 'delivery'
+        return None
     if move == 'back':
         if state == 'company':
             return 'sales'
         if state == 'reclaim':
-            return 'delivery'
+            return 'allocator'
         return 'service' if state == 'done' else None
     if move == 'cutover':
-        if state in ('company', 'allocate'):
+        if state == 'company':
             return 'delivery'
+        if state == 'allocate':
+            return 'allocator'
         if state in ('deliver', 'accept', 'done'):
             return 'service'
     return None

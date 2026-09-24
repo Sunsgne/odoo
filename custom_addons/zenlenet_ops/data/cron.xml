@@ -85,4 +85,5 @@
         <field name="prefix">GD-</field>
         <field name="padding">5</field>
     </record>
+    <function model="zenlenet.flow" name="zenlenet_refresh_teams"/>
 </odoo>

@@ -54,6 +54,7 @@
                 <field name="risk" widget="badge" decoration-success="risk == 'normal'" decoration-warning="risk == 'at_risk'" decoration-danger="risk == 'blocked'"/>
                 <field name="next_task_id" optional="show"/>
                 <field name="sales_user_id" optional="hide"/>
+                <field name="allocator_user_id" optional="hide"/>
                 <field name="delivery_user_id" optional="hide"/>
                 <field name="service_user_id" optional="hide"/>
             </list>
@@ -65,22 +66,23 @@
         <field name="arch" type="xml">
             <form>
                 <header>
-                    <button name="action_prev" type="object" string="退回" invisible="state in ('company', 'done', 'cancel')"/>
-                    <button name="action_next" type="object" string="推进" class="btn-primary" invisible="move != 'out' or state in ('done', 'cancel') or (kind == 'test' and state in ('accept', 'decide'))"/>
-                    <button name="action_next" type="object" string="核对资源" class="btn-primary" invisible="move != 'in' or state != 'company'"/>
-                    <button name="action_next" type="object" string="确认入库" class="btn-primary" invisible="move != 'in' or state != 'allocate'"/>
-                    <button name="action_next" type="object" string="完成入库" class="btn-primary" invisible="move != 'in' or state != 'deliver'"/>
-                    <button name="action_next" type="object" string="开始回收" class="btn-primary" invisible="move != 'back' or state != 'company'"/>
-                    <button name="action_next" type="object" string="确认退回" class="btn-primary" invisible="move != 'back' or state != 'reclaim'"/>
-                    <button name="action_next" type="object" string="通知客户" class="btn-primary" invisible="move != 'cutover' or state != 'company'"/>
-                    <button name="action_next" type="object" string="更换资源" class="btn-primary" invisible="move != 'cutover' or state != 'deliver'"/>
-                    <button name="action_next" type="object" string="业务验证" class="btn-primary" invisible="move != 'cutover' or state != 'allocate'"/>
-                    <button name="action_next" type="object" string="完成割接" class="btn-primary" invisible="move != 'cutover' or state != 'accept'"/>
+                    <field name="can_act" invisible="1"/>
+                    <button name="action_prev" type="object" string="退回" invisible="not can_act or state in ('company', 'done', 'cancel')"/>
+                    <button name="action_next" type="object" string="推进" class="btn-primary" invisible="not can_act or move != 'out' or state in ('done', 'cancel') or (kind == 'test' and state in ('accept', 'decide'))"/>
+                    <button name="action_next" type="object" string="核对资源" class="btn-primary" invisible="not can_act or move != 'in' or state != 'company'"/>
+                    <button name="action_next" type="object" string="确认入库" class="btn-primary" invisible="not can_act or move != 'in' or state != 'allocate'"/>
+                    <button name="action_next" type="object" string="完成入库" class="btn-primary" invisible="not can_act or move != 'in' or state != 'deliver'"/>
+                    <button name="action_next" type="object" string="开始回收" class="btn-primary" invisible="not can_act or move != 'back' or state != 'company'"/>
+                    <button name="action_next" type="object" string="确认退回" class="btn-primary" invisible="not can_act or move != 'back' or state != 'reclaim'"/>
+                    <button name="action_next" type="object" string="通知客户" class="btn-primary" invisible="not can_act or move != 'cutover' or state != 'company'"/>
+                    <button name="action_next" type="object" string="更换资源" class="btn-primary" invisible="not can_act or move != 'cutover' or state != 'deliver'"/>
+                    <button name="action_next" type="object" string="业务验证" class="btn-primary" invisible="not can_act or move != 'cutover' or state != 'allocate'"/>
+                    <button name="action_next" type="object" string="完成割接" class="btn-primary" invisible="not can_act or move != 'cutover' or state != 'accept'"/>
                     <button name="action_fill_notice" type="object" string="生成割接通知" invisible="move != 'cutover' or state in ('company', 'cancel')"/>
-                    <button name="action_reclaim" type="object" string="回收" invisible="move != 'out' or kind != 'test' or state not in ('accept', 'decide')"/>
-                    <button name="action_to_business" type="object" string="转商务" class="btn-primary" invisible="move != 'out' or kind != 'test' or state not in ('accept', 'decide', 'reclaim')"/>
+                    <button name="action_reclaim" type="object" string="回收" invisible="not can_act or move != 'out' or kind != 'test' or state not in ('accept', 'decide')"/>
+                    <button name="action_to_business" type="object" string="转商务" class="btn-primary" invisible="not can_act or move != 'out' or kind != 'test' or state not in ('accept', 'decide', 'reclaim')"/>
                     <button name="action_print_delivery" type="object" string="打印验收单" invisible="move != 'out' or state in ('company', 'cancel')"/>
-                    <button name="action_cancel" type="object" string="取消" invisible="state in ('done', 'cancel')"/>
+                    <button name="action_cancel" type="object" string="取消" invisible="not can_act or state in ('done', 'cancel')"/>
                     <field name="state" widget="statusbar" options="{'clickable': false}" statusbar_visible="company,deliver,accept,done" invisible="move != 'out' or kind == 'test' or service_type != 'vm'"/>
                     <field name="state" widget="statusbar" options="{'clickable': false}" statusbar_visible="company,allocate,deliver,accept,done" invisible="move != 'out' or kind == 'test' or service_type == 'vm'"/>
                     <field name="state" widget="statusbar" options="{'clickable': false}" statusbar_visible="company,allocate,deliver,accept,reclaim,done" invisible="move != 'out' or kind != 'test'"/>
@@ -123,8 +125,10 @@
                         <group string="负责人">
                             <field name="pm_user_id" widget="many2one_avatar_user"/>
                             <field name="sales_user_id" widget="many2one_avatar_user"/>
+                            <field name="allocator_user_id" widget="many2one_avatar_user"/>
                             <field name="delivery_user_id" widget="many2one_avatar_user"/>
                             <field name="service_user_id" widget="many2one_avatar_user"/>
+                            <field name="procurement_user_id" widget="many2one_avatar_user" invisible="move != 'in'"/>
                         </group>
                         <group string="进度">
                             <field name="planned_date"/>
@@ -212,10 +216,12 @@
                 <field name="partner_id"/>
                 <field name="service_type"/>
                 <field name="user_id"/>
-                <filter name="mine" string="我的" domain="['|', '|', '|', ('user_id', '=', uid), ('sales_user_id', '=', uid), ('delivery_user_id', '=', uid), ('service_user_id', '=', uid)]"/>
+                <filter name="mine" string="我的" domain="['|', '|', '|', '|', '|', ('user_id', '=', uid), ('sales_user_id', '=', uid), ('allocator_user_id', '=', uid), ('delivery_user_id', '=', uid), ('service_user_id', '=', uid), ('procurement_user_id', '=', uid)]"/>
                 <filter name="sales" string="销售" domain="[('team', '=', 'sales')]"/>
+                <filter name="allocator" string="资源" domain="[('team', '=', 'allocator')]"/>
                 <filter name="delivery" string="交付" domain="[('team', '=', 'delivery')]"/>
                 <filter name="service" string="售后" domain="[('team', '=', 'service')]"/>
+                <filter name="procurement" string="采购" domain="[('team', '=', 'procurement')]"/>
                 <filter name="move_out" string="出：开通" domain="[('move', '=', 'out')]"/>
                 <filter name="move_in" string="进：入库" domain="[('move', '=', 'in')]"/>
                 <filter name="move_back" string="退：退回" domain="[('move', '=', 'back')]"/>
@@ -235,7 +241,7 @@
             <list editable="bottom" create="0" decoration-success="resource_ref" decoration-warning="not resource_ref">
                 <header>
                     <button name="action_suggest" type="object" string="自动推荐" class="btn-secondary"/>
-                    <button name="action_finish_allocation" type="object" string="这一步完成，推进工单" class="btn-primary"/>
+                    <button name="action_finish_allocation" type="object" string="这一步完成，推进工单" class="btn-primary" groups="zenlenet_ops.group_allocator"/>
                 </header>
                 <field name="flow_id" readonly="1" string="交付工单"/>
                 <field name="partner_id" readonly="1" string="客户"/>

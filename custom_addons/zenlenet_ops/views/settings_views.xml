@@ -12,7 +12,6 @@
                 <field name="name"/>
                 <field name="login"/>
                 <field name="zenlenet_role_names" string="岗位"/>
-                <field name="zenlenet_team"/>
                 <field name="email"/>
             </list>
         </field>
@@ -29,7 +28,6 @@
                         <field name="login"/>
                         <field name="email"/>
                         <field name="zenlenet_role_ids" widget="many2many_checkboxes"/>
-                        <field name="zenlenet_team"/>
                     </group>
                 </sheet>
             </form>
@@ -43,7 +41,6 @@
                 <group>
                     <field name="name"/>
                     <field name="login"/>
-                    <field name="team"/>
                     <field name="role_ids" widget="many2many_checkboxes"/>
                     <field name="password" password="True"/>
                 </group>

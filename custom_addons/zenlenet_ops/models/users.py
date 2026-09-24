@@ -10,11 +10,52 @@ class ResUsers(models.Model):
         ('delivery', '交付'),
         ('service', '售后'),
     ], string='分组')
+    zenlenet_in_sales = fields.Boolean(compute='_compute_zenlenet_in_groups', search='_search_zenlenet_in_sales')
+    zenlenet_in_allocator = fields.Boolean(compute='_compute_zenlenet_in_groups', search='_search_zenlenet_in_allocator')
+    zenlenet_in_delivery = fields.Boolean(compute='_compute_zenlenet_in_groups', search='_search_zenlenet_in_delivery')
+    zenlenet_in_service = fields.Boolean(compute='_compute_zenlenet_in_groups', search='_search_zenlenet_in_service')
+    zenlenet_in_procurement = fields.Boolean(compute='_compute_zenlenet_in_groups', search='_search_zenlenet_in_procurement')
     zenlenet_role_ids = fields.Many2many(
         'res.groups', string='岗位', compute='_compute_roles', inverse='_inverse_roles',
         domain=lambda self: [('privilege_id', '=', self.env.ref('zenlenet_ops.privilege_zenlenet').id)],
     )
     zenlenet_role_names = fields.Char(string='岗位名称', compute='_compute_roles')
+
+    @api.depends('all_group_ids')
+    def _compute_zenlenet_in_groups(self):
+        flags = {
+            'zenlenet_in_sales': self.env.ref('zenlenet_ops.group_sales', raise_if_not_found=False),
+            'zenlenet_in_allocator': self.env.ref('zenlenet_ops.group_allocator', raise_if_not_found=False),
+            'zenlenet_in_delivery': self.env.ref('zenlenet_ops.group_delivery', raise_if_not_found=False),
+            'zenlenet_in_service': self.env.ref('zenlenet_ops.group_service', raise_if_not_found=False),
+            'zenlenet_in_procurement': self.env.ref('zenlenet_ops.group_procurement', raise_if_not_found=False),
+        }
+        for user in self:
+            ids = set(user.all_group_ids.ids)
+            for name, group in flags.items():
+                user[name] = bool(group and group.id in ids)
+
+    def _search_zenlenet_group(self, xmlid, operator, value):
+        group = self.env.ref(xmlid, raise_if_not_found=False)
+        if not group:
+            return [('id', '=', 0)]
+        member = (operator == '=' and value) or (operator == '!=' and not value)
+        return [('all_group_ids', 'in' if member else 'not in', group.ids)]
+
+    def _search_zenlenet_in_sales(self, operator, value):
+        return self._search_zenlenet_group('zenlenet_ops.group_sales', operator, value)
+
+    def _search_zenlenet_in_allocator(self, operator, value):
+        return self._search_zenlenet_group('zenlenet_ops.group_allocator', operator, value)
+
+    def _search_zenlenet_in_delivery(self, operator, value):
+        return self._search_zenlenet_group('zenlenet_ops.group_delivery', operator, value)
+
+    def _search_zenlenet_in_service(self, operator, value):
+        return self._search_zenlenet_group('zenlenet_ops.group_service', operator, value)
+
+    def _search_zenlenet_in_procurement(self, operator, value):
+        return self._search_zenlenet_group('zenlenet_ops.group_procurement', operator, value)
 
     def _zenlenet_role_groups(self):
         privilege = self.env.ref('zenlenet_ops.privilege_zenlenet', raise_if_not_found=False)
@@ -70,24 +111,10 @@ class ZenlenetUserAdd(models.TransientModel):
     name = fields.Char(string='姓名', required=True)
     login = fields.Char(string='登录名', required=True)
     password = fields.Char(string='密码', required=True)
-    team = fields.Selection([
-        ('sales', '销售'),
-        ('delivery', '交付'),
-        ('service', '售后'),
-    ], string='分组')
     role_ids = fields.Many2many(
         'res.groups', string='岗位',
         domain=lambda self: [('privilege_id', '=', self.env.ref('zenlenet_ops.privilege_zenlenet').id)],
     )
-
-    @api.onchange('team')
-    def _onchange_team(self):
-        mapping = {'sales': 'zenlenet_ops.group_sales', 'delivery': 'zenlenet_ops.group_delivery', 'service': 'zenlenet_ops.group_service'}
-        for wizard in self:
-            if wizard.team and not wizard.role_ids:
-                group = self.env.ref(mapping[wizard.team], raise_if_not_found=False)
-                if group:
-                    wizard.role_ids = group
 
     def action_create(self):
         self.ensure_one()
@@ -103,7 +130,6 @@ class ZenlenetUserAdd(models.TransientModel):
             'email': login if '@' in login else False,
             'password': self.password,
             'share': False,
-            'zenlenet_team': self.team or False,
             'group_ids': [(6, 0, (self.env.ref('base.group_user') | self.role_ids).ids)],
         })
         return {'type': 'ir.actions.act_window_close'}

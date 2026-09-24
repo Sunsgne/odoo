@@ -74,9 +74,10 @@ class FlowTests(unittest.TestCase):
 
     def test_people_are_grouped_by_stage(self):
         self.assertEqual(team_for('company'), 'sales')
-        self.assertEqual(team_for('allocate'), 'delivery')
+        self.assertEqual(team_for('allocate'), 'allocator')
         self.assertEqual(team_for('deliver'), 'delivery')
-        for state in ('accept', 'decide', 'reclaim', 'done'):
+        self.assertEqual(team_for('reclaim'), 'allocator')
+        for state in ('accept', 'decide', 'done'):
             self.assertEqual(team_for(state), 'service')
         self.assertIsNone(team_for('cancel'))
 
@@ -99,9 +100,15 @@ class FlowTests(unittest.TestCase):
         self.assertFalse(can_reclaim('business', 'accept', 'back'))
         self.assertEqual(step_label('in', 'allocate'), '核对资源')
         self.assertEqual(step_label('cutover', 'deliver'), '通知客户')
-        self.assertEqual(team_for_move('in', 'company'), 'delivery')
-        self.assertEqual(team_for_move('back', 'reclaim'), 'delivery')
+        self.assertEqual(team_for_move('in', 'company'), 'procurement')
+        self.assertEqual(team_for_move('in', 'allocate'), 'allocator')
+        self.assertEqual(team_for_move('in', 'deliver'), 'delivery')
+        self.assertEqual(team_for_move('back', 'company'), 'sales')
+        self.assertEqual(team_for_move('back', 'reclaim'), 'allocator')
+        self.assertEqual(team_for_move('cutover', 'company'), 'delivery')
         self.assertEqual(team_for_move('cutover', 'deliver'), 'service')
+        self.assertEqual(team_for_move('cutover', 'allocate'), 'allocator')
+        self.assertEqual(team_for_move('cutover', 'accept'), 'service')
 
     def test_each_service_has_its_own_outbound_path(self):
         self.assertEqual(
@@ -118,6 +125,7 @@ class FlowTests(unittest.TestCase):
         self.assertEqual(step_label('out', 'allocate', 'resale'), '供应商下单')
         self.assertEqual(step_label('out', 'deliver', 'pl'), '端口开通')
         self.assertEqual(team_for_move('out', 'company', 'sdwan'), 'sales')
+        self.assertEqual(team_for_move('out', 'allocate', 'ipt'), 'allocator')
         self.assertEqual(team_for_move('out', 'deliver', 'colo'), 'delivery')
         self.assertTrue(track_tasks('ipt'))
         self.assertFalse(any(stage == 'allocate' for stage, *_rest in track_tasks('vm')))
