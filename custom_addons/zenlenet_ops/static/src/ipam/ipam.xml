@@ -171,7 +171,19 @@
                             </div>
                         </t>
 
-                        <div class="zl-ipam-section-title mt-3">下级网段（<t t-out="state.detail.children.length"/>）</div>
+                        <div class="zl-ipam-section-title mt-3" t-if="state.detail.holders.length">分配明细</div>
+                        <table class="table table-sm zl-children" t-if="state.detail.holders.length">
+                            <thead><tr><th>客户</th><th>状态</th><th class="text-end">数量</th><th>地址</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="state.detail.holders" t-as="row" t-key="row_index">
+                                    <td t-out="row.partner"/>
+                                    <td><i t-attf-class="zl-cell zl-cell-#{row.status} zl-legend-dot"/> <t t-out="row.status_label"/></td>
+                                    <td class="text-end" t-out="row.count"/>
+                                    <td class="font-monospace" t-out="row.hosts"/>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="zl-ipam-section-title mt-3" t-if="state.detail.children.length">下级网段（<t t-out="state.detail.children.length"/>）</div>
                         <table class="table table-sm zl-children" t-if="state.detail.children.length">
                             <thead><tr><th>网段</th><th>状态</th><th>分配给</th><th class="text-end">容量</th><th class="text-end">已分配</th><th style="width: 160px;">使用率</th><th>说明</th></tr></thead>
                             <tbody>

@@ -6,7 +6,7 @@ import logging
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
-from odoo.addons.zenlenet_ops.blocks import edge_label, parse_prefix
+from odoo.addons.zenlenet_ops.blocks import allocation_rows, edge_label, parse_prefix
 
 _logger = logging.getLogger(__name__)
 
@@ -200,6 +200,14 @@ class ZenlenetPrefixIpam(models.Model):
                 name = row['partner_id'][1] if row['partner_id'] else '未指定客户'
                 reserved_for[name] = reserved_for.get(name, 0) + 1
         children = self.child_ids.read(['prefix', 'status', 'partner_id', 'size_display', 'allocated_count', 'free_count', 'utilization', 'description'])
+        holders = allocation_rows(self.prefix, [
+            {
+                'ip': ip,
+                'status': row['status'],
+                'partner': row['partner_id'][1] if row['partner_id'] else '',
+            }
+            for ip, row in found.items()
+        ], STATUS_LABELS)
         return {
             'id': self.id,
             'prefix': self.prefix,
@@ -236,6 +244,7 @@ class ZenlenetPrefixIpam(models.Model):
             'create_date': fields.Datetime.to_string(self.create_date) if self.create_date else '',
             'blocks': blocks,
             'truncated': truncated,
+            'holders': holders,
             **self.env['zenlenet.ip.probe'].attach(blocks),
             'children': [{
                 'id': child['id'], 'prefix': child['prefix'], 'status': child['status'],
