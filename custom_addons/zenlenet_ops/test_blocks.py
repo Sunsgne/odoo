@@ -21,13 +21,13 @@ class PrefixBlockTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             parse_prefix('  ')
 
-    def test_slash24_hosts_collapse_to_last_octet(self):
+    def test_hosts_are_written_as_full_ranges(self):
         text = compact_hosts(['124.254.90.8', '124.254.90.2', '124.254.90.3', '124.254.90.4', '124.254.90.10'], '124.254.90.0/24')
-        self.assertEqual(text, '.2–.4 .8 .10')
+        self.assertEqual(text, '124.254.90.2 – 124.254.90.4、124.254.90.8、124.254.90.10')
 
     def test_larger_prefix_keeps_full_addresses(self):
         text = compact_hosts(['10.0.0.1', '10.0.0.2', '10.0.1.1'], '10.0.0.0/23')
-        self.assertEqual(text, '10.0.0.1–10.0.0.2 10.0.1.1')
+        self.assertEqual(text, '10.0.0.1 – 10.0.0.2、10.0.1.1')
 
     def test_allocation_rows_group_customers(self):
         rows = allocation_rows('124.254.90.0/24', [
@@ -38,9 +38,9 @@ class PrefixBlockTests(unittest.TestCase):
             {'ip': '124.254.90.4', 'status': 'internal', 'partner': ''},
         ], {'allocated': '已分配', 'reserved': '预分配', 'internal': '自用'})
         self.assertEqual([(row['partner'], row['status_label'], row['count'], row['hosts']) for row in rows], [
-            ('甲', '已分配', 2, '.2–.3'),
-            ('乙', '预分配', 1, '.9'),
-            ('自用', '自用', 1, '.4'),
+            ('甲', '已分配', 2, '124.254.90.2 – 124.254.90.3'),
+            ('乙', '预分配', 1, '124.254.90.9'),
+            ('自用', '自用', 1, '124.254.90.4'),
         ])
 
 
