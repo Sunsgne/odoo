@@ -65,6 +65,7 @@ class ResConfigSettings(models.TransientModel):
     zenlenet_currency_ids = fields.Many2many(
         'res.currency', string='可用币种', compute='_compute_currencies', inverse='_inverse_currencies',
     )
+    zenlenet_rate_pulled = fields.Char(string='上次拉取', compute='_compute_counts')
     zenlenet_sso_enabled = fields.Boolean(string='启用 Office 365 登录')
     zenlenet_sso_client_id = fields.Char(string='Azure 应用 ID（Client ID）')
     zenlenet_sso_tenant = fields.Char(string='Azure 租户 ID', config_parameter='zenlenet.azure_tenant')
@@ -94,6 +95,7 @@ class ResConfigSettings(models.TransientModel):
             record.zenlenet_netbox_last_sync = icp.get_param('zenlenet.netbox_last_sync') or '还没同步过'
             record.zenlenet_netbox_last_stats = icp.get_param('zenlenet.netbox_last_stats') or ''
             record.zenlenet_netbox_ready = self.env['zenlenet.netbox'].is_configured()
+            record.zenlenet_rate_pulled = icp.get_param('zenlenet.rate_pulled') or ''
 
     def _compute_currencies(self):
         active = self.env['res.currency'].search([('active', '=', True)])
@@ -119,6 +121,10 @@ class ResConfigSettings(models.TransientModel):
             'view_mode': 'list,form',
             'domain': [('active', '=', True)],
         }
+
+    def action_pull_rates(self):
+        self.env['res.currency'].zenlenet_pull_rates()
+        return {'type': 'ir.actions.client', 'tag': 'reload'}
 
     @api.model
     def get_values(self):

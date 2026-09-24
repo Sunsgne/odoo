@@ -42,6 +42,15 @@
         <field name="interval_type">minutes</field>
         <field name="active" eval="True"/>
     </record>
+    <record id="cron_currency_rates" model="ir.cron">
+        <field name="name">尊领：汇率</field>
+        <field name="model_id" ref="base.model_res_currency"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_pull_rates()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active" eval="True"/>
+    </record>
     <record id="seq_customer" model="ir.sequence">
         <field name="name">ZENLENET 客户编号</field>
         <field name="code">zenlenet.customer</field>

@@ -1,4 +1,5 @@
 from . import settings
+from . import currency
 from . import deletion
 from . import maintenance
 from . import partner

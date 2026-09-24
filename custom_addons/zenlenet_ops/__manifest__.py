@@ -1,6 +1,6 @@
 {
     'name': '运营后台',
-    'version': '19.0.4.18.1',
+    'version': '19.0.4.18.9',
     'category': 'Sales',
     'summary': '数据中心、线路、IP；客户、报价、合同、出账；业务流转与工单',
     'author': 'ZENLENET PTE. LTD.',
@@ -12,6 +12,7 @@
         'data/sequence.xml',
         'data/flow_sequence.xml',
         'data/cron.xml',
+        'data/currencies.xml',
         'data/oauth_provider.xml',
         'data/task_templates.xml',
         'reports/report_templates.xml',
