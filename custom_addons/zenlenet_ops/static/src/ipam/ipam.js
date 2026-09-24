@@ -213,7 +213,19 @@ export class ZenlenetIpam extends Component {
 
     cellTitle(cell) {
         const label = Object.fromEntries(STATUSES)[cell.status] || "未登记";
-        return [cell.ip, label, cell.ip_type, cell.ip_native, cell.partner, cell.usage].filter(Boolean).join(" · ");
+        return [cell.ip, cell.edge_label, label, cell.ip_type, cell.ip_native, cell.partner, cell.usage].filter(Boolean).join(" · ");
+    }
+
+    assignableIps() {
+        const blocked = new Set();
+        for (const block of this.state.detail?.blocks || []) {
+            for (const cell of block.cells || []) {
+                if (cell.edge) {
+                    blocked.add(cell.ip);
+                }
+            }
+        }
+        return this.state.selection.filter((ip) => !blocked.has(ip));
     }
 
     // ------------------------------------------------------------ drag select
@@ -273,7 +285,9 @@ export class ZenlenetIpam extends Component {
     }
 
     selectAllFree(block) {
-        this.state.selection = block.cells.filter((cell) => cell.status === "free" || cell.status === "none").map((cell) => cell.ip);
+        this.state.selection = block.cells
+            .filter((cell) => !cell.edge && (cell.status === "free" || cell.status === "none"))
+            .map((cell) => cell.ip);
     }
 
     // --------------------------------------------------------- bulk assign
@@ -338,8 +352,13 @@ export class ZenlenetIpam extends Component {
             this.notification.add("预分配要先从列表里点选客户。", { type: "warning" });
             return;
         }
+        const ips = this.assignableIps();
+        if (!ips.length) {
+            this.notification.add("网络位和广播位不能分配。", { type: "warning" });
+            return;
+        }
         try {
-            const result = await this.orm.call("zenlenet.prefix", "ipam_bulk_reserve", [[this.state.selectedId], this.state.selection, form.partner_id]);
+            const result = await this.orm.call("zenlenet.prefix", "ipam_bulk_reserve", [[this.state.selectedId], ips, form.partner_id]);
             this.notification.add(`已把 ${result.count} 个地址预分配给 ${result.partner}`, { type: "success" });
             this.state.bulkReserve = null;
             this.state.selection = [];
@@ -355,8 +374,13 @@ export class ZenlenetIpam extends Component {
             this.notification.add("请选一张处于「分配资源」的开通工单。", { type: "warning" });
             return;
         }
+        const ips = this.assignableIps();
+        if (!ips.length) {
+            this.notification.add("网络位和广播位不能分配。", { type: "warning" });
+            return;
+        }
         try {
-            const result = await this.orm.call("zenlenet.prefix", "ipam_bulk_assign", [[this.state.selectedId], this.state.selection, form.partner_id || false, form.flow_id || false, form.usage || ""]);
+            const result = await this.orm.call("zenlenet.prefix", "ipam_bulk_assign", [[this.state.selectedId], ips, form.partner_id || false, form.flow_id || false, form.usage || ""]);
             this.notification.add(`${result.count} 个地址已分配${result.flow ? "，并挂到交付工单 " + result.flow : ""}`, { type: "success" });
             this.state.bulkAssign = null;
             this.state.selection = [];
@@ -417,8 +441,16 @@ export class ZenlenetIpam extends Component {
     }
 
     async openTicket(move) {
+        let ips = this.state.selection;
+        if (move === "out") {
+            ips = this.assignableIps();
+            if (!ips.length) {
+                this.notification.add("网络位和广播位不能分配。", { type: "warning" });
+                return;
+            }
+        }
         try {
-            const action = await this.orm.call("zenlenet.prefix", "ipam_open_ticket", [[this.state.selectedId], this.state.selection, move]);
+            const action = await this.orm.call("zenlenet.prefix", "ipam_open_ticket", [[this.state.selectedId], ips, move]);
             this.state.bulkAssign = null;
             this.state.selection = [];
             await this.action.doAction(action, { onClose: () => this.select(this.state.selectedId) });
@@ -438,6 +470,10 @@ export class ZenlenetIpam extends Component {
 
     async saveCell() {
         const form = this.state.cellForm;
+        if (this.state.cell.edge && (form.status === "reserved" || form.status === "allocated")) {
+            this.notification.add("网络位和广播位不能分配。", { type: "warning" });
+            return;
+        }
         if (form.status === "reserved" && !form.partner_id) {
             this.notification.add("预分配要先从列表里点选客户。", { type: "warning" });
             return;

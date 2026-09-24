@@ -241,7 +241,7 @@
                     <label>状态</label>
                     <select t-if="!ticketLocked" class="form-select form-select-sm" t-model="state.cellForm.status">
                         <option value="free">未分配</option>
-                        <option value="reserved">预分配</option>
+                        <option t-if="!state.cell.edge" value="reserved">预分配</option>
                         <option value="internal">自用</option>
                     </select>
                     <label><t t-if="state.cellForm.status === 'reserved'">预分配给</t><t t-else="">分配给</t></label>

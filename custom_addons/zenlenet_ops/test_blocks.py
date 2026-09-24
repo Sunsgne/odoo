@@ -1,6 +1,6 @@
 import unittest
 
-from blocks import parse_prefix, prefix_block
+from blocks import edge_label, parse_prefix, prefix_block
 
 
 class PrefixBlockTests(unittest.TestCase):
@@ -20,6 +20,20 @@ class PrefixBlockTests(unittest.TestCase):
     def test_prefix_rejects_blank(self):
         with self.assertRaises(ValueError):
             parse_prefix('  ')
+
+    def test_slash24_ends_cannot_be_allocated(self):
+        self.assertEqual(edge_label('128.14.5.0/24', '128.14.5.0'), '网络位')
+        self.assertEqual(edge_label('128.14.5.0/24', '128.14.5.255'), '广播位')
+        self.assertEqual(edge_label('128.14.5.0/24', '128.14.5.1'), '')
+
+    def test_only_the_parent_ends_are_blocked(self):
+        self.assertEqual(edge_label('10.0.0.0/23', '10.0.0.0'), '网络位')
+        self.assertEqual(edge_label('10.0.0.0/23', '10.0.0.255'), '')
+        self.assertEqual(edge_label('10.0.0.0/23', '10.0.1.255'), '广播位')
+
+    def test_point_to_point_ends_stay_usable(self):
+        self.assertEqual(edge_label('192.0.2.0/31', '192.0.2.0'), '')
+        self.assertEqual(edge_label('192.0.2.1/32', '192.0.2.1'), '')
 
 
 if __name__ == '__main__':
