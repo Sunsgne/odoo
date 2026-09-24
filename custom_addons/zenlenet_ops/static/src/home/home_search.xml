@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="zenlenet_ops.HomeSearch">
+        <div class="o_zl_home_search">
+            <input type="search" autocomplete="off" t-on-input="onInput"/>
+            <div class="o_zl_hits" t-if="state.rows.length">
+                <button type="button" class="o_zl_hit" t-foreach="state.rows" t-as="row" t-key="row.key" t-on-click="() => this.open(row)">
+                    <span class="o_zl_kind" t-esc="row.kind"/>
+                    <span class="o_zl_label" t-esc="row.label"/>
+                </button>
+            </div>
+        </div>
+    </t>
+</templates>

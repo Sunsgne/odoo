@@ -9,6 +9,9 @@
                     <field name="currency_id" invisible="1"/>
                     <field name="name" invisible="1"/>
 
+                    <div class="o_zl_section_title">查询</div>
+                    <field name="search_query" widget="zenlenet_home_search" nolabel="1"/>
+
                     <div class="o_zl_section_title">待办提醒</div>
                     <div class="o_zl_kpis">
                         <button type="object" name="action_open_my_flows" class="o_zl_kpi o_zl_kpi_primary">

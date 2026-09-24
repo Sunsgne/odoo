@@ -1,4 +1,7 @@
 from odoo import api, fields, models
+from odoo.exceptions import AccessError, UserError
+
+from odoo.addons.zenlenet_ops.searchbox import PER_MODEL, SOURCES, TOTAL, ilike_domain, row_kind, row_label
 
 
 class ZenlenetHome(models.Model):
@@ -33,6 +36,7 @@ class ZenlenetHome(models.Model):
     assets_in_use = fields.Integer(compute='_compute_kpis')
     purchases_open = fields.Integer(compute='_compute_kpis')
     users_count = fields.Integer(compute='_compute_kpis')
+    search_query = fields.Char(compute='_compute_search_query')
 
     def _compute_kpis(self):
         env = self.env
@@ -88,6 +92,55 @@ class ZenlenetHome(models.Model):
             record.assets_in_use = env['zenlenet.asset'].sudo().search_count([('state', '=', 'in_use')])
             record.purchases_open = env['zenlenet.purchase'].sudo().search_count([('state', 'in', ('draft', 'ordered'))])
             record.users_count = env['res.users'].sudo().search_count([('share', '=', False)])
+
+    def _compute_search_query(self):
+        for record in self:
+            record.search_query = False
+
+    @api.model
+    def lookup(self, text):
+        """Match any keyword across customers, addresses, tickets, and the rest.
+
+        A blank query returns nothing. Text that is not an IP address is still searched.
+        """
+        if not ilike_domain(text, ['name']):
+            return []
+        found = []
+        for source in SOURCES:
+            if len(found) >= TOTAL:
+                break
+            try:
+                model = self.env[source['model']]
+            except KeyError:
+                continue
+            try:
+                rows = model.search_read(
+                    ilike_domain(text, source['fields']),
+                    list(source['reads']),
+                    limit=PER_MODEL,
+                    order=source['order'],
+                )
+            except (AccessError, UserError, ValueError, KeyError):
+                continue
+            for row in rows:
+                label = row_label(source, row)
+                if not label:
+                    continue
+                found.append({
+                    'key': f"{source['model']}:{row['id']}",
+                    'kind': row_kind(source, row),
+                    'label': label,
+                    'action': {
+                        'type': 'ir.actions.act_window',
+                        'res_model': source['model'],
+                        'res_id': row['id'],
+                        'views': [(False, 'form')],
+                        'target': 'current',
+                    },
+                })
+                if len(found) >= TOTAL:
+                    break
+        return found
 
     @api.model
     def action_open(self):
