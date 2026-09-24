@@ -46,7 +46,7 @@ HELD_STATUSES = ('allocated', 'reserved', 'testing', 'transferring', 'returning'
 
 
 def compact_hosts(ips, prefix=''):
-    """Turn host addresses into ranges. Inside a /24 or smaller, only the last octet is shown."""
+    """Turn host addresses into ranges written as full addresses, same shape as the block title."""
     hosts = []
     for ip in ips or []:
         try:
@@ -56,18 +56,11 @@ def compact_hosts(ips, prefix=''):
     hosts = sorted(set(hosts), key=int)
     if not hosts:
         return ''
-    octet = False
-    try:
-        network = ipaddress.ip_network(str(prefix or '').strip(), strict=False)
-    except ValueError:
-        network = None
-    if network and network.version == 4 and network.prefixlen >= 24 and all(host in network for host in hosts):
-        octet = True
 
-    def label(host):
-        if octet:
-            return f'.{int(host) & 0xFF}'
-        return str(host)
+    def piece(start, end):
+        if start == end:
+            return str(start)
+        return f'{start} – {end}'
 
     parts = []
     start = prev = hosts[0]
@@ -75,10 +68,10 @@ def compact_hosts(ips, prefix=''):
         if int(host) == int(prev) + 1:
             prev = host
             continue
-        parts.append(label(start) if start == prev else f'{label(start)}–{label(prev)}')
+        parts.append(piece(start, prev))
         start = prev = host
-    parts.append(label(start) if start == prev else f'{label(start)}–{label(prev)}')
-    return ' '.join(parts)
+    parts.append(piece(start, prev))
+    return '、'.join(parts)
 
 
 def allocation_rows(prefix, hosts, labels=None):
