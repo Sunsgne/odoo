@@ -159,8 +159,7 @@
                                         <span class="font-monospace" t-out="block.label"/>
                                         <span class="text-muted small">
                                             （<t t-out="block.cells.length"/> 个 · 已用 <t t-out="block.used"/>
-                                            <t t-if="block.ip_type"> · <t t-out="block.ip_type"/> · <t t-out="block.ip_native"/></t>
-                                            <t t-if="block.ip_checked"> · <t t-out="block.ip_risk"/>%</t>）
+                                            <t t-if="block.ip_type"> · <t t-out="block.ip_type"/> · <t t-out="block.ip_native"/> · <t t-out="block.ip_risk"/>%</t>）
                                         </span>
                                     </span>
                                     <button class="btn btn-sm btn-link p-0" t-on-click="() => this.selectAllFree(block)">选中全部空闲</button>
@@ -206,7 +205,7 @@
                             <dt>IP 占用</dt><dd>已用 <b t-out="state.detail.used"/> / <t t-out="state.detail.size_display"/></dd>
                             <dt>IP 类型</dt><dd t-out="state.detail.ip_type || '—'"/>
                             <dt>原生 IP</dt><dd t-out="state.detail.ip_native || '—'"/>
-                            <dt t-if="state.detail.blocks.length === 1">风控</dt><dd t-if="state.detail.blocks.length === 1" t-out="state.detail.ip_checked ? state.detail.ip_risk + '%' : '—'"/>
+                            <dt t-if="state.detail.blocks.length === 1">风控</dt><dd t-if="state.detail.blocks.length === 1" t-out="state.detail.ip_type ? state.detail.ip_risk + '%' : '—'"/>
                             <dt>查询</dt><dd t-out="state.detail.ip_checked || '—'"/>
                         </dl>
                         <div t-if="Object.keys(state.detail.counts).length" class="zl-counts">
