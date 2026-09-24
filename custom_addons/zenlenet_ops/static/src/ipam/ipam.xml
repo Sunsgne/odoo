@@ -104,7 +104,6 @@
                                 <span><i t-attf-class="zl-cell zl-cell-#{status[0]} zl-legend-dot"/> <t t-out="status[1]"/></span>
                             </t>
                             <span><i class="zl-cell zl-cell-none zl-legend-dot"/> 未登记</span>
-                            <span><i class="zl-cell zl-cell-special zl-legend-dot"/> 网络 / 广播</span>
                         </div>
                         <div t-if="state.selection.length" class="zl-bulk">
                             <span>已选 <b t-out="state.selection.length"/> 个地址：</span>

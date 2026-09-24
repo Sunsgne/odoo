@@ -172,27 +172,23 @@ class ZenlenetPrefixIpam(models.Model):
                 for host in subnet:
                     key = str(host)
                     row = found.get(key)
-                    special = ''
-                    if network.prefixlen < 31:
-                        if host == network.network_address:
-                            special = 'network'
-                        elif host == network.broadcast_address:
-                            special = 'broadcast'
+                    # Network and broadcast addresses stay selectable. With no record they read as free, not a gray dead cell.
+                    edge = network.prefixlen < 31 and host in (network.network_address, network.broadcast_address)
                     cells.append({
                         'ip': key,
                         'last': int(host) & 0xFF,
-                        'status': row['status'] if row else ('special' if special else 'none'),
+                        'status': row['status'] if row else ('free' if edge else 'none'),
                         'partner': row['partner_id'][1] if row and row['partner_id'] else '',
                         'partner_id': row['partner_id'][0] if row and row['partner_id'] else False,
                         'usage': row['usage'] if row else '',
                         'id': row['id'] if row else False,
-                        'special': special,
+                        'special': '',
                     })
                 blocks.append({
                     'label': f'{subnet.network_address} - {subnet.broadcast_address}',
                     'prefix': str(subnet),
                     'cells': cells,
-                    'used': sum(1 for cell in cells if cell['status'] not in ('none', 'free', 'special')),
+                    'used': sum(1 for cell in cells if cell['status'] not in ('none', 'free')),
                 })
         counts = {}
         reserved_for = {}

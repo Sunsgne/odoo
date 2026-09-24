@@ -191,24 +191,18 @@ export class ZenlenetIpam extends Component {
     }
 
     cellClass(cell, block, index) {
-        if (cell.special) {
-            return "zl-cell zl-cell-special";
-        }
         const selected = this.state.selection.includes(cell.ip) || (block && this.isInDrag(block, index)) ? " zl-cell-selected" : "";
         return `zl-cell zl-cell-${cell.status}${selected}`;
     }
 
     cellTitle(cell) {
-        if (cell.special) {
-            return `${cell.ip} · ${cell.special === "network" ? "网络地址" : "广播地址"}`;
-        }
         const label = Object.fromEntries(STATUSES)[cell.status] || "未登记";
         return [cell.ip, label, cell.partner, cell.usage].filter(Boolean).join(" · ");
     }
 
     // ------------------------------------------------------------ drag select
     onCellDown(block, index, cell, ev) {
-        if (cell.special || ev.button !== 0) {
+        if (ev.button !== 0) {
             return;
         }
         ev.preventDefault();
@@ -233,7 +227,7 @@ export class ZenlenetIpam extends Component {
             return;
         }
         const [from, to] = drag.start <= drag.end ? [drag.start, drag.end] : [drag.end, drag.start];
-        const range = block.cells.slice(from, to + 1).filter((cell) => !cell.special).map((cell) => cell.ip);
+        const range = block.cells.slice(from, to + 1).map((cell) => cell.ip);
         if (!drag.moved && !drag.additive) {
             // a plain click opens the single-address editor
             this.openCell(block.cells[drag.start], { shiftKey: false });
@@ -263,7 +257,7 @@ export class ZenlenetIpam extends Component {
     }
 
     selectAllFree(block) {
-        this.state.selection = block.cells.filter((cell) => !cell.special && (cell.status === "free" || cell.status === "none")).map((cell) => cell.ip);
+        this.state.selection = block.cells.filter((cell) => cell.status === "free" || cell.status === "none").map((cell) => cell.ip);
     }
 
     // --------------------------------------------------------- bulk assign
@@ -358,9 +352,6 @@ export class ZenlenetIpam extends Component {
 
     // ----------------------------------------------------------------- cell
     openCell(cell, ev) {
-        if (cell.special) {
-            return;
-        }
         if (ev && (ev.shiftKey || ev.ctrlKey || ev.metaKey)) {
             const index = this.state.selection.indexOf(cell.ip);
             if (index >= 0) {
