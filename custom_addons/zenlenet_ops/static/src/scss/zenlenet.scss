@@ -323,8 +323,9 @@
     display: none !important;
 }
 
-// Settings: only the console tab is relevant to operators.
-.o_setting_container .settings_tab .tab:not([data-key="zenlenet_ops"]) {
+// Only one settings section is shown, so the app switcher is an empty column
+// with a single icon. Drop the column; the action already opens that section.
+.o_base_settings_view .o_setting_container > .position-sticky {
     display: none !important;
 }
 
