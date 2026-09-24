@@ -24,3 +24,4 @@ from . import home
 from . import report
 from . import loader
 from . import shell
+from . import silence
