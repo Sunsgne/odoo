@@ -15,11 +15,9 @@
         padding: 0 8px 32px;
     }
     .o_zl_section_title {
-        font-size: 0.8rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--text-muted, #6c757d);
-        margin: 28px 0 10px 4px;
+        font-size: 16px;
+        color: #313233;
+        margin: 24px 0 12px;
         font-weight: 600;
     }
     .o_zl_section_title:first-of-type {
@@ -80,21 +78,23 @@
         align-items: flex-start;
         gap: 2px;
         padding: 16px 18px;
-        border-radius: 14px;
-        border: 0;
-        color: #fff;
+        border-radius: 4px;
+        border: 1px solid #e6eaee;
+        border-top: 3px solid #00b0d0;
+        background: #fff;
+        color: #313233;
         text-align: left;
         min-height: 110px;
-        transition: transform 0.12s ease, box-shadow 0.12s ease;
+        transition: box-shadow 0.12s ease;
         &:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.14);
-            color: #fff;
+            box-shadow: 0 4px 12px rgba(12, 23, 50, 0.06);
+            color: #313233;
         }
         .o_zl_kpi_value {
             font-size: 2rem;
             font-weight: 700;
             line-height: 1.1;
+            color: #0c1732;
             .o_field_widget, .o_field_widget span, .o_field_widget input {
                 color: inherit !important;
                 font-size: inherit;
@@ -102,22 +102,22 @@
             }
         }
         .o_zl_kpi_label {
-            font-weight: 600;
-            opacity: 0.95;
+            font-weight: 500;
+            color: #626466;
         }
         .o_zl_kpi_sub {
             font-size: 0.8rem;
-            opacity: 0.85;
+            color: #8a8d91;
             .o_field_widget {
                 display: inline;
                 color: inherit !important;
             }
         }
     }
-    .o_zl_kpi_primary { background: linear-gradient(135deg, #714b67, #8f5f82); }
-    .o_zl_kpi_danger { background: linear-gradient(135deg, #c0392b, #e05a4a); }
-    .o_zl_kpi_warning { background: linear-gradient(135deg, #c7791b, #e0a030); }
-    .o_zl_kpi_info { background: linear-gradient(135deg, #1f6f8b, #2e8fb0); }
+    .o_zl_kpi_primary { border-top-color: #00b0d0; }
+    .o_zl_kpi_danger { border-top-color: #e34d59; .o_zl_kpi_value { color: #e34d59; } }
+    .o_zl_kpi_warning { border-top-color: #ed7b2f; }
+    .o_zl_kpi_info { border-top-color: #165dff; }
     .o_zl_stats {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -125,8 +125,8 @@
     }
     .o_zl_stat {
         background: #fff;
-        border: 1px solid var(--border-color, #dee2e6);
-        border-radius: 12px;
+        border: 1px solid #e6eaee;
+        border-radius: 4px;
         padding: 14px 16px;
         display: flex;
         flex-direction: column;
@@ -147,67 +147,41 @@
             }
         }
     }
-    .o_zl_grid {
+    .o_zl_apps {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 16px;
-        margin-top: 28px;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 12px;
     }
-    .o_zl_group {
-        background: #fff;
-        border: 1px solid var(--border-color, #dee2e6);
-        border-radius: 14px;
-        padding: 10px;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-    .o_zl_group_title {
-        font-weight: 700;
-        padding: 8px 10px 10px;
-        color: var(--primary, #714b67);
-        .fa {
-            margin-right: 4px;
-        }
-    }
-    .o_zl_tile {
+    .o_zl_app {
         display: flex;
         align-items: center;
-        gap: 14px;
-        padding: 10px 12px;
-        border: 0;
-        border-radius: 10px;
-        background: transparent;
+        gap: 12px;
+        min-height: 72px;
+        padding: 14px 16px;
+        border: 1px solid #e6eaee;
+        border-radius: 4px;
+        background: #fff;
         text-align: left;
-        color: inherit;
-        transition: background 0.12s ease;
+        color: #313233;
         .fa {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
+            width: 36px;
+            height: 36px;
+            border-radius: 4px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            background: rgba(113, 75, 103, 0.1);
-            color: var(--primary, #714b67);
-            font-size: 1.1rem;
+            background: #e8f7fb;
+            color: #00b0d0;
+            font-size: 16px;
             flex-shrink: 0;
-        }
-        span {
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
         }
         b {
             font-weight: 600;
-        }
-        small {
-            color: var(--text-muted, #6c757d);
-            font-size: 0.78rem;
+            font-size: 14px;
         }
         &:hover {
-            background: rgba(113, 75, 103, 0.06);
-            color: inherit;
+            border-color: #00b0d0;
+            color: #313233;
         }
     }
     .o_field_widget.o_readonly_modifier {
@@ -296,14 +270,13 @@
             padding: 10px 12px;
             .o_zl_stat_value { font-size: 1.25rem; }
         }
-        .o_zl_grid {
-            grid-template-columns: 1fr;
-            gap: 10px;
-            margin-top: 18px;
+        .o_zl_apps {
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
         }
-        .o_zl_tile {
-            padding: 8px 10px;
-            small { white-space: normal; }
+        .o_zl_app {
+            min-height: 60px;
+            padding: 10px 12px;
         }
     }
     // Long Chinese list headers should wrap instead of forcing horizontal scroll in forms.
@@ -329,11 +302,86 @@
     display: none !important;
 }
 
-// Kanban cards read better with a little air and a hover lift.
+// Kanban cards sit on the same light canvas as the other lists.
 .o_kanban_renderer .o_kanban_record {
-    border-radius: 10px;
-    transition: box-shadow 0.12s ease, transform 0.12s ease;
-    &:hover {
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+    border-color: #e6eaee;
+}
+
+// Laplace shell: navy bar, cyan actions, gray canvas, white panels, 4px corners.
+.o_web_client {
+    background: #f5f8fa;
+    color: #313233;
+    .o_main_navbar {
+        background: #0c1732;
+        border-bottom: 0;
+        color: #fff;
+        .o_menu_brand,
+        .o_menu_sections .o_nav_entry,
+        .o_menu_sections .dropdown-toggle,
+        .o_menu_systray .o_nav_entry,
+        .o_menu_systray button,
+        .o_menu_toggle {
+            background: #0c1732;
+            color: #fff;
+        }
+        .o_menu_sections .o_nav_entry:hover,
+        .o_menu_sections .dropdown-toggle:hover,
+        .o_menu_sections .dropdown.show > .dropdown-toggle {
+            background: #152445;
+            color: #7ee7f6;
+        }
+        .o_menu_brand {
+            font-weight: 600;
+            letter-spacing: 0.04em;
+        }
+    }
+    .o_action_manager,
+    .o_form_view,
+    .o_list_view,
+    .o_kanban_view {
+        background: #f5f8fa;
+    }
+    .btn-primary {
+        background-color: #00b0d0;
+        border-color: #00b0d0;
+        border-radius: 4px;
+        &:hover, &:focus, &:active {
+            background-color: #0098b4;
+            border-color: #0098b4;
+        }
+    }
+    .btn-secondary, .btn-outline-primary, .btn-outline-secondary {
+        border-radius: 4px;
+    }
+    .o_form_view a,
+    .o_list_view a,
+    .btn-link {
+        color: #00b0d0;
+    }
+    .dropdown-menu .dropdown-item {
+        color: #313233;
+        &:hover, &:focus {
+            color: #00b0d0;
+            background: #f5f8fa;
+        }
+    }
+    .o_form_view .o_form_sheet {
+        border: 1px solid #e6eaee;
+        border-radius: 4px;
+        box-shadow: none;
+    }
+    .o_list_renderer {
+        background: #fff;
+        border: 1px solid #e6eaee;
+        border-radius: 4px;
+        thead {
+            background: #f5f8fa;
+            color: #626466;
+        }
+    }
+    .o_control_panel {
+        background: transparent;
+        border-bottom: 0;
     }
 }
