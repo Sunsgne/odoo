@@ -48,7 +48,7 @@
                     </div>
                     <div class="oe_title">
                         <h1><field name="name" readonly="1"/></h1>
-                        <h2><field name="title" placeholder="合同名称"/></h2>
+                        <h2><field name="title"/></h2>
                     </div>
                     <group>
                         <group string="客户与期限">
@@ -72,7 +72,6 @@
                         </group>
                     </group>
                     <separator string="费用条款"/>
-                    <div class="text-muted mb-2">合同按这张表出账：周期费用按周期到期时开票；一次性费用只在开始计费之后的第一张账单收一次。</div>
                     <field name="item_ids" nolabel="1">
                         <list editable="bottom" decoration-muted="billed">
                             <field name="sequence" widget="handle"/>
@@ -126,7 +125,7 @@
                         </list>
                     </field>
                     <separator string="补充条款"/>
-                    <field name="terms" nolabel="1" placeholder="SLA、付款方式、违约责任等补充约定"/>
+                    <field name="terms" nolabel="1"/>
                     <separator string="备注"/>
                     <field name="note" nolabel="1"/>
                 </sheet>
@@ -157,10 +156,6 @@
         <field name="res_model">zenlenet.contract</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_contract_search"/>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">还没有合同</p>
-            <p>把客户的订单放进合同，每月 1 日自动生成账单，到期前 30 天提醒销售续签。</p>
-        </field>
     </record>
     <record id="action_quotes" model="ir.actions.act_window">
         <field name="name">报价</field>
@@ -172,9 +167,5 @@
         <field name="view_ids" eval="[(5, 0, 0),
             (0, 0, {'view_mode': 'list', 'view_id': ref('view_order_list')}),
             (0, 0, {'view_mode': 'form', 'view_id': ref('view_quote_form')})]"/>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">还没有报价</p>
-            <p>选客户、加业务明细、填月费，打印报价单。客户同意后点「确认成订单」。</p>
-        </field>
     </record>
 </odoo>

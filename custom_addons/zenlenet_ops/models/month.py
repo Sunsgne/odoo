@@ -6,14 +6,12 @@ from odoo.tools.misc import formatLang
 
 from odoo.addons.zenlenet_ops.billing import (
     CYCLE_WORD,
-    STATUS_HINT,
     STATUS_LABEL,
     STATUS_RANK,
     bandwidth_lines,
     billing_anchor,
     customer_month_status,
     fee_applies,
-    fee_note,
     next_due_month,
     parse_period,
     period_bounds,
@@ -570,8 +568,6 @@ class ZenlenetMonth(models.Model):
             self._finish_row(row, ctx['label'])
         payload = self._row_payload(row)
         payload.update({
-            'hint': STATUS_HINT.get(row['status'], ''),
-            'legend': '报价确认后生成合同草稿。合同开始执行后，按自然月出账：月结每月都有，季结和年结只在到期月，一次性只收一次。资源是现在挂在客户名下的，不按条数加进账单。',
             'quotes': [self._quote_payload(quote) for quote in row['quotes'].sorted('id', reverse=True)],
             'contracts': [self._contract_payload(contract, ctx) for contract in row['contracts'].sorted('id')],
             'invoices': [self._invoice_payload(move) for move in row['invoices'].sorted('invoice_date')],
@@ -606,23 +602,16 @@ class ZenlenetMonth(models.Model):
         due = 0.0
         for item in contract.item_ids.sorted('sequence'):
             applies = self._item_applies(item, logical, ctx['day'], ctx['first'], ctx['last'])
-            amount, estimate = self._fee_amount(item, usages) if applies else (item.amount or 0.0, False)
+            amount = (self._fee_amount(item, usages)[0] if applies else item.amount) or 0.0
             if applies:
                 due += amount
             _shown, label = self._money(amount, contract.currency_id)
             items.append({
                 'name': item.name or '',
                 'due': applies,
-                'note': fee_note(
-                    logical, item.kind, item.cycle, ctx['day'], item.start_date, item.end_date,
-                    item.billed, applies, p95=bool(item.p95), estimate=estimate,
-                ),
                 'amount_label': label,
             })
         _due, due_label = self._money(due, contract.currency_id)
-        aside = ''
-        if contract.state == 'expired' and logical == 'active':
-            aside = '现在已经到期，但这个月还在合同期内，仍按执行中出账。'
         orders = []
         for order in contract.order_ids:
             _amount, amount_label = self._money(order.amount_untaxed, order.currency_id)
@@ -641,7 +630,6 @@ class ZenlenetMonth(models.Model):
             'start': contract.start_date.isoformat() if contract.start_date else '',
             'end': contract.end_date.isoformat() if contract.end_date else '',
             'due_label': due_label,
-            'aside': aside,
             'items': items,
             'orders': orders,
         }
@@ -692,5 +680,4 @@ class ZenlenetMonth(models.Model):
             } for line in lines],
             'line_more': max(Line.search_count(line_domain) - len(lines), 0),
             'addresses': addresses,
-            'note': '这是现在挂在客户名下的，不随月份回溯。账单按上面的合同条款收，不按地址或线路条数自动加。',
         }

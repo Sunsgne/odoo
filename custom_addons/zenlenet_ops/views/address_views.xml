@@ -37,9 +37,6 @@
                     <field name="status" widget="statusbar" options="{'clickable': true}" statusbar_visible="free,reserved,allocated,returning"/>
                 </header>
                 <sheet>
-                    <div class="alert alert-warning" role="alert" invisible="status != 'reserved' or partner_id">
-                        预分配要写上留给哪家客户。这一步不走交付工单，只是先把地址留给这家客户。
-                    </div>
                     <group>
                         <group>
                             <field name="address" class="font-monospace"/>
@@ -59,7 +56,7 @@
                             <field name="expires_on"/>
                         </group>
                     </group>
-                    <field name="remark" placeholder="备注"/>
+                    <field name="remark"/>
                     <separator string="交付记录"/>
                     <field name="allocation_ids" readonly="1" nolabel="1">
                         <list limit="20">

@@ -36,7 +36,7 @@
                 <sheet>
                     <div class="oe_title">
                         <h1><field name="name" readonly="1"/></h1>
-                        <h2><field name="resource" placeholder="采购内容，例如：HKG 10G IP Transit"/></h2>
+                        <h2><field name="resource"/></h2>
                     </div>
                     <group>
                         <group string="采购">
@@ -62,7 +62,7 @@
                             <field name="end_on"/>
                         </group>
                     </group>
-                    <field name="note" placeholder="供应商联系人、合同号、端口信息"/>
+                    <field name="note"/>
                     <separator string="供应商账单" invisible="not bill_id"/>
                     <group invisible="not bill_id">
                         <field name="bill_residual"/>
@@ -112,9 +112,5 @@
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_purchase_search"/>
         <field name="context">{'search_default_open': 1}</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">还没有采购记录</p>
-            <p>按类别登记向供应商采购的 IP 段、带宽、专线、机柜、设备和云资源，跟进下单、到货和到期。</p>
-        </field>
     </record>
 </odoo>

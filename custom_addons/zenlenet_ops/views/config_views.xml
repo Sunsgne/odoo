@@ -8,12 +8,12 @@
         <field name="arch" type="xml">
             <xpath expr="//form" position="inside">
                 <app data-string="系统设置" string="系统设置" name="zenlenet_ops" logo="/zenlenet_ops/static/description/icon.png">
-                    <block title="公司资料" name="zenlenet_company" help="出现在报价单、合同和账单抬头。">
-                        <setting id="zenlenet_company_setting" string="抬头信息" help="公司名称、UEN、地址和账务联系方式。">
+                    <block title="公司资料" name="zenlenet_company">
+                        <setting id="zenlenet_company_setting" string="抬头信息">
                             <div class="content-group">
                                 <div class="row mt8">
                                     <label for="zenlenet_brand" class="col-lg-4 o_light_label"/>
-                                    <field name="zenlenet_brand" placeholder="尊领"/>
+                                    <field name="zenlenet_brand"/>
                                 </div>
                                 <div class="row">
                                     <label for="zenlenet_company_name" class="col-lg-4 o_light_label"/>
@@ -41,13 +41,13 @@
                                 </div>
                             </div>
                         </setting>
-                        <setting id="zenlenet_logo_setting" string="Logo" help="打印在报价单、合同和账单上。建议横版 PNG。">
+                        <setting id="zenlenet_logo_setting" string="Logo">
                             <field name="zenlenet_company_logo" widget="image" class="oe_avatar" options="{'size': [0, 80]}"/>
                         </setting>
                     </block>
 
-                    <block title="出账与收款" name="zenlenet_billing" help="账单怎么生成、多久到期。">
-                        <setting id="zenlenet_auto_billing_setting" string="自动出账" help="开着时，定时任务每天检查一次，为执行中的合同生成本账期账单，同一账期不会重复。">
+                    <block title="出账与收款" name="zenlenet_billing">
+                        <setting id="zenlenet_auto_billing_setting" string="自动出账">
                             <field name="zenlenet_auto_billing"/>
                             <div class="content-group" invisible="not zenlenet_auto_billing">
                                 <div class="row mt8">
@@ -63,13 +63,13 @@
                                 <button name="action_open_crons" type="object" string="查看定时任务" icon="oi-arrow-right" class="btn-link"/>
                             </div>
                         </setting>
-                        <setting id="zenlenet_invoice_footer_setting" string="账单备注" help="收款账户、付款说明，打印在每张账单底部。">
-                            <field name="zenlenet_invoice_footer" placeholder="例如：DBS Bank 账户 xxx-xxxxxx-x，请在到期日前付款"/>
+                        <setting id="zenlenet_invoice_footer_setting" string="账单备注">
+                            <field name="zenlenet_invoice_footer"/>
                         </setting>
                     </block>
 
-                    <block title="95 值计费" name="zenlenet_usage" help="Cacti 采集的 95 值按订单和账期入库，出账时保底之上按超量单价计。">
-                        <setting id="zenlenet_usage_setting" string="Cacti 接口" help="Cacti 侧脚本每月初 POST JSON 到 /zenlenet/usage：{token, period, items:[{order, p95_mbps, max_mbps, avg_mbps, graph_id}]}。order 填订单号或订单上登记的 Cacti 图 ID。也可以在「财务 → 95 值」手工导入 CSV。">
+                    <block title="95 值计费" name="zenlenet_usage">
+                        <setting id="zenlenet_usage_setting" string="Cacti 接口">
                             <div class="row mt8">
                                 <label for="zenlenet_usage_token" class="col-lg-4 o_light_label"/>
                                 <field name="zenlenet_usage_token" password="True"/>
@@ -77,8 +77,8 @@
                         </setting>
                     </block>
 
-                    <block title="币种" name="zenlenet_currency" help="每个客户可以用不同币种结算，单价按客户专属价目。">
-                        <setting id="zenlenet_currency_setting" string="可用币种" help="勾选允许作为结算币种的货币。公司本位币是 USD，汇率在币种上维护。">
+                    <block title="币种" name="zenlenet_currency">
+                        <setting id="zenlenet_currency_setting" string="可用币种">
                             <field name="zenlenet_currency_ids" widget="many2many_tags" options="{'no_create': True}"/>
                             <div class="mt8">
                                 <button name="action_open_currencies" type="object" string="维护汇率" icon="oi-arrow-right" class="btn-link"/>
@@ -86,8 +86,8 @@
                         </setting>
                     </block>
 
-                    <block title="合同" name="zenlenet_contract" help="新建合同时的默认值和到期提醒。">
-                        <setting id="zenlenet_contract_term_setting" string="默认期限与续签" help="新合同默认签几个月，到期是否自动按原条款续一期。">
+                    <block title="合同" name="zenlenet_contract">
+                        <setting id="zenlenet_contract_term_setting" string="默认期限与续签">
                             <div class="content-group">
                                 <div class="row mt8">
                                     <label for="zenlenet_contract_term" class="col-lg-5 o_light_label"/>
@@ -99,7 +99,7 @@
                                 </div>
                             </div>
                         </setting>
-                        <setting id="zenlenet_notice_setting" string="到期提醒" help="到期前多少天把合同标成「即将到期」，并给销售派一条待办。">
+                        <setting id="zenlenet_notice_setting" string="到期提醒">
                             <div class="row mt8">
                                 <label for="zenlenet_notice_days" class="col-lg-5 o_light_label"/>
                                 <field name="zenlenet_notice_days" class="col-lg-3"/>
@@ -107,8 +107,8 @@
                         </setting>
                     </block>
 
-                    <block title="故障减免" name="zenlenet_credit" help="故障工单可申请减免，财务批准后自动在下期账单抵扣或开红字账单。">
-                        <setting id="zenlenet_credit_setting" string="默认减免规则" help="按故障小时数 × 每小时比例 × 该服务月费计算，不超过上限。申请时可逐单改。">
+                    <block title="故障减免" name="zenlenet_credit">
+                        <setting id="zenlenet_credit_setting" string="默认减免规则">
                             <div class="content-group">
                                 <div class="row mt8">
                                     <label for="zenlenet_credit_rate" class="col-lg-5 o_light_label"/>
@@ -122,8 +122,8 @@
                         </setting>
                     </block>
 
-                    <block title="工单 SLA" name="zenlenet_sla" help="按优先级规定多少小时内要解决，超时的工单会标红。">
-                        <setting id="zenlenet_sla_setting" string="解决时限" help="从受理时间起算。">
+                    <block title="工单 SLA" name="zenlenet_sla">
+                        <setting id="zenlenet_sla_setting" string="解决时限">
                             <div class="content-group">
                                 <div class="row mt8">
                                     <label for="zenlenet_sla_urgent" class="col-lg-5 o_light_label"/>
@@ -145,8 +145,8 @@
                         </setting>
                     </block>
 
-                    <block title="账号与权限" name="zenlenet_users" help="谁能登录、属于哪个岗位、谁能删除。">
-                        <setting id="zenlenet_users_setting" string="账号" help="账号按岗位分组：销售 / 交付 / 资源分配 / 项目经理 / 售后 / 财务 / 采购 / 运营主管。业务流转按岗位指派负责人。">
+                    <block title="账号与权限" name="zenlenet_users">
+                        <setting id="zenlenet_users_setting" string="账号">
                             <span class="fa fa-lg fa-users me-2"/>
                             <field name="zenlenet_user_count" class="w-auto fw-bold"/>
                             <span class="o_form_label">个内部账号</span>
@@ -154,27 +154,15 @@
                                 <button name="action_open_users" type="object" string="管理账号" icon="oi-arrow-right" class="btn-link"/>
                             </div>
                         </setting>
-                        <setting id="zenlenet_manager_setting" string="岗位与权限" help="每个岗位只能新建 / 修改自己那部分数据，其余只读；财务、采购与资产、设置菜单只对相应岗位显示。">
+                        <setting id="zenlenet_manager_setting" string="岗位与权限">
                             <div class="mt8">
                                 <button name="action_open_groups" type="object" string="查看运营主管" icon="oi-arrow-right" class="btn-link"/>
                             </div>
                         </setting>
-                        <setting id="zenlenet_delete_setting" string="删除权限" help="删除会抹掉历史，所以只有「运营主管」能删除业务记录，其他岗位用取消 / 终止 / 释放代替。即使是主管，也只能删除还没产生下游数据的记录：">
-                            <ul class="mb-0 mt8 small text-muted ps-3">
-                                <li>合同：草稿且未出账；已生效的只能「终止」</li>
-                                <li>交付工单：录入阶段或已取消，且未挂资源；服务工单：新建或已取消</li>
-                                <li>网段：无子网段、无已分配地址、未分配客户；地址：未分配；线路：已终止</li>
-                                <li>数据中心：下面没有网段 / 地址 / 线路 / 设备</li>
-                                <li>采购：待采购且未生成供应商账单；设备：闲置或报废</li>
-                                <li>故障减免：待审批或已驳回；维护通告：草稿或已取消</li>
-                                <li>合同费用项、交付任务、工单资源行：所属岗位可删，但合同生效 / 任务完成 / 资源已交付后不可删</li>
-                                <li>已同步 NetBox 的网段和地址，删除时会同步从 NetBox 移除；NetBox 拒绝则删除撤销</li>
-                            </ul>
-                        </setting>
                     </block>
 
-                    <block title="产品与资源目录" name="zenlenet_catalog" help="报价和订单用到的业务类型、单价，以及机房清单。">
-                        <setting id="zenlenet_products_setting" string="业务与价目" help="IPT / RMIPT、专线、SD-WAN、云主机、托管、转售。这里的单价是演示价目，报价时可逐单改。">
+                    <block title="产品与资源目录" name="zenlenet_catalog">
+                        <setting id="zenlenet_products_setting" string="业务与价目">
                             <span class="fa fa-lg fa-tags me-2"/>
                             <field name="zenlenet_product_count" class="w-auto fw-bold"/>
                             <span class="o_form_label">种业务</span>
@@ -182,7 +170,7 @@
                                 <button name="action_open_products" type="object" string="维护业务与价目" icon="oi-arrow-right" class="btn-link"/>
                             </div>
                         </setting>
-                        <setting id="zenlenet_datacenter_setting" string="数据中心" help="机房一页看完：专线绑两端设备、端口、VLAN；SD-WAN 绑地区和带宽；云主机绑物理机、IP 和带宽。">
+                        <setting id="zenlenet_datacenter_setting" string="数据中心">
                             <span class="fa fa-lg fa-building me-2"/>
                             <field name="zenlenet_datacenter_count" class="w-auto fw-bold"/>
                             <span class="o_form_label">个数据中心</span>
@@ -190,7 +178,7 @@
                                 <button name="action_open_datacenters" type="object" string="维护数据中心" icon="oi-arrow-right" class="btn-link"/>
                             </div>
                         </setting>
-                        <setting id="zenlenet_templates_setting" string="通知模板" help="维护、割接、风险、紧急、接入点五类邮件模板。">
+                        <setting id="zenlenet_templates_setting" string="通知模板">
                             <span class="fa fa-lg fa-envelope-o me-2"/>
                             <field name="zenlenet_template_count" class="w-auto fw-bold"/>
                             <span class="o_form_label">个模板</span>
@@ -200,35 +188,33 @@
                         </setting>
                     </block>
 
-                    <block title="登录与集成" name="zenlenet_integration" help="Office 365 单点登录和 NetBox 引擎。">
-                        <setting id="zenlenet_sso_setting" string="Office 365 登录" help="填入 Azure 注册应用的 Client ID 和租户 ID 后打开。回调地址：https://netbox.zenlenet.com/auth_oauth/signin">
+                    <block title="登录与集成" name="zenlenet_integration">
+                        <setting id="zenlenet_sso_setting" string="Office 365 登录">
                             <field name="zenlenet_sso_enabled"/>
                             <div class="content-group">
                                 <div class="row mt8">
                                     <label for="zenlenet_sso_client_id" class="col-lg-4 o_light_label"/>
-                                    <field name="zenlenet_sso_client_id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"/>
+                                    <field name="zenlenet_sso_client_id"/>
                                 </div>
                                 <div class="row">
                                     <label for="zenlenet_sso_tenant" class="col-lg-4 o_light_label"/>
-                                    <field name="zenlenet_sso_tenant" placeholder="租户 ID"/>
+                                    <field name="zenlenet_sso_tenant"/>
                                 </div>
-                                <div class="text-muted mt8" invisible="zenlenet_sso_ready">还没有填 Client ID，登录页暂不显示 Office 365 按钮。</div>
-                                <div class="text-success mt8" invisible="not zenlenet_sso_ready">Client ID 已填写。</div>
                             </div>
                         </setting>
-                        <setting id="zenlenet_netbox_setting" string="NetBox" help="数据中心、地址段、IP 地址、线路以 NetBox 为准。这里同步过来，分配结果再写回去。">
+                        <setting id="zenlenet_netbox_setting" string="NetBox">
                             <div class="content-group">
                                 <div class="row mt8">
                                     <label for="zenlenet_netbox_url" class="col-lg-4 o_light_label"/>
-                                    <field name="zenlenet_netbox_url" placeholder="https://netbox.zenlenet.com"/>
+                                    <field name="zenlenet_netbox_url"/>
                                 </div>
                                 <div class="row">
                                     <label for="zenlenet_netbox_api_url" class="col-lg-4 o_light_label"/>
-                                    <field name="zenlenet_netbox_api_url" placeholder="https://172.18.0.1"/>
+                                    <field name="zenlenet_netbox_api_url"/>
                                 </div>
                                 <div class="row">
                                     <label for="zenlenet_netbox_host" class="col-lg-4 o_light_label"/>
-                                    <field name="zenlenet_netbox_host" placeholder="netbox.zenlenet.com"/>
+                                    <field name="zenlenet_netbox_host"/>
                                 </div>
                                 <div class="row">
                                     <label for="zenlenet_netbox_token" class="col-lg-4 o_light_label"/>

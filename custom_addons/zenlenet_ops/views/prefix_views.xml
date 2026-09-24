@@ -44,7 +44,7 @@
                 <sheet>
                     <div class="oe_title">
                         <div class="text-muted small" invisible="not parent_id">上级 <field name="parent_id" readonly="1" class="d-inline w-auto"/></div>
-                        <h1><field name="prefix" placeholder="例如 203.0.113.0/24" class="font-monospace"/></h1>
+                        <h1><field name="prefix" class="font-monospace"/></h1>
                         <div class="d-flex gap-2 align-items-center">
                             <field name="utilization" widget="progressbar" class="flex-grow-1" style="max-width: 320px;"/>
                             <span class="text-muted small">已分配 <field name="allocated_count" readonly="1" class="d-inline w-auto"/> · 未分配 <field name="free_count" readonly="1" class="d-inline w-auto"/> · 容量 <field name="size_display" readonly="1" class="d-inline w-auto"/></span>
@@ -57,9 +57,9 @@
                             <field name="top_id" string="IP 段"/>
                             <field name="partner_id" string="分配给客户" options="{'no_create': True}" domain="[('is_company', '=', True), ('customer_rank', '>', 0)]"/>
                             <field name="datacenter_id"/>
-                            <field name="role" placeholder="例如 客户接入 / 互联 / 管理"/>
+                            <field name="role"/>
                             <field name="vlan"/>
-                            <field name="description" placeholder="说明"/>
+                            <field name="description"/>
                         </group>
                         <group string="网络">
                             <field name="family"/>
@@ -145,10 +145,6 @@
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_prefix_search"/>
         <field name="context">{'search_default_group_parent': 1}</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">还没有网段</p>
-            <p>录入网段 → 切割 → 分配给客户。所有网段与 NetBox 的 Prefix 一一对应。</p>
-        </field>
     </record>
     <record id="action_ipam" model="ir.actions.client">
         <field name="name">地址管理</field>

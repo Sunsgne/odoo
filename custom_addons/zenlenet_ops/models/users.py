@@ -9,11 +9,10 @@ class ResUsers(models.Model):
         ('sales', '销售'),
         ('delivery', '交付'),
         ('service', '售后'),
-    ], string='分组', help='业务流转里按这个分组指派负责人。')
+    ], string='分组')
     zenlenet_role_ids = fields.Many2many(
         'res.groups', string='岗位', compute='_compute_roles', inverse='_inverse_roles',
         domain=lambda self: [('privilege_id', '=', self.env.ref('zenlenet_ops.privilege_zenlenet').id)],
-        help='岗位决定能看什么菜单、能改什么数据。一个人可以有多个岗位。',
     )
     zenlenet_role_names = fields.Char(string='岗位名称', compute='_compute_roles')
 

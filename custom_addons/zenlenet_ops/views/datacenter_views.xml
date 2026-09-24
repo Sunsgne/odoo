@@ -61,13 +61,13 @@
             <form>
                 <sheet>
                     <div class="oe_title">
-                        <h1><field name="name" placeholder="机房名称，例如 TYO7"/></h1>
+                        <h1><field name="name"/></h1>
                     </div>
                     <group>
                         <group string="这个机房">
                             <field name="state"/>
-                            <field name="region" placeholder="东京 / 新加坡 / 香港"/>
-                            <field name="facility" placeholder="机房楼栋或运营商站点名"/>
+                            <field name="region"/>
+                            <field name="facility"/>
                             <field name="asn"/>
                             <field name="supplier_id" options="{'no_create': True}"/>
                         </group>
@@ -78,7 +78,7 @@
                             <field name="phone"/>
                         </group>
                     </group>
-                    <field name="note" placeholder="销售需要知道的话：电力、机柜、进出流程"/>
+                    <field name="note"/>
                     <separator string="地址段"/>
                     <field name="prefix_ids" nolabel="1">
                         <list limit="40">
@@ -153,9 +153,5 @@
         <field name="view_mode">kanban,list,form</field>
         <field name="search_view_id" ref="view_datacenter_search"/>
         <field name="context">{'search_default_active': 1}</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">还没有数据中心</p>
-            <p>新建一个机房或 POP 点，IP、线路和设备就能挂到它下面。</p>
-        </field>
     </record>
 </odoo>

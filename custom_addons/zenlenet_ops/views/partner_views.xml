@@ -43,10 +43,9 @@
                         <div class="o_zl_chain_step"><b><field name="zenlenet_address_count"/></b><span>IP</span></div>
                         <div class="o_zl_chain_step"><b><field name="zenlenet_line_count"/></b><span>线路</span></div>
                     </div>
-                    <div class="text-muted small mb-2">报价、合同、账单、工单、地址、线路和云主机都在这一页，往下看。</div>
                     <div class="oe_title">
                         <div class="text-muted font-monospace"><field name="zenlenet_code" readonly="1"/></div>
-                        <h1><field name="name" placeholder="客户名称"/></h1>
+                        <h1><field name="name"/></h1>
                     </div>
                     <group>
                         <group string="归属">
@@ -90,7 +89,7 @@
                             </list>
                         </field>
                     </group>
-                    <field name="comment" placeholder="对接情况、付款习惯、特殊约定"/>
+                    <field name="comment"/>
                     <separator string="专属价格"/>
                     <div class="mb-2">
                         <button name="action_open_prices" type="object" string="改专属价格" class="btn btn-secondary btn-sm"/>

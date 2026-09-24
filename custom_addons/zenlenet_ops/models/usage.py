@@ -18,7 +18,7 @@ class ZenlenetUsage(models.Model):
 
     order_id = fields.Many2one('sale.order', string='服务订单', required=True, index=True, ondelete='cascade')
     partner_id = fields.Many2one(related='order_id.partner_id', string='客户', store=True, index=True)
-    period = fields.Char(string='账期', required=True, index=True, help='格式 2026-09')
+    period = fields.Char(string='账期', required=True, index=True)
     p95_mbps = fields.Float(string='95 值 (Mbps)', required=True)
     max_mbps = fields.Float(string='峰值 (Mbps)')
     avg_mbps = fields.Float(string='均值 (Mbps)')
@@ -74,7 +74,6 @@ class ZenlenetUsageImport(models.TransientModel):
     period = fields.Char(string='账期', required=True, default=lambda self: period_label(fields.Date.context_today(self)))
     file = fields.Binary(string='CSV 文件', required=True)
     filename = fields.Char()
-    note = fields.Char(readonly=True, default='列：订单号,95值Mbps,峰值Mbps,均值Mbps,图ID。订单号也可以填 Cacti 图 ID（先在订单上登记）。')
 
     def action_import(self):
         self.ensure_one()

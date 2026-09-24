@@ -30,7 +30,7 @@
                             <span invisible="not zenlenet_stage"> · <field name="zenlenet_stage" readonly="1" class="w-auto d-inline"/></span>
                         </div>
                         <h1><field name="name" readonly="1"/></h1>
-                        <h2><field name="origin" placeholder="项目 / 业务名称，例如：HKG 500M IPT 接入" readonly="state == 'sale'"/></h2>
+                        <h2><field name="origin" readonly="state == 'sale'"/></h2>
                     </div>
                     <group>
                         <group string="客户">
@@ -81,9 +81,8 @@
                         <field name="zenlenet_contract_total" class="oe_subtotal_footer_separator"/>
                         <field name="amount_total" invisible="1"/>
                     </group>
-                    <field name="note" placeholder="条款与备注：开通周期、SLA、付款方式、特殊约定。会打印在报价单上。" readonly="state == 'sale'"/>
+                    <field name="note" readonly="state == 'sale'"/>
                     <separator string="交付进度" invisible="state != 'sale'"/>
-                    <div class="text-muted mb-2" invisible="state != 'sale'">确认报价时生成。分到哪条线路、哪个地址，打开下面的工单就能看到。</div>
                     <field name="zenlenet_flow_ids" readonly="1" nolabel="1" invisible="state != 'sale'">
                         <list limit="20">
                             <field name="name"/>

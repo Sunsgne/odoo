@@ -63,8 +63,7 @@ class ZenlenetContract(models.Model):
         default=lambda self: self.env['ir.config_parameter'].sudo().get_param('zenlenet.auto_renew', 'True') != 'False',
     )
     item_ids = fields.One2many('zenlenet.contract.item', 'contract_id', string='费用条款', copy=True)
-    monthly_amount = fields.Monetary(string='月费', compute='_compute_amounts', store=True,
-                                     help='所有周期性费用折算到每月的合计，未税。')
+    monthly_amount = fields.Monetary(string='月费', compute='_compute_amounts', store=True)
     cycle_amount = fields.Monetary(string='每期金额', compute='_compute_amounts', store=True)
     one_time_total = fields.Monetary(string='一次性费用', compute='_compute_amounts', store=True)
     one_time_billed = fields.Monetary(string='一次性已出账', compute='_compute_amounts', store=True)
@@ -388,10 +387,10 @@ class ZenlenetContractItem(models.Model):
     price_unit = fields.Monetary(string='单价', currency_field='currency_id')
     amount = fields.Monetary(string='金额', compute='_compute_amount', store=True, currency_field='currency_id')
     currency_id = fields.Many2one(related='contract_id.currency_id')
-    p95 = fields.Boolean(string='按 95 值', help='出账时按该订单行的保底和 95 值拆行。')
+    p95 = fields.Boolean(string='按 95 值')
     start_date = fields.Date(string='开始计费')
     end_date = fields.Date(string='停止计费')
-    billed = fields.Boolean(string='已出账', help='一次性费用出过账后打勾，不再重复。')
+    billed = fields.Boolean(string='已出账')
     invoice_id = fields.Many2one('account.move', string='所在账单', readonly=True)
 
     def _delete_snapshot(self):

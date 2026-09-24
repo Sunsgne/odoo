@@ -59,7 +59,7 @@
                             <field name="currency_id" invisible="1"/>
                         </group>
                     </group>
-                    <field name="reason" placeholder="故障现象、时间线、影响范围、依据的 SLA 条款" readonly="state != 'draft'"/>
+                    <field name="reason" readonly="state != 'draft'"/>
                     <group string="审批" invisible="state == 'draft'">
                         <field name="requested_by" widget="many2one_avatar_user"/>
                         <field name="approver_id" widget="many2one_avatar_user"/>
@@ -97,9 +97,5 @@
         <field name="res_model">zenlenet.credit</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_credit_search"/>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">还没有减免申请</p>
-            <p>在故障工单上点「申请故障减免」，按故障时长自动算出金额；财务批准后在下期账单里自动抵扣，或立即开红字账单。</p>
-        </field>
     </record>
 </odoo>

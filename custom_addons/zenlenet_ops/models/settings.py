@@ -24,8 +24,8 @@ def param_int(env, key, default):
 class ResConfigSettings(models.TransientModel):
     _inherit = 'res.config.settings'
 
-    zenlenet_brand = fields.Char(string='系统名称', config_parameter='zenlenet.brand', help='左上角和菜单里显示的名字。')
-    zenlenet_usage_token = fields.Char(string='95 值接口 Token', config_parameter='zenlenet.usage_token', help='Cacti 侧脚本 POST /zenlenet/usage 时带的口令。')
+    zenlenet_brand = fields.Char(string='系统名称', config_parameter='zenlenet.brand')
+    zenlenet_usage_token = fields.Char(string='95 值接口 Token', config_parameter='zenlenet.usage_token')
     zenlenet_company_name = fields.Char(related='company_id.name', readonly=False, string='公司名称')
     zenlenet_company_vat = fields.Char(related='company_id.vat', readonly=False, string='UEN / 税号')
     zenlenet_company_street = fields.Char(related='company_id.street', readonly=False, string='地址')
@@ -36,13 +36,11 @@ class ResConfigSettings(models.TransientModel):
 
     zenlenet_billing_day = fields.Integer(
         string='每月出账日', config_parameter='zenlenet.billing_day', default=1,
-        help='定时任务在每月这一天之后的第一次运行时，为执行中的合同生成本账期账单。',
     )
     zenlenet_due_days = fields.Integer(string='付款期限（天）', config_parameter='zenlenet.due_days', default=30)
     zenlenet_auto_billing = fields.Boolean(string='自动出账')
     zenlenet_invoice_footer = fields.Char(
         string='账单备注', config_parameter='zenlenet.invoice_footer',
-        help='打印在每张账单底部，例如收款账户信息。',
     )
 
     zenlenet_credit_rate = fields.Integer(string='每小时减免月费 %', config_parameter='zenlenet.credit_rate', default=5)
@@ -56,9 +54,9 @@ class ResConfigSettings(models.TransientModel):
     zenlenet_sla_normal = fields.Integer(string='普通（小时）', config_parameter='zenlenet.sla_normal', default=24)
     zenlenet_sla_low = fields.Integer(string='低（小时）', config_parameter='zenlenet.sla_low', default=72)
 
-    zenlenet_netbox_url = fields.Char(string='NetBox 网址', config_parameter='zenlenet.netbox_url', help='给操作员点「在 NetBox 中查看」用。')
-    zenlenet_netbox_api_url = fields.Char(string='API 地址', config_parameter='zenlenet.netbox_api_url', help='本机能直接访问的地址，例如 https://172.18.0.1。')
-    zenlenet_netbox_host = fields.Char(string='Host 头', config_parameter='zenlenet.netbox_host', help='API 地址是 IP 时填 NetBox 的域名。')
+    zenlenet_netbox_url = fields.Char(string='NetBox 网址', config_parameter='zenlenet.netbox_url')
+    zenlenet_netbox_api_url = fields.Char(string='API 地址', config_parameter='zenlenet.netbox_api_url')
+    zenlenet_netbox_host = fields.Char(string='Host 头', config_parameter='zenlenet.netbox_host')
     zenlenet_netbox_token = fields.Char(string='API Token', config_parameter='zenlenet.netbox_token')
     zenlenet_netbox_sync = fields.Boolean(string='自动同步', config_parameter='zenlenet.netbox_sync')
     zenlenet_netbox_last_sync = fields.Char(string='上次同步', compute='_compute_counts')
@@ -66,7 +64,6 @@ class ResConfigSettings(models.TransientModel):
     zenlenet_netbox_ready = fields.Boolean(compute='_compute_counts')
     zenlenet_currency_ids = fields.Many2many(
         'res.currency', string='可用币种', compute='_compute_currencies', inverse='_inverse_currencies',
-        help='客户结算币种只能从这里选。汇率在币种上维护。',
     )
     zenlenet_sso_enabled = fields.Boolean(string='启用 Office 365 登录')
     zenlenet_sso_client_id = fields.Char(string='Azure 应用 ID（Client ID）')

@@ -46,21 +46,21 @@
                     <div class="o_zl_grid">
                         <div class="o_zl_group">
                             <div class="o_zl_group_title"><i class="fa fa-users" title="客户与财务"/> 客户与财务</div>
-                            <button type="action" name="%(zenlenet_ops.action_customers)d" class="o_zl_tile"><i class="fa fa-building-o" title="客户管理"/><span><b>客户</b><small>客户经理、结算币种、专属价格，服务与账单一页看完</small></span></button>
-                            <button type="action" name="%(zenlenet_ops.action_month)d" class="o_zl_tile" groups="zenlenet_ops.group_sales,zenlenet_ops.group_finance,zenlenet_ops.group_manager"><i class="fa fa-calendar" title="出账"/><span><b>出账</b><small>按自然月看每个客户的报价、合同、账单和名下资源</small></span></button>
+                            <button type="action" name="%(zenlenet_ops.action_customers)d" class="o_zl_tile"><i class="fa fa-building-o" title="客户管理"/><span><b>客户</b></span></button>
+                            <button type="action" name="%(zenlenet_ops.action_month)d" class="o_zl_tile" groups="zenlenet_ops.group_sales,zenlenet_ops.group_finance,zenlenet_ops.group_manager"><i class="fa fa-calendar" title="出账"/><span><b>出账</b></span></button>
                         </div>
                         <div class="o_zl_group">
                             <div class="o_zl_group_title"><i class="fa fa-cogs" title="工单"/> 工单</div>
-                            <button type="action" name="%(zenlenet_ops.action_flow)d" class="o_zl_tile"><i class="fa fa-random" title="资源工单"/><span><b>资源工单</b><small>出开通、进入库、退回、割接，都在这一张单上走完</small></span></button>
-                            <button type="action" name="%(zenlenet_ops.action_tickets)d" class="o_zl_tile"><i class="fa fa-life-ring" title="工单"/><span><b>服务工单</b><small>故障、变更、咨询、投诉，按 SLA 倒计时</small></span></button>
-                            <button type="action" name="%(zenlenet_ops.action_maintenance)d" class="o_zl_tile"><i class="fa fa-wrench" title="割接与维护"/><span><b>维护通告</b><small>方案评审、通知客户、执行、验证</small></span></button>
+                            <button type="action" name="%(zenlenet_ops.action_flow)d" class="o_zl_tile"><i class="fa fa-random" title="资源工单"/><span><b>资源工单</b></span></button>
+                            <button type="action" name="%(zenlenet_ops.action_tickets)d" class="o_zl_tile"><i class="fa fa-life-ring" title="工单"/><span><b>服务工单</b></span></button>
+                            <button type="action" name="%(zenlenet_ops.action_maintenance)d" class="o_zl_tile"><i class="fa fa-wrench" title="割接与维护"/><span><b>维护通告</b></span></button>
                         </div>
                         <div class="o_zl_group">
                             <div class="o_zl_group_title"><i class="fa fa-sitemap" title="网络资源"/> 网络资源</div>
-                            <button type="action" name="%(zenlenet_ops.action_datacenter_board)d" class="o_zl_tile"><i class="fa fa-building" title="数据中心"/><span><b>数据中心</b><small>专线绑两端设备、端口、VLAN；SD-WAN 绑地区和带宽；云主机绑物理机、IP 和带宽</small></span></button>
-                            <button type="action" name="%(zenlenet_ops.action_allocation_queue)d" class="o_zl_tile" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_allocator,zenlenet_ops.group_manager"><i class="fa fa-magic" title="资源分配"/><span><b>资源分配</b><small>待分配队列：给交付工单挂网段、IP、线路</small></span></button>
-                            <button type="action" name="%(zenlenet_ops.action_ipam)d" class="o_zl_tile"><i class="fa fa-sitemap" title="地址管理"/><span><b>地址管理</b><small>网段树、地址分布图、录入 / 切割 / 分配，与 NetBox 同步</small></span></button>
-                            <button type="action" name="%(zenlenet_ops.action_assets)d" class="o_zl_tile"><i class="fa fa-server" title="固定资产"/><span><b>采购与设备</b><small>按类别登记采购，设备在用 / 闲置</small></span></button>
+                            <button type="action" name="%(zenlenet_ops.action_datacenter_board)d" class="o_zl_tile"><i class="fa fa-building" title="数据中心"/><span><b>数据中心</b></span></button>
+                            <button type="action" name="%(zenlenet_ops.action_allocation_queue)d" class="o_zl_tile" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_allocator,zenlenet_ops.group_manager"><i class="fa fa-magic" title="资源分配"/><span><b>资源分配</b></span></button>
+                            <button type="action" name="%(zenlenet_ops.action_ipam)d" class="o_zl_tile"><i class="fa fa-sitemap" title="地址管理"/><span><b>地址管理</b></span></button>
+                            <button type="action" name="%(zenlenet_ops.action_assets)d" class="o_zl_tile"><i class="fa fa-server" title="固定资产"/><span><b>采购与设备</b></span></button>
                         </div>
                     </div>
                 </sheet>

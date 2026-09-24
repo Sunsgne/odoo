@@ -68,7 +68,7 @@
                             <field name="display_type" column_invisible="1"/>
                         </list>
                     </field>
-                    <field name="narration" placeholder="账期说明" readonly="state != 'draft'"/>
+                    <field name="narration" readonly="state != 'draft'"/>
                 </sheet>
                 <chatter/>
             </form>
@@ -125,10 +125,6 @@
         <field name="view_mode">list</field>
         <field name="view_id" ref="view_payment_list_zenlenet"/>
         <field name="domain">[('payment_type', '=', 'inbound')]</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">还没有收款</p>
-            <p>在已确认的账单上点「登记收款」，这里就会有记录。</p>
-        </field>
     </record>
     <record id="view_invoice_pivot" model="ir.ui.view">
         <field name="name">zenlenet.invoice.pivot</field>

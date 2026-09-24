@@ -42,7 +42,7 @@
             <form>
                 <group>
                     <field name="name"/>
-                    <field name="login" placeholder="姓名拼音或邮箱"/>
+                    <field name="login"/>
                     <field name="team"/>
                     <field name="role_ids" widget="many2many_checkboxes"/>
                     <field name="password" password="True"/>

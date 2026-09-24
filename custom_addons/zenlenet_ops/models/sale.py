@@ -16,18 +16,17 @@ class SaleOrder(models.Model):
         ('active', '在网'),
         ('terminated', '已退租'),
     ], string='服务状态', index=True, copy=False)
-    zenlenet_graph_ref = fields.Char(string='Cacti 图 ID', help='Cacti 里这条服务的流量图编号，95 值按它对上。')
+    zenlenet_graph_ref = fields.Char(string='Cacti 图 ID')
     zenlenet_bill_mode = fields.Selection([
         ('flat', '固定带宽'),
         ('p95', '95 值计费'),
     ], string='计费方式', default='flat', required=True)
     zenlenet_usage_ids = fields.One2many('zenlenet.usage', 'order_id', string='95 值')
-    zenlenet_term_months = fields.Integer(string='合约期（月）', default=12, help='报价按这个期限算合约总额，确认后带入合同。')
+    zenlenet_term_months = fields.Integer(string='合约期（月）', default=12)
     zenlenet_version = fields.Integer(string='版本', default=1, copy=False)
     zenlenet_parent_id = fields.Many2one('sale.order', string='上一版本', copy=False, readonly=True)
     zenlenet_setup_total = fields.Monetary(string='一次性费用合计', compute='_compute_zenlenet_totals', store=True)
-    zenlenet_contract_total = fields.Monetary(string='合约期总额', compute='_compute_zenlenet_totals', store=True,
-                                              help='月费 × 合约期 + 一次性费用，未税。')
+    zenlenet_contract_total = fields.Monetary(string='合约期总额', compute='_compute_zenlenet_totals', store=True)
     zenlenet_setup_billed = fields.Boolean(string='一次性费用已出账', copy=False)
     zenlenet_flow_ids = fields.One2many('zenlenet.flow', 'order_id', string='交付工单')
     zenlenet_flow_count = fields.Integer(compute='_compute_zenlenet_links')
@@ -184,9 +183,9 @@ class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
 
     zenlenet_sku = fields.Char(related='product_id.default_code', string='SKU')
-    zenlenet_setup_fee = fields.Monetary(string='一次性费用', help='接入费、安装费等，只在第一期账单收。')
-    zenlenet_commit_mbps = fields.Float(string='保底 (Mbps)', help='留空时按数量作为保底带宽。')
-    zenlenet_overage_price = fields.Float(string='超量单价 / Mbps', help='95 值超过保底的部分按这个单价；留空则整体按单价。')
+    zenlenet_setup_fee = fields.Monetary(string='一次性费用')
+    zenlenet_commit_mbps = fields.Float(string='保底 (Mbps)')
+    zenlenet_overage_price = fields.Float(string='超量单价 / Mbps')
     zenlenet_unit = fields.Char(string='单位', compute='_compute_zenlenet_unit')
 
     @api.depends('product_id')

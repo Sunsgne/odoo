@@ -81,9 +81,8 @@
                             <field name="priority" widget="priority"/>
                             <field name="name" readonly="1"/>
                         </h1>
-                        <h2><field name="subject" placeholder="一句话说明问题"/></h2>
+                        <h2><field name="subject"/></h2>
                     </div>
-                    <div class="alert alert-danger py-1" role="alert" invisible="not overdue">这张工单已经超过 SLA 截止时间。</div>
                     <group>
                         <group string="工单">
                             <field name="kind"/>
@@ -104,9 +103,9 @@
                         </group>
                     </group>
                     <separator string="问题描述"/>
-                    <field name="description" nolabel="1" placeholder="现象、开始时间、影响范围、客户已做的排查"/>
+                    <field name="description" nolabel="1"/>
                     <separator string="处理结果"/>
-                    <field name="resolution" nolabel="1" placeholder="根因、处理动作、是否需要后续跟进"/>
+                    <field name="resolution" nolabel="1"/>
                     <separator string="涉及资源"/>
                     <group>
                         <field name="datacenter_id"/>
@@ -174,9 +173,5 @@
         <field name="view_mode">kanban,list,form</field>
         <field name="search_view_id" ref="view_ticket_search"/>
         <field name="context">{'search_default_open': 1}</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">还没有工单</p>
-            <p>故障、变更、咨询、投诉都从这里进来。紧急 4 小时、高 8 小时、普通 24 小时、低 72 小时内要解决。</p>
-        </field>
     </record>
 </odoo>

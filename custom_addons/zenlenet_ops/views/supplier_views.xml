@@ -28,9 +28,8 @@
                         <div class="o_zl_chain_step"><b><field name="zenlenet_purchase_count"/></b><span>采购</span></div>
                         <div class="o_zl_chain_step"><b><field name="zenlenet_payable_amount" widget="monetary" options="{'currency_field': 'zenlenet_currency_id'}"/></b><span>应付 · <field name="zenlenet_bill_count"/> 张账单</span></div>
                     </div>
-                    <div class="text-muted small mb-2">线路、采购、账单、机房和地址都在这一页，不用再点去别的菜单。</div>
                     <div class="oe_title">
-                        <h1><field name="name" placeholder="供应商名称"/></h1>
+                        <h1><field name="name"/></h1>
                     </div>
                     <group>
                         <group string="供应商">
@@ -52,7 +51,7 @@
                             <field name="country_id" string="国家"/>
                         </group>
                     </group>
-                    <field name="comment" placeholder="账期、开票要求、割接通知渠道"/>
+                    <field name="comment"/>
                     <separator string="线路"/>
                     <field name="zenlenet_supplied_line_ids" nolabel="1" context="{'default_supplier_id': id}">
                         <list limit="40">
@@ -155,10 +154,6 @@
         <field name="view_ids" eval="[(5, 0, 0),
             (0, 0, {'view_mode': 'list', 'view_id': ref('view_supplier_list')}),
             (0, 0, {'view_mode': 'form', 'view_id': ref('view_supplier_form')})]"/>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">还没有供应商</p>
-            <p>线路、采购、IP 段、机房都只能从这里选供应商，不再手填。</p>
-        </field>
     </record>
 
     <record id="view_vendor_bill_list" model="ir.ui.view">
@@ -222,7 +217,7 @@
                             <field name="display_type" column_invisible="1"/>
                         </list>
                     </field>
-                    <field name="narration" placeholder="说明" readonly="state != 'draft'"/>
+                    <field name="narration" readonly="state != 'draft'"/>
                 </sheet>
                 <chatter/>
             </form>
@@ -237,10 +232,6 @@
         <field name="view_ids" eval="[(5, 0, 0),
             (0, 0, {'view_mode': 'list', 'view_id': ref('view_vendor_bill_list')}),
             (0, 0, {'view_mode': 'form', 'view_id': ref('view_vendor_bill_form')})]"/>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">还没有供应商账单</p>
-            <p>在采购单上点「生成供应商账单」，或直接新建。确认后登记付款。</p>
-        </field>
     </record>
     <record id="action_vendor_payments" model="ir.actions.act_window">
         <field name="name">付款</field>

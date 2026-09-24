@@ -33,18 +33,16 @@ class ResPartner(models.Model):
     ], string='业务状态', default='lead', index=True, tracking=True)
     zenlenet_manager_id = fields.Many2one(
         'res.users', string='客户经理', domain=[('share', '=', False)], index=True, tracking=True,
-        help='负责这家客户的销售。报价和合同默认归到这个人。',
     )
     zenlenet_level = fields.Selection(LEVELS, string='客户等级', default='c')
     zenlenet_source = fields.Selection(SOURCES, string='客户来源')
     zenlenet_industry = fields.Selection(INDUSTRIES, string='行业')
     zenlenet_payment_days = fields.Integer(string='账期（天）', default=30)
     zenlenet_commercial_contact = fields.Char(string='商务对接人')
-    zenlenet_noc_email = fields.Char(string='NOC 邮箱', help='故障和维护通知发到这里。')
+    zenlenet_noc_email = fields.Char(string='NOC 邮箱')
     zenlenet_noc_phone = fields.Char(string='NOC 电话')
     zenlenet_currency_id = fields.Many2one(
         'res.currency', string='结算币种', compute='_compute_currency', inverse='_inverse_currency',
-        help='报价、合同和账单都用这个币种。改币种会给客户建一份专属价目。',
     )
     zenlenet_price_count = fields.Integer(compute='_compute_zenlenet_counts')
     zenlenet_order_count = fields.Integer(compute='_compute_zenlenet_counts')

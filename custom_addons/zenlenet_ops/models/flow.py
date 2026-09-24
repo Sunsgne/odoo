@@ -101,11 +101,10 @@ class ZenlenetFlow(models.Model):
     )
     team = fields.Selection(TEAMS, string='分组', compute='_compute_team', store=True, group_expand='_group_expand_teams')
     partner_id = fields.Many2one('res.partner', string='客户', tracking=True, domain=[('is_company', '=', True)])
-    datacenter_id = fields.Many2one('zenlenet.datacenter', string='期望数据中心', tracking=True, help='销售录入时填，分资源的人按这个找网段和线路。')
+    datacenter_id = fields.Many2one('zenlenet.datacenter', string='期望数据中心', tracking=True)
     pending_count = fields.Integer(string='待分配', compute='_compute_pending')
     order_id = fields.Many2one(
         'sale.order', string='服务订单', tracking=True, domain="[('partner_id', '=', partner_id)]",
-        help='从哪张订单来的交付。选好后点「从订单带入」生成业务行。',
     )
     contract_id = fields.Many2one('zenlenet.contract', string='合同', compute='_compute_contract')
     contract_state = fields.Selection(related='contract_id.state', string='合同状态')
@@ -115,8 +114,7 @@ class ZenlenetFlow(models.Model):
     resource_ids = fields.One2many('zenlenet.flow.resource', 'flow_id', string='资源')
     task_ids = fields.One2many('zenlenet.flow.task', 'flow_id', string='交付任务')
     task_progress = fields.Float(string='任务进度', compute='_compute_task_progress')
-    pm_user_id = fields.Many2one('res.users', string='项目经理', tracking=True, domain=[('share', '=', False)],
-                                 help='对整个交付负责的人，可以跨阶段调整任务。')
+    pm_user_id = fields.Many2one('res.users', string='项目经理', tracking=True, domain=[('share', '=', False)])
     planned_date = fields.Date(string='计划交付日期', tracking=True)
     actual_date = fields.Date(string='实际交付日期', readonly=True, copy=False)
     risk = fields.Selection([('normal', '正常'), ('at_risk', '有风险'), ('blocked', '阻塞')], string='风险', compute='_compute_health', store=True)
@@ -728,7 +726,7 @@ class ZenlenetTaskTemplate(models.Model):
     sequence = fields.Integer(default=10)
     name = fields.Char(string='任务', required=True)
     team = fields.Selection(TEAMS, string='默认负责分组')
-    days = fields.Integer(string='计划用时（天）', default=1, help='从上一项任务的计划完成日往后推。')
+    days = fields.Integer(string='计划用时（天）', default=1)
     estimate_hours = fields.Float(string='预计工时')
     priority = fields.Selection([('0', '普通'), ('1', '重要'), ('2', '关键路径')], string='优先级', default='0')
     active = fields.Boolean(default=True)
@@ -746,7 +744,7 @@ class ZenlenetFlowResource(models.Model):
     order_line_id = fields.Many2one('sale.order.line', string='订单行', ondelete='set null')
     resource_ref = fields.Reference(
         selection=[('zenlenet.prefix', 'IP 地址段'), ('zenlenet.address', '单个 IP'), ('zenlenet.line', '线路')],
-        string='交付资源', help='由下面的网段 / IP / 线路自动填写，一项业务只挂一种。',
+        string='交付资源',
     )
     partner_id = fields.Many2one(related='flow_id.partner_id', string='客户', store=True)
     flow_state = fields.Selection(related='flow_id.state', string='工单阶段', store=True)

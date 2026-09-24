@@ -5,10 +5,9 @@
         <div class="o_action zl-dc">
             <aside class="zl-dc-tree">
                 <div class="zl-dc-tree-head">
-                    <input type="search" class="form-control form-control-sm" placeholder="搜地区 / 机房" t-att-value="state.search" t-on-input="onSearch"/>
+                    <input type="search" class="form-control form-control-sm" t-att-value="state.search" t-on-input="onSearch"/>
                     <button class="btn btn-primary btn-sm" t-on-click="() => this.editSite(false)" title="新机房"><i class="fa fa-plus"/></button>
                 </div>
-                <div class="zl-dc-hint">按地区选机房。专线、SD-WAN、云主机都在右边这一页。</div>
                 <ul class="zl-dc-regions">
                     <li t-foreach="regions" t-as="region" t-key="region.name">
                         <div class="zl-dc-region"><i class="fa fa-globe"/> <t t-out="region.name"/> <span t-out="region.sites.length"/></div>
@@ -22,7 +21,6 @@
                     </li>
                 </ul>
                 <button t-if="state.loose" type="button" t-attf-class="zl-dc-loose {{ state.selectedId === 0 ? 'active' : '' }}" t-on-click="() => this.select(0)">未挂机房 <t t-out="state.loose"/></button>
-                <div t-if="!state.sites.length" class="text-muted small p-3">没有机房。点 + 加一个。</div>
             </aside>
 
             <section class="zl-dc-main" t-if="state.detail">
@@ -55,20 +53,12 @@
                             <button t-att-class="state.filter === 'free' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline-secondary'" t-on-click="() => this.setFilter('free')">可售</button>
                             <button t-att-class="state.filter === 'sold' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline-secondary'" t-on-click="() => this.setFilter('sold')">已卖出</button>
                             <button t-att-class="state.filter === 'all' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-outline-secondary'" t-on-click="() => this.setFilter('all')">全部</button>
-                            <span class="text-muted small">地址段按这个筛。专线、SD-WAN、云主机始终列出绑定。</span>
-                        </div>
-
-                        <div class="zl-dc-legend">
-                            <div><b>专线</b>A 端设备、端口、VLAN · Z 端设备、端口、VLAN · 带宽</div>
-                            <div><b>SD-WAN</b>地区 · 带宽</div>
-                            <div><b>云主机</b>机房 · 物理机 · IP · 带宽</div>
                         </div>
 
                         <div class="zl-dc-section-row">
                             <div class="zl-dc-section">专线</div>
                             <button t-if="state.detail.can_write" class="btn btn-link btn-sm" t-on-click="() => this.addLine('pl')">加一条专线</button>
                         </div>
-                        <div class="zl-dc-note">A 端、Z 端各绑设备、端口和 VLAN，再加上带宽。设备和端口空着时，先在这里补上，保存后写回 NetBox。</div>
                         <table class="table table-sm zl-dc-table" t-if="privateLines.length">
                             <thead><tr><th>专线</th><th>带宽</th><th>A 端</th><th>Z 端</th><th>客户</th></tr></thead>
                             <tbody>
@@ -81,13 +71,11 @@
                                 </tr>
                             </tbody>
                         </table>
-                        <div t-else="" class="text-muted small mb-3">这个机房没有专线。</div>
 
                         <div class="zl-dc-section-row">
                             <div class="zl-dc-section">SD-WAN</div>
                             <button t-if="state.detail.can_write" class="btn btn-link btn-sm" t-on-click="() => this.addLine('sdwan')">加一条 SD-WAN</button>
                         </div>
-                        <div class="zl-dc-note">SD-WAN 绑地区和带宽，不绑端口。</div>
                         <table class="table table-sm zl-dc-table" t-if="sdwanLines.length">
                             <thead><tr><th>接入</th><th>地区</th><th>带宽</th><th>客户</th></tr></thead>
                             <tbody>
@@ -99,13 +87,11 @@
                                 </tr>
                             </tbody>
                         </table>
-                        <div t-else="" class="text-muted small mb-3">这个机房还没有 SD-WAN。加一条时写上地区和带宽。</div>
 
                         <div class="zl-dc-section-row">
                             <div class="zl-dc-section">VXLAN</div>
                             <button t-if="state.detail.can_write" class="btn btn-link btn-sm" t-on-click="() => this.addLine('vxlan')">加一条 VXLAN</button>
                         </div>
-                        <div class="zl-dc-note">和专线一样，两端绑设备、端口和 VLAN。</div>
                         <table class="table table-sm zl-dc-table" t-if="vxlanLines.length">
                             <thead><tr><th>链路</th><th>带宽</th><th>A 端</th><th>Z 端</th><th>客户</th></tr></thead>
                             <tbody>
@@ -118,7 +104,6 @@
                                 </tr>
                             </tbody>
                         </table>
-                        <div t-else="" class="text-muted small mb-3">这个机房没有 VXLAN。</div>
 
                         <t t-if="otherLines.length">
                             <div class="zl-dc-section">其他线路</div>
@@ -140,7 +125,6 @@
                             <div class="zl-dc-section">物理机</div>
                             <button t-if="state.detail.can_write &amp;&amp; state.detail.id" class="btn btn-link btn-sm" t-on-click="() => this.openRecord('zenlenet.device', false, '物理机', {default_datacenter_id: this.state.selectedId})">加一台物理机</button>
                         </div>
-                        <div class="zl-dc-note">物理机属于这个机房。云主机要选其中一台来跑。</div>
                         <table class="table table-sm zl-dc-table" t-if="devices.length">
                             <thead><tr><th>设备</th><th>角色</th><th>状态</th><th class="text-end">云主机</th></tr></thead>
                             <tbody>
@@ -152,13 +136,11 @@
                                 </tr>
                             </tbody>
                         </table>
-                        <div t-else="" class="text-muted small mb-3">这个机房还没有物理机。</div>
 
                         <div class="zl-dc-section-row">
                             <div class="zl-dc-section">云主机</div>
                             <button t-if="state.detail.can_write &amp;&amp; state.detail.id" class="btn btn-link btn-sm" t-on-click="() => this.openRecord('zenlenet.vm', false, '云主机', {default_datacenter_id: this.state.selectedId})">加一台云主机</button>
                         </div>
-                        <div class="zl-dc-note">云主机绑这个机房、一台物理机、一个 IP 和带宽。</div>
                         <table class="table table-sm zl-dc-table" t-if="vms.length">
                             <thead><tr><th>云主机</th><th>物理机</th><th>IP</th><th>带宽</th><th>客户</th></tr></thead>
                             <tbody>
@@ -171,7 +153,6 @@
                                 </tr>
                             </tbody>
                         </table>
-                        <div t-else="" class="text-muted small mb-3">这个机房还没有云主机。</div>
 
                         <div class="zl-dc-section">地址段</div>
                         <table class="table table-sm zl-dc-table" t-if="prefixes.length">
@@ -186,7 +167,6 @@
                                 </tr>
                             </tbody>
                         </table>
-                        <div t-else="" class="text-muted small mb-3">这个筛选下没有地址段。</div>
 
                     </div>
 
@@ -282,7 +262,6 @@
             </section>
             <section class="zl-dc-main d-flex align-items-center justify-content-center text-muted" t-else="">
                 <t t-if="state.loading">加载中…</t>
-                <t t-else="">左边选一个机房</t>
             </section>
         </div>
     </t>

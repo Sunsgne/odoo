@@ -93,12 +93,6 @@
                     <div class="oe_title">
                         <h1><field name="name" readonly="1"/></h1>
                     </div>
-                    <div class="alert alert-info py-2" invisible="state in ('done', 'cancel')">这一步：<field name="step_name" readonly="1" class="fw-bold"/></div>
-                    <div class="text-muted mb-2" invisible="move != 'out' or kind != 'test'">测试开通：验收之后只有回收或转商务。客户退租不要用这张单，另开「退：退回」。</div>
-                    <div class="text-muted mb-2" invisible="move != 'out' or kind != 'business'">出：开通给客户。销售录入，交付分配，售后验收。验收后完成。</div>
-                    <div class="text-muted mb-2" invisible="move != 'in'">进：供应商资源入库。登记来源，核对网段或线路，确认后进入库存，不挂客户。</div>
-                    <div class="text-muted mb-2" invisible="move != 'back'">退：客户退租回到库存，或整段退回供应商。确认之后地址、网段、线路才释放。</div>
-                    <div class="text-muted mb-2" invisible="move != 'cutover'">割接：先写方案和窗口，通知客户，再把原资源换成新资源，验证后完成。通知在本页生成，不用另开维护单。</div>
                     <field name="contract_id" invisible="1"/>
                     <group>
                         <group>
@@ -135,7 +129,6 @@
                         </group>
                     </group>
                     <separator string="这笔订单" invisible="not order_id"/>
-                    <div class="text-muted mb-2" invisible="not order_id">销售报的内容。按这些行分配下面的资源，不用另开订单。</div>
                     <field name="order_line_ids" readonly="1" nolabel="1" invisible="not order_id">
                         <list limit="20">
                             <field name="product_id" string="业务"/>
@@ -148,10 +141,6 @@
                         </list>
                     </field>
                     <separator string="资源"/>
-                    <div class="text-muted mb-2" invisible="move != 'out'">先选服务订单，点「从订单带入」。IPT / IP 段填「网段」，单个 IP 填「IP」，专线 / SD-WAN 填「线路」。</div>
-                    <div class="text-muted mb-2" invisible="move != 'in'">填要入库的网段、IP 或线路。确认入库后它们不挂客户，可以再卖。</div>
-                    <div class="text-muted mb-2" invisible="move != 'back'">填要退的资源。确认退回后才会从客户名下拿掉。</div>
-                    <div class="text-muted mb-2" invisible="move != 'cutover'">每一行写原资源，以及换成的新资源。点「更换资源」之后才对调。</div>
                     <field name="resource_ids" nolabel="1">
                         <list editable="bottom">
                             <field name="service_type" string="业务"/>
@@ -168,7 +157,7 @@
                             <field name="resource_ref" column_invisible="1"/>
                         </list>
                     </field>
-                    <field name="resource_note" placeholder="整单说明"/>
+                    <field name="resource_note"/>
                     <separator string="割接通知" invisible="move != 'cutover'"/>
                     <group invisible="move != 'cutover'">
                         <field name="reason"/>
@@ -177,10 +166,8 @@
                         <field name="notice_body"/>
                     </group>
                     <separator string="交付任务"/>
-                    <div class="d-flex align-items-center gap-3 mb-2">
-                        <span class="text-muted">每个阶段的任务完成或跳过，才能推进到下一步。任务就在下面。</span>
-                        <field name="task_progress" widget="progressbar" class="flex-grow-1"/>
-                    </div>
+                    <field name="task_progress" widget="progressbar" class="mb-2"/>
+
                     <field name="task_ids" nolabel="1" context="{'default_flow_id': id}">
                         <list editable="bottom" decoration-success="state == 'done'" decoration-muted="state == 'skipped'" decoration-danger="state == 'blocked' or overdue" decoration-info="state == 'doing'">
                             <field name="sequence" widget="handle"/>
@@ -288,10 +275,6 @@
         <field name="search_view_id" ref="view_allocation_queue_search"/>
         <field name="domain">[('flow_state', '=', 'allocate'), ('needs_resource', '=', True)]</field>
         <field name="context">{'search_default_pending': 1, 'search_default_group_flow': 1}</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">没有待分配的资源</p>
-            <p>每行是一张订单里的一项业务。IPT 和 IP 段填「网段」，单个 IP 填「IP」，专线和 SD-WAN 填「线路」。同一资源不能挂到两张工单。全部填完后点「分配完成，转交付」。</p>
-        </field>
     </record>
     <record id="view_flow_task_kanban" model="ir.ui.view">
         <field name="name">zenlenet.flow.task.kanban</field>
@@ -381,10 +364,6 @@
         <field name="search_view_id" ref="view_flow_task_search"/>
         <field name="domain">[('flow_id.state', 'not in', ('done', 'cancel'))]</field>
         <field name="context">{'search_default_open': 1}</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">没有进行中的交付任务</p>
-            <p>交付工单确认后，任务会按业务类型从模板生成，在这里按状态、负责人和日历跟进。</p>
-        </field>
     </record>
     <record id="view_task_template_list" model="ir.ui.view">
         <field name="name">zenlenet.task.template.list</field>
@@ -408,10 +387,6 @@
         <field name="res_model">zenlenet.task.template</field>
         <field name="view_mode">list</field>
         <field name="context">{'search_default_group_type': 1}</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">还没有任务模板</p>
-            <p>「所有业务」的模板每张交付工单都会带；按业务类型（IPT、专线、云主机、托管、转售）再加各自的步骤。</p>
-        </field>
     </record>
     <record id="action_flow" model="ir.actions.act_window">
         <field name="name">资源工单</field>

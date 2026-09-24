@@ -309,7 +309,7 @@ export class ZenlenetIpam extends Component {
     async confirmBulkAssign() {
         const form = this.state.bulkAssign;
         if (!form.flow_id) {
-            this.notification.add("请选一张处于「分配资源」的开通工单。没有的话先开一张。", { type: "warning" });
+            this.notification.add("请选一张处于「分配资源」的开通工单。", { type: "warning" });
             return;
         }
         try {

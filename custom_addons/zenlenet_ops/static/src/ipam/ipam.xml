@@ -25,7 +25,7 @@
         <div class="o_action zl-ipam">
             <aside class="zl-ipam-tree">
                 <div class="zl-ipam-tree-head">
-                    <input type="search" class="form-control form-control-sm" placeholder="搜网段 / 客户 / 说明" t-att-value="state.search" t-on-input="onSearch"/>
+                    <input type="search" class="form-control form-control-sm" t-att-value="state.search" t-on-input="onSearch"/>
                     <button class="btn btn-primary btn-sm" t-on-click="() => this.addPrefix(null)" title="录入顶级网段"><i class="fa fa-plus"/></button>
                     <button class="btn btn-secondary btn-sm" t-on-click="openList" title="列表视图"><i class="fa fa-list"/></button>
                 </div>
@@ -56,7 +56,6 @@
                         </li>
                     </t>
                 </ul>
-                <div t-if="!roots.length" class="text-muted small p-3">没有网段。点 + 录入第一个。</div>
             </aside>
 
             <section class="zl-ipam-main" t-if="state.detail">
@@ -90,14 +89,12 @@
                             </t>
                             <span><i class="zl-cell zl-cell-none zl-legend-dot"/> 未登记</span>
                             <span><i class="zl-cell zl-cell-special zl-legend-dot"/> 网络 / 广播</span>
-                            <span class="text-muted ms-auto">在格子上按住鼠标拖动可框选；Shift 点选可追加</span>
                         </div>
                         <div t-if="state.selection.length" class="zl-bulk">
                             <span>已选 <b t-out="state.selection.length"/> 个地址：</span>
                             <button class="btn btn-sm btn-primary" t-on-click="openBulkAssign"><i class="fa fa-user-plus"/> 挂到开通工单</button>
                             <button class="btn btn-sm btn-outline-primary" t-on-click="() => this.openTicket('back')">退回工单</button>
                             <button class="btn btn-sm btn-outline-primary" t-on-click="() => this.openTicket('cutover')">割接工单</button>
-                            <span class="text-muted small">｜ 不走工单的：</span>
                             <button class="btn btn-sm btn-outline-secondary" t-on-click="openBulkReserve">预分配</button>
                             <button class="btn btn-sm btn-outline-secondary" t-on-click="() => this.bulkStatus('internal')">自用</button>
                             <button class="btn btn-sm btn-outline-secondary" t-on-click="() => this.bulkStatus('free')">取消预留</button>
@@ -108,8 +105,7 @@
                                 <b>把 <t t-out="state.selection.length"/> 个地址预分配给谁</b>
                                 <button class="btn btn-sm btn-link" t-on-click="closeBulkReserve"><i class="fa fa-times"/></button>
                             </div>
-                            <div class="small text-muted mb-2">预分配不走交付工单，只是先留给这家客户。正式开通再从交付工单分配。</div>
-                            <input type="text" class="form-control form-control-sm" placeholder="搜客户，然后点选" t-att-value="state.bulkReserve.partner_name" t-on-input="searchBulkCustomers"/>
+                            <input type="text" class="form-control form-control-sm" t-att-value="state.bulkReserve.partner_name" t-on-input="searchBulkCustomers"/>
                             <ul t-if="state.bulkCustomers.length" class="zl-choices">
                                 <li t-foreach="state.bulkCustomers" t-as="customer" t-key="customer.id" t-on-click="() => this.pickBulkCustomer(customer)" t-out="customer.name"/>
                             </ul>
@@ -124,15 +120,13 @@
                                 <b>把 <t t-out="state.selection.length"/> 个地址分配出去</b>
                                 <button class="btn btn-sm btn-link" t-on-click="closeBulkAssign"><i class="fa fa-times"/></button>
                             </div>
-                            <div class="small text-muted mb-2">选一张已经到「分配资源」的开通工单。没有的话先开一张，地址先挂上，推进之后才会标成已分配。</div>
                             <ul class="zl-flow-list">
                                 <li t-foreach="state.pendingFlows" t-as="flow" t-key="flow.id" t-attf-class="#{state.bulkAssign.flow_id === flow.id ? 'active' : ''}" t-on-click="() => this.pickFlow(flow)">
                                     <span class="font-monospace fw-bold" t-out="flow.name"/> <span t-out="flow.partner"/>
                                     <span class="text-muted small"> · <t t-out="flow.order"/> <t t-if="flow.datacenter">· <t t-out="flow.datacenter"/></t> · 待分配 <t t-out="flow.pending"/></span>
                                 </li>
-                                <li t-if="!state.pendingFlows.length" class="text-muted">没有处于「分配资源」的开通工单</li>
                             </ul>
-                            <input type="text" class="form-control form-control-sm mt-2" placeholder="用途（可选）" t-model="state.bulkAssign.usage"/>
+                            <input type="text" class="form-control form-control-sm mt-2" t-model="state.bulkAssign.usage"/>
                             <div class="d-flex justify-content-end gap-2 mt-2">
                                 <button class="btn btn-sm btn-secondary" t-on-click="() => this.openTicket('out')">先开一张开通工单</button>
                                 <button class="btn btn-sm btn-secondary" t-on-click="closeBulkAssign">取消</button>
@@ -151,9 +145,7 @@
                                     </t>
                                 </div>
                             </div>
-                            <div t-if="state.detail.truncated" class="text-muted small">网段太大，只展示前 <t t-out="state.detail.blocks.length"/> 个 /24；请先切割再逐段管理。</div>
                         </t>
-                        <div t-else="" class="text-muted p-3">这个网段大于 /16 或是 IPv6，不逐个展示地址；请在左侧或下方进入下级网段。</div>
 
                         <div class="zl-ipam-section-title mt-3">下级网段（<t t-out="state.detail.children.length"/>）</div>
                         <table class="table table-sm zl-children" t-if="state.detail.children.length">
@@ -170,7 +162,6 @@
                                 </tr>
                             </tbody>
                         </table>
-                        <div t-else="" class="text-muted small">没有下级网段。用「切割」分成更小的段，或「添加网段」手工加一段。</div>
                     </div>
 
                     <aside class="zl-ipam-facts">
@@ -219,20 +210,18 @@
                         <button class="btn btn-sm btn-link" t-on-click="closeCell"><i class="fa fa-times"/></button>
                     </div>
                     <label>状态</label>
-                    <div t-if="ticketLocked" class="small mb-1">这个地址在用。换客户、退回、割接都要开工单，这里只能改用途。</div>
-                    <select t-else="" class="form-select form-select-sm" t-model="state.cellForm.status">
+                    <select t-if="!ticketLocked" class="form-select form-select-sm" t-model="state.cellForm.status">
                         <option value="free">未分配</option>
                         <option value="reserved">预分配</option>
                         <option value="internal">自用</option>
                     </select>
                     <label><t t-if="state.cellForm.status === 'reserved'">预分配给</t><t t-else="">分配给</t></label>
-                    <div t-if="state.cellForm.status === 'reserved'" class="small text-muted">必填。从下面的名单里点选，不能只打字。</div>
-                    <input type="text" class="form-control form-control-sm" placeholder="搜客户，留空表示无" t-att-value="state.cellForm.partner_name" t-on-input="(ev) => this.searchCustomers(ev, 'cell')"/>
+                    <input type="text" class="form-control form-control-sm" t-att-value="state.cellForm.partner_name" t-on-input="(ev) => this.searchCustomers(ev, 'cell')"/>
                     <ul t-if="state.customers.length" class="zl-choices">
                         <li t-foreach="state.customers" t-as="customer" t-key="customer.id" t-on-click="() => this.pickCustomer(customer)" t-out="customer.name"/>
                     </ul>
                     <label>用途</label>
-                    <input type="text" class="form-control form-control-sm" t-model="state.cellForm.usage" placeholder="网关 / 客户设备 / 监控…"/>
+                    <input type="text" class="form-control form-control-sm" t-model="state.cellForm.usage"/>
                     <div class="d-flex justify-content-end gap-2 mt-2">
                         <button class="btn btn-sm btn-secondary" t-on-click="closeCell">取消</button>
                         <button class="btn btn-sm btn-primary" t-on-click="saveCell">保存</button>
@@ -241,7 +230,6 @@
             </section>
             <section class="zl-ipam-main d-flex align-items-center justify-content-center text-muted" t-else="">
                 <t t-if="state.loading">加载中…</t>
-                <t t-else="">左侧选择一个网段</t>
             </section>
         </div>
     </t>

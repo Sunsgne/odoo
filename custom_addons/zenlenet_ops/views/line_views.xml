@@ -54,7 +54,7 @@
                         </group>
                     </group>
                     <group string="SD-WAN" invisible="kind != 'sdwan'">
-                        <field name="region" placeholder="例如：亚太"/>
+                        <field name="region"/>
                     </group>
                     <group string="两端" invisible="kind == 'sdwan'">
                         <group string="A 端">
