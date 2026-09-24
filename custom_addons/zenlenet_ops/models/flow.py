@@ -20,8 +20,10 @@ from odoo.addons.zenlenet_ops.flow import (
 
 TEAMS = [
     ('sales', '销售'),
+    ('allocator', '资源'),
     ('delivery', '交付'),
     ('service', '售后'),
+    ('procurement', '采购'),
 ]
 DEFAULT_TASKS = [
     ('allocate', '按业务类型分配资源'),
@@ -89,16 +91,25 @@ class ZenlenetFlow(models.Model):
     )
     sales_user_id = fields.Many2one(
         'res.users', string='销售', tracking=True, default=lambda self: self.env.user,
-        domain="['&', ('share', '=', False), '|', ('zenlenet_team', '=', 'sales'), ('zenlenet_team', '=', False)]",
+        domain="[('share', '=', False), ('zenlenet_in_sales', '=', True)]",
+    )
+    allocator_user_id = fields.Many2one(
+        'res.users', string='资源', tracking=True,
+        domain="[('share', '=', False), ('zenlenet_in_allocator', '=', True)]",
     )
     delivery_user_id = fields.Many2one(
-        'res.users', string='交付', tracking=True, default=lambda self: self.env.user,
-        domain="['&', ('share', '=', False), '|', ('zenlenet_team', '=', 'delivery'), ('zenlenet_team', '=', False)]",
+        'res.users', string='交付', tracking=True,
+        domain="[('share', '=', False), ('zenlenet_in_delivery', '=', True)]",
     )
     service_user_id = fields.Many2one(
-        'res.users', string='售后', tracking=True, default=lambda self: self.env.user,
-        domain="['&', ('share', '=', False), '|', ('zenlenet_team', '=', 'service'), ('zenlenet_team', '=', False)]",
+        'res.users', string='售后', tracking=True,
+        domain="[('share', '=', False), ('zenlenet_in_service', '=', True)]",
     )
+    procurement_user_id = fields.Many2one(
+        'res.users', string='采购', tracking=True,
+        domain="[('share', '=', False), ('zenlenet_in_procurement', '=', True)]",
+    )
+    can_act = fields.Boolean(compute='_compute_can_act')
     team = fields.Selection(TEAMS, string='分组', compute='_compute_team', store=True, group_expand='_group_expand_teams')
     partner_id = fields.Many2one('res.partner', string='客户', tracking=True, domain=[('is_company', '=', True)])
     datacenter_id = fields.Many2one('zenlenet.datacenter', string='期望数据中心', tracking=True)
@@ -154,6 +165,19 @@ class ZenlenetFlow(models.Model):
     def _compute_team(self):
         for record in self:
             record.team = team_for_move(record.move, record.state) or False
+
+    @api.depends('state', 'move')
+    @api.depends_context('uid')
+    def _compute_can_act(self):
+        for record in self:
+            record.can_act = record._user_may(record.state)
+
+    @api.model
+    def zenlenet_refresh_teams(self):
+        records = self.sudo().search([])
+        if records:
+            self.env.add_to_compute(self._fields['team'], records)
+            records._recompute_recordset(['team'])
 
     @api.depends('resource_ids.resource_ref', 'resource_ids.spec', 'resource_ids.service_type')
     def _compute_pending(self):
@@ -283,7 +307,9 @@ class ZenlenetFlow(models.Model):
             for index, (stage, name, team, days, hours, priority) in enumerate(rows):
                 if (stage, name) in have:
                     continue
-                person = {'sales': record.sales_user_id, 'delivery': record.delivery_user_id, 'service': record.service_user_id}.get(team) or record._person_for(stage)
+                if stage == 'allocate':
+                    team = 'allocator'
+                person = record._person_for_team(team) or record._person_for(stage)
                 cursor = fields.Date.add(cursor, days=max(days or 0, 0))
                 Task.create({
                     'flow_id': record.id,
@@ -303,23 +329,47 @@ class ZenlenetFlow(models.Model):
                 new_state = vals.get('state', record.state)
                 new_kind = vals.get('kind', record.kind)
                 new_move = vals.get('move', record.move)
+                if new_state != record.state or new_move != record.move or new_kind != record.kind:
+                    record._ensure_role(record.state)
                 if not transition_allowed(record.kind, record.state, new_kind, new_state, record.move, new_move):
                     raise UserError('请按顺序推进，不能跳步。')
         result = super().write(vals)
-        if {'state', 'move', 'sales_user_id', 'delivery_user_id', 'service_user_id'} & set(vals):
+        watched = {
+            'state', 'move', 'sales_user_id', 'allocator_user_id', 'delivery_user_id',
+            'service_user_id', 'procurement_user_id',
+        }
+        if watched & set(vals):
             self._sync_assignee()
         if {'state', 'kind', 'move', 'address_ids', 'partner_id', 'resource_ids', 'return_to'} & set(vals):
             self._apply_resources()
         return result
 
-    def _person_for(self, state):
+    def _person_for_team(self, team):
         self.ensure_one()
-        team = team_for_move(self.move, state)
         return {
             'sales': self.sales_user_id,
+            'allocator': self.allocator_user_id,
             'delivery': self.delivery_user_id,
             'service': self.service_user_id,
+            'procurement': self.procurement_user_id,
         }.get(team)
+
+    def _person_for(self, state):
+        self.ensure_one()
+        return self._person_for_team(team_for_move(self.move, state))
+
+    def _stamp_actor(self):
+        field_by_team = {
+            'sales': 'sales_user_id',
+            'allocator': 'allocator_user_id',
+            'delivery': 'delivery_user_id',
+            'service': 'service_user_id',
+            'procurement': 'procurement_user_id',
+        }
+        for record in self:
+            field = field_by_team.get(team_for_move(record.move, record.state))
+            if field and not record[field]:
+                record[field] = self.env.user
 
     def _sync_assignee(self):
         for record in self:
@@ -364,25 +414,31 @@ class ZenlenetFlow(models.Model):
 
     ROLE_BY_TEAM = {
         'sales': ('zenlenet_ops.group_sales', '销售'),
+        'allocator': ('zenlenet_ops.group_allocator', '资源分配'),
         'delivery': ('zenlenet_ops.group_delivery', '交付'),
         'service': ('zenlenet_ops.group_service', '售后'),
+        'procurement': ('zenlenet_ops.group_procurement', '采购'),
     }
 
-    def _ensure_role(self, state):
+    def _user_may(self, state):
+        self.ensure_one()
+        user = self.env.user
+        if user.has_group('zenlenet_ops.group_manager'):
+            return True
         team = team_for_move(self.move, state)
         role = self.ROLE_BY_TEAM.get(team)
         if not role:
+            return True
+        return user.has_group(role[0])
+
+    def _ensure_role(self, state):
+        self.ensure_one()
+        if self._user_may(state):
             return
-        user = self.env.user
-        if user.has_group('zenlenet_ops.group_manager') or user.has_group(role[0]):
-            return
-        if state == 'allocate' and user.has_group('zenlenet_ops.group_allocator'):
-            return
-        if (self.move or 'out') == 'in' and user.has_group('zenlenet_ops.group_procurement'):
-            return
-        if user.has_group('zenlenet_ops.group_pm') and (self.pm_user_id == user or not self.pm_user_id):
-            return
-        raise UserError(f'这一步（{step_label(self.move, state)}）由{role[1]}岗位操作，你的岗位没有权限。')
+        team = team_for_move(self.move, state)
+        role = self.ROLE_BY_TEAM.get(team)
+        label = role[1] if role else ''
+        raise UserError(f'这一步（{step_label(self.move, state)}）由{label}操作。')
 
     def _check_exit(self):
         self.ensure_one()
@@ -558,6 +614,8 @@ class ZenlenetFlow(models.Model):
                 if (record.move or 'out') == 'out' and record.kind == 'test' and record.state == 'decide':
                     raise UserError('测试单请选择回收或转商务。')
                 continue
+            record._ensure_role(record.state)
+            record._stamp_actor()
             record._check_exit()
             record.state = nxt
             if record.move == 'cutover' and nxt == 'deliver' and not record.notice_body:
@@ -597,7 +655,7 @@ class ZenlenetFlow(models.Model):
 
     def action_reclaim(self):
         for record in self:
-            record._ensure_role('accept')
+            record._ensure_role(record.state)
             if not can_reclaim(record.kind, record.state, record.move):
                 raise UserError('只有测试单可以回收。客户退租请另开「退：退回」工单。')
             record.state = 'reclaim'
@@ -605,7 +663,7 @@ class ZenlenetFlow(models.Model):
 
     def action_to_business(self):
         for record in self:
-            record._ensure_role('accept')
+            record._ensure_role(record.state)
             if not can_convert(record.kind, record.state, record.move):
                 raise UserError('只有测试单在验收、测试结论或回收时可以转商务。')
             record.write({'kind': 'business', 'state': 'deliver'})

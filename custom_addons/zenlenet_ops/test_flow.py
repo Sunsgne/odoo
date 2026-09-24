@@ -73,9 +73,10 @@ class FlowTests(unittest.TestCase):
 
     def test_people_are_grouped_by_stage(self):
         self.assertEqual(team_for('company'), 'sales')
-        self.assertEqual(team_for('allocate'), 'delivery')
+        self.assertEqual(team_for('allocate'), 'allocator')
         self.assertEqual(team_for('deliver'), 'delivery')
-        for state in ('accept', 'decide', 'reclaim', 'done'):
+        self.assertEqual(team_for('reclaim'), 'allocator')
+        for state in ('accept', 'decide', 'done'):
             self.assertEqual(team_for(state), 'service')
         self.assertIsNone(team_for('cancel'))
 
@@ -98,9 +99,15 @@ class FlowTests(unittest.TestCase):
         self.assertFalse(can_reclaim('business', 'accept', 'back'))
         self.assertEqual(step_label('in', 'allocate'), '核对资源')
         self.assertEqual(step_label('cutover', 'deliver'), '通知客户')
-        self.assertEqual(team_for_move('in', 'company'), 'delivery')
-        self.assertEqual(team_for_move('back', 'reclaim'), 'delivery')
+        self.assertEqual(team_for_move('in', 'company'), 'procurement')
+        self.assertEqual(team_for_move('in', 'allocate'), 'allocator')
+        self.assertEqual(team_for_move('in', 'deliver'), 'delivery')
+        self.assertEqual(team_for_move('back', 'company'), 'sales')
+        self.assertEqual(team_for_move('back', 'reclaim'), 'allocator')
+        self.assertEqual(team_for_move('cutover', 'company'), 'delivery')
         self.assertEqual(team_for_move('cutover', 'deliver'), 'service')
+        self.assertEqual(team_for_move('cutover', 'allocate'), 'allocator')
+        self.assertEqual(team_for_move('cutover', 'accept'), 'service')
 
 
 if __name__ == '__main__':

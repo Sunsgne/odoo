@@ -168,29 +168,39 @@ def step_label(move, state):
 def team_for(state):
     if state == 'company':
         return 'sales'
-    if state in ('allocate', 'deliver'):
+    if state in ('allocate', 'reclaim'):
+        return 'allocator'
+    if state == 'deliver':
         return 'delivery'
-    if state in ('accept', 'decide', 'reclaim', 'done'):
+    if state in ('accept', 'decide', 'done'):
         return 'service'
     return None
 
 
 def team_for_move(move, state):
-    """Who presses the button at this step. 出 keeps the sales → delivery → service handoff."""
+    """Which group may approve the ticket out of this step."""
     move = move or 'out'
     if move == 'out':
         return team_for(state)
     if move == 'in':
-        return 'delivery' if state in ('company', 'allocate', 'deliver') else None
+        if state == 'company':
+            return 'procurement'
+        if state == 'allocate':
+            return 'allocator'
+        if state == 'deliver':
+            return 'delivery'
+        return None
     if move == 'back':
         if state == 'company':
             return 'sales'
         if state == 'reclaim':
-            return 'delivery'
+            return 'allocator'
         return 'service' if state == 'done' else None
     if move == 'cutover':
-        if state in ('company', 'allocate'):
+        if state == 'company':
             return 'delivery'
+        if state == 'allocate':
+            return 'allocator'
         if state in ('deliver', 'accept', 'done'):
             return 'service'
     return None

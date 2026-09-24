@@ -104,3 +104,5 @@ access_zenlenet_credit_service,zenlenet.credit.service,model_zenlenet_credit,zen
 access_zenlenet_credit_sales,zenlenet.credit.sales,model_zenlenet_credit,zenlenet_ops.group_sales,1,1,1,0
 access_zenlenet_credit_finance,zenlenet.credit.finance,model_zenlenet_credit,zenlenet_ops.group_finance,1,1,1,0
 access_zenlenet_credit_manager,zenlenet.credit.manager,model_zenlenet_credit,zenlenet_ops.group_manager,1,1,1,1
+access_zenlenet_flow_procurement,zenlenet.flow.procurement,model_zenlenet_flow,zenlenet_ops.group_procurement,1,1,1,0
+access_zenlenet_flow_resource_procurement,zenlenet.flow.resource.procurement,model_zenlenet_flow_resource,zenlenet_ops.group_procurement,1,1,1,1
