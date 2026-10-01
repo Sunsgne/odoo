@@ -45,6 +45,20 @@ def can_resell(evidenced):
     return bool(evidenced)
 
 
+def recent_periods(day, count=2):
+    """The current month and the months immediately before it, oldest first."""
+    from datetime import date
+    if not isinstance(day, date):
+        return []
+    count = max(int(count or 1), 1)
+    year, month = day.year, day.month
+    periods = []
+    for offset in range(1 - count, 1):
+        index = month - 1 + offset
+        periods.append(f'{year + index // 12:04d}-{(index % 12) + 1:02d}')
+    return periods
+
+
 def shadow_delta(contract_amount, charge_amount):
     return round(float(contract_amount or 0) - float(charge_amount or 0), 2)
 

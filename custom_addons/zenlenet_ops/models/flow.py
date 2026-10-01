@@ -890,19 +890,23 @@ class ZenlenetFlowResource(models.Model):
                 continue
             slot = resource_slot(record.service_type)
             dc = [('datacenter_id', '=', record.datacenter_id.id)] if record.datacenter_id else []
+            order_id = record.flow_id.order_id.id
             if slot == 'line':
-                line = Line.search([('status', 'in', ('planned', 'provisioning', 'active')), ('partner_id', '=', False)] + dc, limit=1, order='name')
+                blocked = self.env['zenlenet.hold'].blocked_ids('line', order_id)
+                line = Line.search([('status', 'in', ('planned', 'provisioning', 'active')), ('partner_id', '=', False), ('id', 'not in', blocked)] + dc, limit=1, order='name')
                 if not line:
                     raise UserError(f'{record.datacenter_id.name or "库里"}没有空闲线路，请先采购或录入。')
                 record.line_id = line
             elif slot == 'address':
-                address = Address.search([('status', '=', 'free')] + dc, limit=1, order='address')
+                blocked = self.env['zenlenet.hold'].blocked_ids('address', order_id)
+                address = Address.search([('status', '=', 'free'), ('id', 'not in', blocked)] + dc, limit=1, order='address')
                 if not address:
                     raise UserError(f'{record.datacenter_id.name or "库里"}没有未分配的 IP。')
                 record.address_id = address
             elif slot == 'prefix':
                 wanted = record._wanted_prefixlen()
-                base = [('status', 'in', ('active', 'reserved')), ('partner_id', '=', False), ('child_ids', '=', False)]
+                blocked = self.env['zenlenet.hold'].blocked_ids('prefix', order_id)
+                base = [('status', 'in', ('active', 'reserved')), ('partner_id', '=', False), ('child_ids', '=', False), ('id', 'not in', blocked)]
                 if wanted:
                     base.append(('prefixlen', '=', wanted))
                 candidates = Prefix.search(base + dc, limit=1, order='prefix') or Prefix.search(base, limit=1, order='prefix')
@@ -971,6 +975,11 @@ class ZenlenetFlowResource(models.Model):
                         raise UserError(f'{target.display_name} 已经挂在工单 {clash.flow_id.name}。一个{label}同时只走一张未完成的工单。')
             if (record.flow_id.move or 'out') != 'out':
                 continue
+            Hold = self.env['zenlenet.hold']
+            order_id = record.flow_id.order_id.id
+            for kind, target in (('prefix', record.prefix_id), ('address', record.address_id), ('line', record.line_id)):
+                if target and Hold.allocation_blocked(kind, target.id, order_id):
+                    raise UserError(f'{target.display_name} 已被预留，不能分给这张工单。')
             for target in (record.prefix_id, record.address_id, record.line_id):
                 partner = target.partner_id if target else False
                 if partner and partner != record.flow_id.partner_id:

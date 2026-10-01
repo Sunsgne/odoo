@@ -1,7 +1,7 @@
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
-from odoo.addons.zenlenet_ops.loop import can_rebind, capacity_ready, operation_result, payload_hash
+from odoo.addons.zenlenet_ops.loop import can_rebind, capacity_ready, hold_allows, operation_result, payload_hash
 
 SOURCES = [('netbox', 'NetBox'), ('monitor', '监控'), ('odoo', '运营')]
 HOLD_OBJECTS = [('prefix', '地址段'), ('address', '地址'), ('line', '线路')]
@@ -146,6 +146,27 @@ class ZenlenetHold(models.Model):
     def action_release(self):
         self.filtered(lambda row: row.state in ('held', 'unknown')).write({'state': 'released'})
         return True
+
+    @api.model
+    def allocation_blocked(self, object_type, res_id, order_id):
+        if not res_id:
+            return False
+        hold = self.search([
+            ('state', '=', 'held'),
+            ('object_type', '=', object_type),
+            ('res_ref', '=', res_id),
+        ], limit=1)
+        if not hold:
+            return False
+        return not hold_allows(hold.order_id.id or 0, order_id or 0)
+
+    @api.model
+    def blocked_ids(self, object_type, order_id):
+        holds = self.search([('state', '=', 'held'), ('object_type', '=', object_type)])
+        return [
+            hold.res_ref for hold in holds
+            if hold.res_ref and not hold_allows(hold.order_id.id or 0, order_id or 0)
+        ]
 
 
 class ZenlenetChange(models.Model):

@@ -12,6 +12,15 @@ def operation_result(existing_hash, new_hash):
     return 'conflict'
 
 
+def hold_allows(hold_order_id, allocating_order_id):
+    """None means there is no hold. 0 means the hold names no order and blocks everyone."""
+    if hold_order_id is None:
+        return True
+    if not hold_order_id:
+        return False
+    return hold_order_id == allocating_order_id
+
+
 def can_rebind(tombstoned):
     return not tombstoned
 

@@ -1,5 +1,7 @@
 import unittest
 
+from datetime import date
+
 from remain import (
     can_resell,
     inventory_export_allowed,
@@ -7,6 +9,7 @@ from remain import (
     next_rollout,
     portal_partner_id,
     power_ok,
+    recent_periods,
     shadow_delta,
     should_apply,
 )
@@ -44,6 +47,7 @@ class RemainRuleTests(unittest.TestCase):
     def test_shadow_does_not_invent_a_posted_amount(self):
         self.assertEqual(shadow_delta(100, 80), 20.0)
         self.assertEqual(shadow_delta(51.61, 51.61), 0.0)
+        self.assertEqual(recent_periods(date(2026, 10, 1), 2), ['2026-09', '2026-10'])
 
     def test_power_and_portal_scope(self):
         self.assertTrue(power_ok(10, 0))

@@ -134,7 +134,7 @@
         <field name="arch" type="xml">
             <list>
                 <header>
-                    <button name="action_build_current" type="object" string="对本月做影子对比" display="always" groups="zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
+                    <button name="action_build_current" type="object" string="对最近两个账期做影子对比" display="always" groups="zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
                 </header>
                 <field name="period"/>
                 <field name="partner_id"/>

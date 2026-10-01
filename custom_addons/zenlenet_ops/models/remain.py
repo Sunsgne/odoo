@@ -199,9 +199,10 @@ class ZenlenetShadow(models.Model):
 
     @api.model
     def action_build_current(self):
-        from odoo.addons.zenlenet_ops.billing import period_label
-        period = period_label(fields.Date.context_today(self))
-        rows = self.build_period(period)
+        from odoo.addons.zenlenet_ops.remain import recent_periods
+        rows = self.env['zenlenet.shadow']
+        for period in recent_periods(fields.Date.context_today(self), 2):
+            rows |= self.build_period(period)
         return {
             'type': 'ir.actions.act_window',
             'name': '影子计费',

@@ -1,6 +1,6 @@
 import unittest
 
-from loop import can_rebind, capacity_ready, http_policy, operation_result, payload_hash, pick_remote
+from loop import can_rebind, capacity_ready, hold_allows, http_policy, operation_result, payload_hash, pick_remote
 
 
 class LoopRuleTests(unittest.TestCase):
@@ -8,6 +8,12 @@ class LoopRuleTests(unittest.TestCase):
         digest = payload_hash('reserve:prefix:4')
         self.assertEqual(operation_result(digest, digest), 'same')
         self.assertEqual(operation_result(digest, payload_hash('reserve:prefix:5')), 'conflict')
+
+    def test_a_hold_blocks_every_order_except_its_own(self):
+        self.assertTrue(hold_allows(None, 9))
+        self.assertFalse(hold_allows(0, 9))
+        self.assertFalse(hold_allows(4, 9))
+        self.assertTrue(hold_allows(9, 9))
 
     def test_tombstone_blocks_rebind(self):
         self.assertFalse(can_rebind(True))

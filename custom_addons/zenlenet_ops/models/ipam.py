@@ -340,6 +340,8 @@ class ZenlenetPrefixIpam(models.Model):
                 })
             if existing.id in have:
                 continue
+            if self.env['zenlenet.hold'].allocation_blocked('address', existing.id, flow.order_id.id):
+                raise UserError(f'{ip} 已被预留，不能分给这张工单。')
             Resource.create({
                 'flow_id': flow.id,
                 'service_type': 'ip_single',
