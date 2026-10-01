@@ -14,8 +14,18 @@ class SaleOrder(models.Model):
     zenlenet_stage = fields.Selection([
         ('testing', '测试'),
         ('active', '在网'),
+        ('suspended', '暂停'),
         ('terminated', '已退租'),
     ], string='服务状态', index=True, copy=False)
+    zenlenet_commercial_start = fields.Date(string='商业开始')
+    zenlenet_technical_ready = fields.Date(string='技术完成')
+    zenlenet_customer_accepted = fields.Date(string='客户验收')
+    zenlenet_billing_start = fields.Date(string='起费日')
+    zenlenet_technical_disabled = fields.Date(string='技术停用')
+    zenlenet_metering_cutoff = fields.Date(string='计量截止')
+    zenlenet_capacity_released = fields.Date(string='资源释放')
+    zenlenet_supplier_ceased = fields.Date(string='供应商终止')
+    zenlenet_suspended_on = fields.Date(string='暂停日期', copy=False)
     zenlenet_graph_ref = fields.Char(string='Cacti 图 ID')
     zenlenet_bill_mode = fields.Selection([
         ('flat', '固定带宽'),
@@ -168,6 +178,25 @@ class SaleOrder(models.Model):
             if order.state != 'cancel':
                 order._action_cancel()
             order.zenlenet_stage = 'terminated'
+
+    def action_suspend(self):
+        """Pause the service. Resources stay assigned."""
+        today = fields.Date.context_today(self)
+        for order in self:
+            if order.state != 'sale' or order.zenlenet_stage != 'active':
+                raise UserError('只有在网的服务订单可以暂停。')
+            order.write({
+                'zenlenet_stage': 'suspended',
+                'zenlenet_suspended_on': today,
+            })
+        return True
+
+    def action_resume(self):
+        for order in self:
+            if order.zenlenet_stage != 'suspended':
+                raise UserError('这张订单没有暂停。')
+            order.write({'zenlenet_stage': 'active'})
+        return True
 
 
 class SaleOrderLine(models.Model):

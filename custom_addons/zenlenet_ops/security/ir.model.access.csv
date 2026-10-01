@@ -110,5 +110,8 @@ access_zenlenet_labor_delivery,zenlenet.labor.delivery,model_zenlenet_labor,zenl
 access_zenlenet_labor_service,zenlenet.labor.service,model_zenlenet_labor,zenlenet_ops.group_service,1,1,1,0
 access_zenlenet_labor_finance,zenlenet.labor.finance,model_zenlenet_labor,zenlenet_ops.group_finance,1,1,1,0
 access_zenlenet_labor_manager,zenlenet.labor.manager,model_zenlenet_labor,zenlenet_ops.group_manager,1,1,1,1
+access_zenlenet_charge_user,zenlenet.charge.user,model_zenlenet_charge,base.group_user,1,0,0,0
+access_zenlenet_charge_finance,zenlenet.charge.finance,model_zenlenet_charge,zenlenet_ops.group_finance,1,1,1,0
+access_zenlenet_charge_manager,zenlenet.charge.manager,model_zenlenet_charge,zenlenet_ops.group_manager,1,1,1,1
 access_zenlenet_flow_procurement,zenlenet.flow.procurement,model_zenlenet_flow,zenlenet_ops.group_procurement,1,1,1,0
 access_zenlenet_flow_resource_procurement,zenlenet.flow.resource.procurement,model_zenlenet_flow_resource,zenlenet_ops.group_procurement,1,1,1,1

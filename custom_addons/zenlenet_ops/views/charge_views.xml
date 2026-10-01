@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_charge_list" model="ir.ui.view">
+        <field name="name">zenlenet.charge.list</field>
+        <field name="model">zenlenet.charge</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'invoiced'">
+                <header>
+                    <button name="action_invoice" type="object" string="出账" groups="zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
+                </header>
+                <field name="period"/>
+                <field name="partner_id"/>
+                <field name="kind"/>
+                <field name="name"/>
+                <field name="order_id" optional="show"/>
+                <field name="quantity"/>
+                <field name="price_unit"/>
+                <field name="amount" sum="合计"/>
+                <field name="currency_id"/>
+                <field name="invoice_id" optional="show"/>
+                <field name="state" widget="badge"/>
+                <field name="business_key" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_charge_form" model="ir.ui.view">
+        <field name="name">zenlenet.charge.form</field>
+        <field name="model">zenlenet.charge</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_invoice" type="object" string="出账" class="btn-primary" invisible="state != 'draft'" groups="zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,invoiced"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" readonly="state != 'draft'"/>
+                            <field name="kind" readonly="state != 'draft'"/>
+                            <field name="partner_id" readonly="state != 'draft'"/>
+                            <field name="order_id" readonly="state != 'draft'"/>
+                            <field name="contract_id" readonly="state != 'draft'"/>
+                            <field name="labor_id" readonly="state != 'draft'"/>
+                            <field name="period" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="quantity" readonly="state != 'draft'"/>
+                            <field name="price_unit" readonly="state != 'draft'"/>
+                            <field name="amount"/>
+                            <field name="currency_id" readonly="state != 'draft'"/>
+                            <field name="invoice_id"/>
+                            <field name="business_key" readonly="state != 'draft'"/>
+                            <field name="company_id" invisible="1"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_charge_search" model="ir.ui.view">
+        <field name="name">zenlenet.charge.search</field>
+        <field name="model">zenlenet.charge</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="business_key"/>
+                <field name="partner_id"/>
+                <field name="period"/>
+                <filter name="draft" string="草稿" domain="[('state', '=', 'draft')]"/>
+                <filter name="invoiced" string="已出账" domain="[('state', '=', 'invoiced')]"/>
+                <group>
+                    <filter name="group_partner" string="客户" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_kind" string="种类" context="{'group_by': 'kind'}"/>
+                    <filter name="group_period" string="账期" context="{'group_by': 'period'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_charges" model="ir.actions.act_window">
+        <field name="name">收费项</field>
+        <field name="res_model">zenlenet.charge</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_charge_search"/>
+        <field name="context">{'search_default_draft': 1}</field>
+    </record>
+</odoo>

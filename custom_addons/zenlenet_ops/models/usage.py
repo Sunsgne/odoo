@@ -8,6 +8,7 @@ from odoo import api, fields, models
 from odoo.exceptions import UserError
 
 from odoo.addons.zenlenet_ops.billing import p95_billable, period_label
+from odoo.addons.zenlenet_ops.meter import aggregate_series, commit_overage_amount, nearest_rank_p95, parse_samples
 
 
 class ZenlenetUsage(models.Model):
@@ -25,6 +26,8 @@ class ZenlenetUsage(models.Model):
     commit_mbps = fields.Float(string='保底 (Mbps)', compute='_compute_billable', store=True)
     billable_mbps = fields.Float(string='计费 (Mbps)', compute='_compute_billable', store=True)
     overage_mbps = fields.Float(string='超量 (Mbps)', compute='_compute_billable', store=True)
+    samples = fields.Text(string='采样')
+    pool = fields.Char(string='带宽组', index=True)
     source = fields.Selection([('cacti', 'Cacti'), ('csv', 'CSV 导入'), ('manual', '手工')], default='manual', required=True)
     graph_ref = fields.Char(string='Cacti 图 ID')
     imported_at = fields.Datetime(string='采集时间', default=fields.Datetime.now)
@@ -45,6 +48,75 @@ class ZenlenetUsage(models.Model):
             record.commit_mbps = commit
             record.billable_mbps = p95_billable(commit, record.p95_mbps)
             record.overage_mbps = max(record.billable_mbps - commit, 0.0)
+
+    @api.model
+    def _fold_samples(self, vals):
+        if not vals.get('samples'):
+            return
+        measured = nearest_rank_p95(parse_samples(vals['samples']))
+        if measured is None:
+            raise UserError('没有有效采样。')
+        vals['p95_mbps'] = measured
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            self._fold_samples(vals)
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if vals.get('samples'):
+            self._fold_samples(vals)
+        return super().write(vals)
+
+    def action_make_charge(self):
+        if not self:
+            raise UserError('请先勾选用量。')
+        groups = {}
+        for row in self:
+            pool = (row.pool or '').strip()
+            key = (row.partner_id.id, row.period, pool or f'order:{row.order_id.id}')
+            groups.setdefault(key, self.env['zenlenet.usage'])
+            groups[key] |= row
+        charges = self.env['zenlenet.charge']
+        for group_key, batch in groups.items():
+            if len(batch) > 1:
+                if any(not row.samples for row in batch):
+                    raise UserError('多条用量没有对齐采样，不能把各端口的 95 相加。')
+                measured = nearest_rank_p95(aggregate_series([parse_samples(row.samples) for row in batch]))
+            else:
+                row = batch[0]
+                measured = nearest_rank_p95(parse_samples(row.samples)) if row.samples else row.p95_mbps
+            if measured is None:
+                raise UserError('没有有效采样。')
+            order = batch[0].order_id
+            line = order._zenlenet_bandwidth_line() if order else self.env['sale.order.line']
+            commit = line._zenlenet_commit() if line else 0.0
+            price = line.price_unit if line else 0.0
+            overage_price = line.zenlenet_overage_price if line else 0.0
+            if overage_price:
+                amount = commit_overage_amount(measured, commit, price, overage_price)
+            else:
+                amount = round(max(commit, float(measured)) * float(price or 0), 2)
+            label = batch[0].pool or order.name or batch[0].period
+            charges |= self.env['zenlenet.charge'].register(f'p95:{group_key[0]}:{group_key[1]}:{group_key[2]}', {
+                'name': f'95 带宽 {batch[0].period} {label} · {measured:g}M',
+                'kind': 'p95',
+                'partner_id': batch[0].partner_id.id,
+                'order_id': order.id,
+                'company_id': order.company_id.id,
+                'currency_id': order.currency_id.id,
+                'period': batch[0].period,
+                'quantity': 1.0,
+                'price_unit': amount,
+            })
+        return {
+            'type': 'ir.actions.act_window',
+            'name': '收费项',
+            'res_model': 'zenlenet.charge',
+            'view_mode': 'list,form',
+            'domain': [('id', 'in', charges.ids)],
+        }
 
     @api.model
     def upsert(self, order, period, p95, maximum=None, average=None, source='cacti', graph_ref=None):

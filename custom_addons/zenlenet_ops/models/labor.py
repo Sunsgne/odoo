@@ -255,6 +255,20 @@ class ZenlenetLabor(models.Model):
                 'state': 'billed',
                 'invoice_id': invoice.id,
             })
+            for record in batch:
+                self.env['zenlenet.charge'].register(f'labor:{record.id}', {
+                    'name': record.name,
+                    'kind': 'labor',
+                    'partner_id': record.partner_id.id,
+                    'labor_id': record.id,
+                    'company_id': record.company_id.id,
+                    'currency_id': record.currency_id.id,
+                    'period': record.service_date.strftime('%Y-%m') if record.service_date else False,
+                    'quantity': record.quantity,
+                    'price_unit': record.price_unit,
+                    'invoice_id': invoice.id,
+                    'state': 'invoiced',
+                })
             invoices |= invoice
         if len(invoices) == 1:
             return {

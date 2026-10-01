@@ -133,6 +133,12 @@ def _maintenance(snap):
     return None
 
 
+def _charge(snap):
+    if snap.get('state') == 'invoiced' or snap.get('invoice'):
+        return '已经出过账，不能删除。'
+    return None
+
+
 def _labor(snap):
     if snap.get('state') == 'billed' or snap.get('invoice'):
         return '已经出过账，不能删除。'
@@ -159,6 +165,7 @@ RULES = {
     'zenlenet.credit': _credit,
     'zenlenet.maintenance': _maintenance,
     'zenlenet.labor': _labor,
+    'zenlenet.charge': _charge,
 }
 
 # Line items the owning role may delete itself (still subject to the state rules above).

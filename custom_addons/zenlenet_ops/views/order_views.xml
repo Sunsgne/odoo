@@ -12,6 +12,8 @@
                     <button name="action_confirm" type="object" string="客户已确认" class="btn-primary" invisible="state not in ('draft', 'sent')"/>
                     <button name="action_open_contract" type="object" string="合同" invisible="state != 'sale'"/>
                     <button name="action_new_version" type="object" string="复制为新版本" invisible="state == 'cancel'"/>
+                    <button name="action_suspend" type="object" string="暂停" invisible="state != 'sale' or zenlenet_stage != 'active'"/>
+                    <button name="action_resume" type="object" string="恢复" invisible="zenlenet_stage != 'suspended'"/>
                     <button name="action_mark_active" type="object" string="标为在网" invisible="state != 'sale' or zenlenet_stage == 'active'"/>
                     <button name="action_mark_testing" type="object" string="标为测试" invisible="state != 'sale' or zenlenet_stage == 'testing'"/>
                     <button name="action_mark_terminated" type="object" string="退租" invisible="state != 'sale' or zenlenet_stage == 'terminated'" confirm="退租会取消这张服务订单，合同里的月费也会减少。继续？"/>
@@ -48,6 +50,15 @@
                             <field name="zenlenet_term_months" readonly="state == 'sale'"/>
                             <field name="zenlenet_bill_mode" readonly="state == 'sale'"/>
                             <field name="zenlenet_graph_ref" invisible="zenlenet_bill_mode != 'p95'"/>
+                            <field name="zenlenet_commercial_start"/>
+                            <field name="zenlenet_technical_ready"/>
+                            <field name="zenlenet_customer_accepted"/>
+                            <field name="zenlenet_billing_start"/>
+                            <field name="zenlenet_technical_disabled"/>
+                            <field name="zenlenet_metering_cutoff"/>
+                            <field name="zenlenet_capacity_released"/>
+                            <field name="zenlenet_supplier_ceased"/>
+                            <field name="zenlenet_suspended_on" invisible="zenlenet_stage != 'suspended'"/>
                             <field name="zenlenet_parent_id" invisible="not zenlenet_parent_id"/>
                         </group>
                     </group>

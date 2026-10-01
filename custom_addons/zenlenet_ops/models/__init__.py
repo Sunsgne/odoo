@@ -20,6 +20,7 @@ from . import ticket
 from . import contract
 from . import month
 from . import usage
+from . import charge
 from . import credit
 from . import labor
 from . import home

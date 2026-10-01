@@ -30,12 +30,15 @@
             <list editable="bottom" decoration-warning="overage_mbps > 0">
                 <header>
                     <button name="%(zenlenet_ops.action_usage_import)d" type="action" string="导入 CSV" class="btn-primary" display="always"/>
+                    <button name="action_make_charge" type="object" string="生成收费项"/>
                 </header>
                 <field name="period"/>
                 <field name="partner_id"/>
                 <field name="order_id" options="{'no_create': True}" domain="[('zenlenet_bill_mode', '=', 'p95')]" context="{'list_view_ref': 'zenlenet_ops.view_order_list'}"/>
                 <field name="commit_mbps"/>
                 <field name="p95_mbps"/>
+                <field name="samples" optional="hide"/>
+                <field name="pool" optional="show"/>
                 <field name="max_mbps" optional="show"/>
                 <field name="avg_mbps" optional="hide"/>
                 <field name="billable_mbps"/>

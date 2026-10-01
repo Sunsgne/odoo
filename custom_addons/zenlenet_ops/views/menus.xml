@@ -15,6 +15,7 @@
     <menuitem id="menu_aging" name="应收账龄" parent="menu_fin_ar" action="action_receivable_aging" sequence="30"/>
     <menuitem id="menu_fin_billing" name="计费" parent="menu_finance" sequence="20"/>
     <menuitem id="menu_usage" name="95 值用量" parent="menu_fin_billing" action="action_usage" sequence="20"/>
+    <menuitem id="menu_charges" name="收费项" parent="menu_fin_billing" action="action_charges" sequence="25"/>
     <menuitem id="menu_credits" name="故障减免" parent="menu_fin_billing" action="action_credits" sequence="30"/>
     <menuitem id="menu_fin_ap" name="应付" parent="menu_finance" sequence="30"/>
     <menuitem id="menu_vendor_bills" name="供应商账单" parent="menu_fin_ap" action="action_vendor_bills" sequence="10"/>
