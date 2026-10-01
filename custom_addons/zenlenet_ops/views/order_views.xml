@@ -17,6 +17,7 @@
                     <button name="action_mark_active" type="object" string="标为在网" invisible="state != 'sale' or zenlenet_stage == 'active'"/>
                     <button name="action_mark_testing" type="object" string="标为测试" invisible="state != 'sale' or zenlenet_stage == 'testing'"/>
                     <button name="action_mark_terminated" type="object" string="退租" invisible="state != 'sale' or zenlenet_stage == 'terminated'" confirm="退租会取消这张服务订单，合同里的月费也会减少。继续？"/>
+                    <button name="action_open_exit" type="object" string="退订进度" invisible="state != 'sale'"/>
                     <button name="action_draft" type="object" string="改回草稿" invisible="state != 'cancel'"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,sent,sale"/>
                 </header>

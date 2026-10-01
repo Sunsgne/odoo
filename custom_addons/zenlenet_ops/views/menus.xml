@@ -27,6 +27,11 @@
     <menuitem id="menu_flow" name="资源工单" parent="menu_work" action="action_flow" sequence="10"/>
     <menuitem id="menu_tickets" name="服务工单" parent="menu_work" action="action_tickets" sequence="20"/>
     <menuitem id="menu_labor" name="人力" parent="menu_work" action="action_labor" sequence="25"/>
+    <menuitem id="menu_holds" name="资源预留" parent="menu_work" action="action_holds" sequence="16" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_allocator,zenlenet_ops.group_manager"/>
+    <menuitem id="menu_changes" name="变更" parent="menu_work" action="action_changes" sequence="26"/>
+    <menuitem id="menu_exits" name="退订" parent="menu_work" action="action_exits" sequence="27"/>
+    <menuitem id="menu_bindings" name="外部绑定" parent="menu_work" action="action_bindings" sequence="28" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_manager"/>
+    <menuitem id="menu_operations" name="操作" parent="menu_work" action="action_operations" sequence="29" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_manager"/>
     <menuitem id="menu_maintenance" name="维护通告" parent="menu_work" action="action_maintenance" sequence="30"/>
     <menuitem id="menu_flow_tasks" name="交付任务" parent="menu_work" action="action_flow_tasks" sequence="12"/>
     <menuitem id="menu_allocation" name="资源分配" parent="menu_work" action="action_allocation_queue" sequence="15" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_allocator,zenlenet_ops.group_manager"/>

@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_binding_list" model="ir.ui.view">
+        <field name="name">zenlenet.binding.list</field>
+        <field name="model">zenlenet.binding</field>
+        <field name="arch" type="xml">
+            <list>
+                <header>
+                    <button name="action_tombstone" type="object" string="标记删除"/>
+                </header>
+                <field name="source"/>
+                <field name="object_type"/>
+                <field name="external_id"/>
+                <field name="odoo_model"/>
+                <field name="res_ref"/>
+                <field name="tombstoned"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_binding_form" model="ir.ui.view">
+        <field name="name">zenlenet.binding.form</field>
+        <field name="model">zenlenet.binding</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_tombstone" type="object" string="标记删除" invisible="tombstoned"/>
+                </header>
+                <sheet>
+                    <group>
+                        <field name="source" readonly="tombstoned"/>
+                        <field name="object_type" readonly="tombstoned"/>
+                        <field name="external_id" readonly="tombstoned"/>
+                        <field name="odoo_model" readonly="tombstoned"/>
+                        <field name="res_ref" readonly="tombstoned"/>
+                        <field name="tombstoned"/>
+                        <field name="company_id" invisible="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_bindings" model="ir.actions.act_window">
+        <field name="name">外部绑定</field>
+        <field name="res_model">zenlenet.binding</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_operation_list" model="ir.ui.view">
+        <field name="name">zenlenet.operation.list</field>
+        <field name="model">zenlenet.operation</field>
+        <field name="arch" type="xml">
+            <list>
+                <header>
+                    <button name="action_unknown" type="object" string="结果未知"/>
+                    <button name="action_done" type="object" string="完成"/>
+                    <button name="action_fail" type="object" string="失败"/>
+                </header>
+                <field name="name"/>
+                <field name="state" widget="badge"/>
+                <field name="payload" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_operation_form" model="ir.ui.view">
+        <field name="name">zenlenet.operation.form</field>
+        <field name="model">zenlenet.operation</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_unknown" type="object" string="结果未知" invisible="state != 'queued'"/>
+                    <button name="action_done" type="object" string="完成" invisible="state not in ('queued', 'unknown')"/>
+                    <button name="action_fail" type="object" string="失败" invisible="state not in ('queued', 'unknown')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="queued,unknown,done"/>
+                </header>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="payload"/>
+                        <field name="payload_digest"/>
+                        <field name="company_id" invisible="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_operations" model="ir.actions.act_window">
+        <field name="name">操作</field>
+        <field name="res_model">zenlenet.operation</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_hold_list" model="ir.ui.view">
+        <field name="name">zenlenet.hold.list</field>
+        <field name="model">zenlenet.hold</field>
+        <field name="arch" type="xml">
+            <list>
+                <header>
+                    <button name="action_hold" type="object" string="预留"/>
+                    <button name="action_unknown" type="object" string="结果未知"/>
+                    <button name="action_release" type="object" string="释放"/>
+                </header>
+                <field name="order_id"/>
+                <field name="object_type"/>
+                <field name="res_ref"/>
+                <field name="state" widget="badge"/>
+                <field name="slot" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_hold_form" model="ir.ui.view">
+        <field name="name">zenlenet.hold.form</field>
+        <field name="model">zenlenet.hold</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_hold" type="object" string="预留" invisible="state not in ('draft', 'unknown')"/>
+                    <button name="action_unknown" type="object" string="结果未知" invisible="state != 'draft'"/>
+                    <button name="action_release" type="object" string="释放" invisible="state not in ('held', 'unknown')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,held,released"/>
+                </header>
+                <sheet>
+                    <group>
+                        <field name="order_id" readonly="state != 'draft'"/>
+                        <field name="object_type" readonly="state != 'draft'"/>
+                        <field name="res_ref" readonly="state != 'draft'"/>
+                        <field name="slot"/>
+                        <field name="company_id" invisible="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_holds" model="ir.actions.act_window">
+        <field name="name">资源预留</field>
+        <field name="res_model">zenlenet.hold</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_change_list" model="ir.ui.view">
+        <field name="name">zenlenet.change.list</field>
+        <field name="model">zenlenet.change</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="order_id"/>
+                <field name="summary"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_change_form" model="ir.ui.view">
+        <field name="name">zenlenet.change.form</field>
+        <field name="model">zenlenet.change</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_approve" type="object" string="批准" invisible="state != 'draft'"/>
+                    <button name="action_done" type="object" string="完成" invisible="state != 'approved'"/>
+                    <button name="action_cancel" type="object" string="取消" invisible="state not in ('draft', 'approved')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,approved,done"/>
+                </header>
+                <sheet>
+                    <group>
+                        <field name="order_id" readonly="state != 'draft'"/>
+                        <field name="summary" readonly="state != 'draft'"/>
+                        <field name="company_id" invisible="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_changes" model="ir.actions.act_window">
+        <field name="name">变更</field>
+        <field name="res_model">zenlenet.change</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_exit_list" model="ir.ui.view">
+        <field name="name">zenlenet.exit.step.list</field>
+        <field name="model">zenlenet.exit.step</field>
+        <field name="arch" type="xml">
+            <list>
+                <header>
+                    <button name="action_done" type="object" string="完成"/>
+                </header>
+                <field name="order_id"/>
+                <field name="partner_id"/>
+                <field name="kind"/>
+                <field name="state" widget="badge"/>
+                <field name="done_on"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_exit_form" model="ir.ui.view">
+        <field name="name">zenlenet.exit.step.form</field>
+        <field name="model">zenlenet.exit.step</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_done" type="object" string="完成" invisible="state == 'done'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="open,done"/>
+                </header>
+                <sheet>
+                    <group>
+                        <field name="order_id" readonly="state == 'done'"/>
+                        <field name="kind" readonly="state == 'done'"/>
+                        <field name="done_on"/>
+                        <field name="company_id" invisible="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_exits" model="ir.actions.act_window">
+        <field name="name">退订</field>
+        <field name="res_model">zenlenet.exit.step</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>
