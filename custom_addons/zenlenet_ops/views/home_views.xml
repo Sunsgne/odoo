@@ -54,6 +54,7 @@
                         <button type="action" name="%(zenlenet_ops.action_month)d" class="o_zl_app" groups="zenlenet_ops.group_sales,zenlenet_ops.group_finance,zenlenet_ops.group_manager"><i class="fa fa-calendar" title="出账"/><b>出账</b></button>
                         <button type="action" name="%(zenlenet_ops.action_flow)d" class="o_zl_app"><i class="fa fa-random" title="资源工单"/><b>资源工单</b></button>
                         <button type="action" name="%(zenlenet_ops.action_tickets)d" class="o_zl_app"><i class="fa fa-life-ring" title="服务工单"/><b>服务工单</b></button>
+                        <button type="action" name="%(zenlenet_ops.action_labor)d" class="o_zl_app" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_service,zenlenet_ops.group_finance,zenlenet_ops.group_manager"><i class="fa fa-clock-o" title="人力"/><b>人力</b></button>
                         <button type="action" name="%(zenlenet_ops.action_maintenance)d" class="o_zl_app"><i class="fa fa-wrench" title="维护通告"/><b>维护通告</b></button>
                         <button type="action" name="%(zenlenet_ops.action_datacenter_board)d" class="o_zl_app"><i class="fa fa-building" title="园区"/><b>园区</b></button>
                         <button type="action" name="%(zenlenet_ops.action_allocation_queue)d" class="o_zl_app" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_allocator,zenlenet_ops.group_manager"><i class="fa fa-magic" title="资源分配"/><b>资源分配</b></button>

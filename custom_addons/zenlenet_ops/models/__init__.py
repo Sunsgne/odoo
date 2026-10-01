@@ -21,6 +21,7 @@ from . import contract
 from . import month
 from . import usage
 from . import credit
+from . import labor
 from . import home
 from . import report
 from . import loader

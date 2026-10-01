@@ -25,6 +25,7 @@
     <menuitem id="menu_work" name="工单" parent="menu_root" sequence="30"/>
     <menuitem id="menu_flow" name="资源工单" parent="menu_work" action="action_flow" sequence="10"/>
     <menuitem id="menu_tickets" name="服务工单" parent="menu_work" action="action_tickets" sequence="20"/>
+    <menuitem id="menu_labor" name="人力" parent="menu_work" action="action_labor" sequence="25"/>
     <menuitem id="menu_maintenance" name="维护通告" parent="menu_work" action="action_maintenance" sequence="30"/>
     <menuitem id="menu_flow_tasks" name="交付任务" parent="menu_work" action="action_flow_tasks" sequence="12"/>
     <menuitem id="menu_allocation" name="资源分配" parent="menu_work" action="action_allocation_queue" sequence="15" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_allocator,zenlenet_ops.group_manager"/>

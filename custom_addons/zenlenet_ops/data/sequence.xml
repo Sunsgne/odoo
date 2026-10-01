@@ -18,6 +18,12 @@
         <field name="prefix">PD</field>
         <field name="padding">6</field>
     </record>
+    <record id="seq_labor" model="ir.sequence">
+        <field name="name">ZENLENET 人力</field>
+        <field name="code">zenlenet.labor</field>
+        <field name="prefix">RL-%(year)s-</field>
+        <field name="padding">4</field>
+    </record>
     <record id="seq_maintenance" model="ir.sequence">
         <field name="name">ZENLENET 割接维护</field>
         <field name="code">zenlenet.maintenance</field>

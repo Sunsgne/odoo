@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_labor_list" model="ir.ui.view">
+        <field name="name">zenlenet.labor.list</field>
+        <field name="model">zenlenet.labor</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'cancel'" decoration-success="state == 'billed'" decoration-info="state == 'confirmed'">
+                <header>
+                    <button name="action_bill" type="object" string="出账" groups="zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
+                </header>
+                <field name="ref" optional="show"/>
+                <field name="service_date"/>
+                <field name="partner_id"/>
+                <field name="datacenter_id"/>
+                <field name="place" optional="show"/>
+                <field name="method"/>
+                <field name="operation"/>
+                <field name="target" optional="show"/>
+                <field name="engineer" optional="show"/>
+                <field name="arrived" optional="hide"/>
+                <field name="left" optional="hide"/>
+                <field name="hours"/>
+                <field name="rate_unit"/>
+                <field name="price_unit"/>
+                <field name="amount" sum="合计"/>
+                <field name="currency_id" optional="show"/>
+                <field name="amount_company" optional="hide"/>
+                <field name="company_currency_id" column_invisible="1"/>
+                <field name="applicant" optional="hide"/>
+                <field name="approver" optional="show"/>
+                <field name="result" optional="show"/>
+                <field name="issue" optional="hide"/>
+                <field name="confirmed_by" optional="show"/>
+                <field name="confirmed_on" optional="hide"/>
+                <field name="state" widget="badge" decoration-info="state == 'confirmed'" decoration-success="state == 'billed'" decoration-muted="state == 'cancel'"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_labor_form" model="ir.ui.view">
+        <field name="name">zenlenet.labor.form</field>
+        <field name="model">zenlenet.labor</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_confirm" type="object" string="客户确认" class="btn-primary" invisible="state != 'draft'" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_service,zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
+                    <button name="action_bill" type="object" string="出账" class="btn-primary" invisible="state != 'confirmed'" groups="zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
+                    <button name="action_reset" type="object" string="改回登记" invisible="state != 'confirmed'" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_service,zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
+                    <button name="action_cancel" type="object" string="取消" invisible="state not in ('draft', 'confirmed')" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_service,zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed,billed"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_invoice" type="object" class="oe_stat_button" icon="fa-pencil-square-o" invisible="not invoice_id">
+                            <div class="o_stat_info"><span class="o_stat_text">账单</span></div>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="服务">
+                            <field name="ref" readonly="state != 'draft'"/>
+                            <field name="service_date" readonly="state != 'draft'"/>
+                            <field name="partner_id" readonly="state != 'draft'" options="{'no_create': True}"/>
+                            <field name="datacenter_id" readonly="state != 'draft'" options="{'no_create': True}"/>
+                            <field name="place" readonly="state != 'draft'"/>
+                            <field name="method" readonly="state != 'draft'"/>
+                            <field name="operation" readonly="state != 'draft'"/>
+                            <field name="engineer" readonly="state != 'draft'"/>
+                            <field name="product_id" readonly="1"/>
+                        </group>
+                        <group string="计费">
+                            <field name="arrived" readonly="state != 'draft'"/>
+                            <field name="left" readonly="state != 'draft'"/>
+                            <field name="hours" readonly="state != 'draft'"/>
+                            <field name="rate_unit" readonly="state != 'draft'"/>
+                            <field name="quantity" readonly="state != 'draft'"/>
+                            <field name="currency_id" readonly="state != 'draft'"/>
+                            <field name="price_unit" readonly="state != 'draft'"/>
+                            <field name="amount"/>
+                            <field name="company_currency_id" invisible="1"/>
+                            <field name="amount_company"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="target" readonly="state != 'draft'"/>
+                        <field name="detail" readonly="state != 'draft'"/>
+                        <field name="issue" readonly="state != 'draft'"/>
+                    </group>
+                    <group string="确认">
+                        <group>
+                            <field name="applicant" readonly="state != 'draft'"/>
+                            <field name="approver" readonly="state != 'draft'"/>
+                            <field name="result" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="confirmed_by" readonly="state != 'draft'"/>
+                            <field name="confirmed_on" readonly="state != 'draft'"/>
+                            <field name="company_id" invisible="1"/>
+                            <field name="invoice_id" invisible="1"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="view_labor_search" model="ir.ui.view">
+        <field name="name">zenlenet.labor.search</field>
+        <field name="model">zenlenet.labor</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="ref"/>
+                <field name="partner_id"/>
+                <field name="datacenter_id"/>
+                <field name="place"/>
+                <field name="engineer"/>
+                <field name="target"/>
+                <filter name="draft" string="登记" domain="[('state', '=', 'draft')]"/>
+                <filter name="confirmed" string="待出账" domain="[('state', '=', 'confirmed')]"/>
+                <filter name="billed" string="已出账" domain="[('state', '=', 'billed')]"/>
+                <group>
+                    <filter name="group_partner" string="客户" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_site" string="机房" context="{'group_by': 'datacenter_id'}"/>
+                    <filter name="group_month" string="服务日期" context="{'group_by': 'service_date'}"/>
+                </group>
+                <searchpanel>
+                    <field name="state" string="状态" enable_counters="1" expand="1" icon="fa-flag"/>
+                    <field name="operation" string="操作类型" enable_counters="1" expand="1" icon="fa-wrench"/>
+                </searchpanel>
+            </search>
+        </field>
+    </record>
+    <record id="action_labor" model="ir.actions.act_window">
+        <field name="name">人力</field>
+        <field name="res_model">zenlenet.labor</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_labor_search"/>
+    </record>
+</odoo>

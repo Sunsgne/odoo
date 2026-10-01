@@ -113,6 +113,14 @@ SOURCES = (
         'order': 'name',
     },
     {
+        'model': 'zenlenet.labor',
+        'kind': '人力',
+        'fields': ('name', 'ref', 'place', 'engineer', 'target', 'detail', 'partner_id.name', 'datacenter_id.name'),
+        'reads': ('name',),
+        'label': 'name',
+        'order': 'id desc',
+    },
+    {
         'model': 'zenlenet.maintenance',
         'kind': '维护通告',
         'fields': ('name', 'place', 'reason', 'impact'),

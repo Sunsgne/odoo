@@ -73,6 +73,10 @@ class DeletePolicyTests(unittest.TestCase):
         self.assertIsNotNone(blocked_reason('zenlenet.credit', {'state': 'applied'}))
         self.assertIsNone(blocked_reason('zenlenet.maintenance', {'state': 'draft'}))
         self.assertIsNotNone(blocked_reason('zenlenet.maintenance', {'state': 'notified'}))
+        self.assertIsNone(blocked_reason('zenlenet.labor', {'state': 'draft'}))
+        self.assertIsNone(blocked_reason('zenlenet.labor', {'state': 'confirmed'}))
+        self.assertIn('出过账', blocked_reason('zenlenet.labor', {'state': 'billed'}))
+        self.assertIn('出过账', blocked_reason('zenlenet.labor', {'state': 'draft', 'invoice': True}))
 
     def test_unknown_model_is_unrestricted(self):
         self.assertIsNone(blocked_reason('zenlenet.ipset', {}))
