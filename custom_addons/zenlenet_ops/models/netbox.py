@@ -7,12 +7,14 @@ allocation made here is written back to NetBox through its REST API.
 import ipaddress
 import logging
 import re
+import time
 
 import requests
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
+from odoo.addons.zenlenet_ops.loop import http_policy, pick_remote
 from odoo.addons.zenlenet_ops.resource_bindings import circuit_kind, end_facts, kbps, vlan_vid
 
 _logger = logging.getLogger(__name__)
@@ -79,13 +81,30 @@ class ZenlenetNetbox(models.AbstractModel):
             requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
         return session, cfg['api']
 
+    def _request(self, session, method, url, **kwargs):
+        kwargs.setdefault('timeout', 60)
+        last = None
+        for attempt in range(4):
+            response = session.request(method, url, **kwargs)
+            policy = http_policy(response.status_code)
+            if policy == 'ok':
+                return response
+            last = response
+            if policy == 'stop':
+                raise UserError(f'NetBox 拒绝访问 {response.status_code}。')
+            if policy == 'retry' and attempt < 3:
+                time.sleep(attempt + 1)
+                continue
+            break
+        code = last.status_code if last is not None else 0
+        text = (last.text or '')[:200] if last is not None else ''
+        raise UserError(f'NetBox 返回 {code}：{text}')
+
     def _iterate(self, session, base, path, params=None):
         url = f'{base}/api{path}'
         query = dict(params or {}, limit=PAGE, offset=0)
         while url:
-            response = session.get(url, params=query if query is not None else None, timeout=60)
-            if response.status_code != 200:
-                raise UserError(f'NetBox 返回 {response.status_code}：{response.text[:200]}')
+            response = self._request(session, 'GET', url, params=query if query is not None else None)
             payload = response.json()
             yield from payload.get('results', [])
             url = payload.get('next')
@@ -97,9 +116,7 @@ class ZenlenetNetbox(models.AbstractModel):
                 url = re.sub(r'^https?://[^/]+', base, url)
 
     def _write(self, session, base, method, path, payload):
-        response = session.request(method, f'{base}/api{path}', json=payload, timeout=60)
-        if response.status_code >= 300:
-            raise UserError(f'NetBox 写入失败 {response.status_code}：{response.text[:300]}')
+        response = self._request(session, method, f'{base}/api{path}', json=payload)
         return response.json() if response.text else {}
 
     # -------------------------------------------------------------------- sync
@@ -166,23 +183,80 @@ class ZenlenetNetbox(models.AbstractModel):
         return stats
 
     def _partner_by_tenant(self, tenant):
-        if not tenant:
+        """Customer link follows the stored tenant id, not the display name."""
+        if not tenant or not tenant.get('id'):
             return False
-        name = (tenant.get('name') or '').strip()
-        if not name:
-            return False
-        Partner = self.env['res.partner'].sudo()
-        partner = Partner.search([('name', '=', name), ('is_company', '=', True)], limit=1)
-        if not partner:
-            partner = Partner.create({'name': name, 'is_company': True, 'company_type': 'company', 'customer_rank': 1})
-        return partner.id
+        binding = self.env['zenlenet.binding'].sudo().search([
+            ('source', '=', 'netbox'),
+            ('object_type', '=', 'tenancy.tenant'),
+            ('external_id', '=', str(tenant['id'])),
+            ('tombstoned', '=', False),
+        ], limit=1)
+        return binding.res_ref or False
+
+    def _tombstoned_ids(self, object_type):
+        rows = self.env['zenlenet.binding'].sudo().search([
+            ('source', '=', 'netbox'),
+            ('object_type', '=', object_type),
+            ('tombstoned', '=', True),
+        ])
+        found = set()
+        for row in rows:
+            try:
+                found.add(int(row.external_id))
+            except (TypeError, ValueError):
+                continue
+        return found
+
+    def _remember_binding(self, object_type, external_id, odoo_model, res_id):
+        self.env['zenlenet.binding'].sudo().register(
+            'netbox', object_type, str(external_id), odoo_model, res_id,
+        )
+
+    def _tombstone_absent(self, object_type, odoo_model, seen, by_external):
+        Binding = self.env['zenlenet.binding'].sudo()
+        for external_id, record in by_external.items():
+            if external_id in seen:
+                continue
+            found = Binding.search([
+                ('source', '=', 'netbox'),
+                ('object_type', '=', object_type),
+                ('external_id', '=', str(external_id)),
+            ], limit=1)
+            if found:
+                if not found.tombstoned:
+                    found.action_tombstone()
+            else:
+                Binding.create({
+                    'source': 'netbox',
+                    'object_type': object_type,
+                    'external_id': str(external_id),
+                    'odoo_model': odoo_model,
+                    'res_ref': record.id,
+                    'tombstoned': True,
+                })
+
+    @staticmethod
+    def _keep_commercial(values, existing):
+        if not existing:
+            return values
+        kept = dict(values)
+        kept.pop('partner_id', None)
+        kept.pop('supplier_id', None)
+        return kept
 
     def _sync_sites(self, session, base):
         DC = self.env['zenlenet.datacenter'].sudo()
-        existing = {record.netbox_id: record for record in DC.search([('netbox_id', '!=', 0)])}
-        by_name = {record.name: record for record in DC.search([])}
+        by_external = {record.netbox_id: record for record in DC.search([('netbox_id', '!=', 0)])}
+        name_owner = {record.name: record.netbox_id or 0 for record in DC.search([])}
+        unlinked = {record.name: record for record in DC.search([('netbox_id', '=', 0)])}
+        tombstoned = self._tombstoned_ids('dcim.site')
+        seen = set()
         count = 0
         for site in self._iterate(session, base, '/dcim/sites/'):
+            decision = pick_remote(by_external, name_owner, site['id'], site['name'], tombstoned)
+            if decision in ('tombstone', 'conflict'):
+                continue
             status = (site.get('status') or {}).get('value', 'active')
             values = {
                 'netbox_id': site['id'],
@@ -194,22 +268,34 @@ class ZenlenetNetbox(models.AbstractModel):
                 'facility': site.get('facility') or '',
                 'netbox_synced': fields.Datetime.now(),
             }
-            record = existing.get(site['id']) or by_name.get(site['name'])
+            record = by_external.get(site['id']) or unlinked.get(site['name'])
             if record:
                 record.with_context(netbox_skip_push=True).write({key: value for key, value in values.items() if value or key in ('netbox_id', 'state')})
             else:
                 record = DC.with_context(netbox_skip_push=True).create(values)
-                by_name[record.name] = record
+            by_external[site['id']] = record
+            name_owner[record.name] = site['id']
+            unlinked.pop(site['name'], None)
+            self._remember_binding('dcim.site', site['id'], 'zenlenet.datacenter', record.id)
+            seen.add(site['id'])
             count += 1
+        self._tombstone_absent('dcim.site', 'zenlenet.datacenter', seen, by_external)
         return count
 
     def _sync_prefixes(self, session, base):
         Prefix = self.env['zenlenet.prefix'].sudo()
         DC = self.env['zenlenet.datacenter'].sudo()
         sites = {record.netbox_id: record.id for record in DC.search([('netbox_id', '!=', 0)])}
-        existing = {record.prefix: record for record in Prefix.search([])}
+        by_external = {record.netbox_id: record for record in Prefix.search([('netbox_id', '!=', 0)])}
+        name_owner = {record.prefix: record.netbox_id or 0 for record in Prefix.search([])}
+        unlinked = {record.prefix: record for record in Prefix.search([('netbox_id', '=', 0)])}
+        tombstoned = self._tombstoned_ids('ipam.prefix')
+        seen = set()
         count = 0
         for item in self._iterate(session, base, '/ipam/prefixes/'):
+            decision = pick_remote(by_external, name_owner, item['id'], item['prefix'], tombstoned)
+            if decision in ('tombstone', 'conflict'):
+                continue
             scope = item.get('scope') or {}
             site_id = sites.get(scope.get('id')) if (item.get('scope_type') or '') == 'dcim.site' else False
             values = {
@@ -224,17 +310,30 @@ class ZenlenetNetbox(models.AbstractModel):
                 'is_pool': bool(item.get('is_pool')),
                 'netbox_synced': fields.Datetime.now(),
             }
-            record = existing.get(item['prefix'])
+            record = by_external.get(item['id']) or unlinked.get(item['prefix'])
             if record:
-                record.with_context(netbox_skip_push=True).write(values)
+                record.with_context(netbox_skip_push=True).write(self._keep_commercial(values, record))
             else:
-                existing[item['prefix']] = Prefix.with_context(netbox_skip_push=True).create(values)
+                if not values.get('partner_id'):
+                    values.pop('partner_id', None)
+                record = Prefix.with_context(netbox_skip_push=True).create(values)
+            by_external[item['id']] = record
+            name_owner[record.prefix] = item['id']
+            unlinked.pop(item['prefix'], None)
+            self._remember_binding('ipam.prefix', item['id'], 'zenlenet.prefix', record.id)
+            seen.add(item['id'])
             count += 1
+        self._tombstone_absent('ipam.prefix', 'zenlenet.prefix', seen, by_external)
         return count
 
     def _sync_ips(self, session, base):
         Address = self.env['zenlenet.address'].sudo()
-        existing = {record.address: record for record in Address.search([])}
+        by_external = {record.netbox_id: record for record in Address.search([('netbox_id', '!=', 0)])}
+        name_owner = {record.address: record.netbox_id or 0 for record in Address.search([])}
+        unlinked = {record.address: record for record in Address.search([('netbox_id', '=', 0)])}
+        tombstoned = self._tombstoned_ids('ipam.ipaddress')
+        seen = set()
+        fresh = []
         count = 0
         batch = []
         for item in self._iterate(session, base, '/ipam/ip-addresses/'):
@@ -257,7 +356,10 @@ class ZenlenetNetbox(models.AbstractModel):
                 values['usage'] = custom['usage']
             if custom.get('expires_on'):
                 values['expires_on'] = custom['expires_on']
-            record = existing.get(item['address'])
+            decision = pick_remote(by_external, name_owner, item['id'], item['address'], tombstoned)
+            if decision in ('tombstone', 'conflict'):
+                continue
+            record = by_external.get(item['id']) or unlinked.get(item['address'])
             if record:
                 # NetBox decides tenant and hard states; the console keeps its finer allocation states.
                 if status == 'reserved' and record.status not in ('reserved', 'transferring'):
@@ -268,7 +370,11 @@ class ZenlenetNetbox(models.AbstractModel):
                     values['status'] = 'allocated'
                 elif status == 'active' and not partner_id and record.status in ('allocated', 'testing'):
                     values['status'] = 'free'
-                record.with_context(netbox_skip_push=True).write(values)
+                record.with_context(netbox_skip_push=True).write(self._keep_commercial(values, record))
+                by_external[item['id']] = record
+                name_owner[record.address] = item['id']
+                self._remember_binding('ipam.ipaddress', item['id'], 'zenlenet.address', record.id)
+                seen.add(item['id'])
             else:
                 values.update({
                     'address': item['address'],
@@ -277,13 +383,23 @@ class ZenlenetNetbox(models.AbstractModel):
                         'reserved' if status == 'reserved' else ('returning' if status == 'deprecated' else 'free')),
                     'remark': item.get('description') or '',
                 })
+                if not values.get('partner_id'):
+                    values.pop('partner_id', None)
                 batch.append(values)
+                fresh.append(item['id'])
+                name_owner[item['address']] = item['id']
+                seen.add(item['id'])
                 if len(batch) >= 500:
                     Address.with_context(netbox_skip_push=True).create(batch)
                     batch = []
             count += 1
         if batch:
             Address.with_context(netbox_skip_push=True).create(batch)
+        if fresh:
+            for record in Address.search([('netbox_id', 'in', fresh)]):
+                by_external[record.netbox_id] = record
+                self._remember_binding('ipam.ipaddress', record.netbox_id, 'zenlenet.address', record.id)
+        self._tombstone_absent('ipam.ipaddress', 'zenlenet.address', seen, by_external)
         return count
 
     @staticmethod
@@ -299,7 +415,8 @@ class ZenlenetNetbox(models.AbstractModel):
     def _sync_devices(self, session, base):
         Device = self.env['zenlenet.device'].sudo()
         sites = {record.netbox_id: record.id for record in self.env['zenlenet.datacenter'].sudo().search([('netbox_id', '!=', 0)])}
-        existing = {record.netbox_id: record for record in Device.search([('netbox_id', '!=', 0)])}
+        by_external = {record.netbox_id: record for record in Device.search([('netbox_id', '!=', 0)])}
+        seen = set()
         count = 0
         for item in self._iterate(session, base, '/dcim/devices/'):
             status = (item.get('status') or {}).get('value') or 'active'
@@ -312,12 +429,16 @@ class ZenlenetNetbox(models.AbstractModel):
                 'serial': item.get('serial') or '',
                 'netbox_synced': fields.Datetime.now(),
             }
-            record = existing.get(item['id'])
+            record = by_external.get(item['id'])
             if record:
                 record.with_context(netbox_skip_push=True).write(values)
             else:
-                existing[item['id']] = Device.with_context(netbox_skip_push=True).create(values)
+                record = Device.with_context(netbox_skip_push=True).create(values)
+                by_external[item['id']] = record
+            self._remember_binding('dcim.device', item['id'], 'zenlenet.device', record.id)
+            seen.add(item['id'])
             count += 1
+        self._tombstone_absent('dcim.device', 'zenlenet.device', seen, by_external)
         return count
 
     def _sync_vms(self, session, base):
@@ -325,7 +446,9 @@ class ZenlenetNetbox(models.AbstractModel):
         sites = {record.netbox_id: record.id for record in self.env['zenlenet.datacenter'].sudo().search([('netbox_id', '!=', 0)])}
         devices = {record.netbox_id: record.id for record in self.env['zenlenet.device'].sudo().search([('netbox_id', '!=', 0)])}
         addresses = {record.address: record.id for record in self.env['zenlenet.address'].sudo().search([])}
-        existing = {record.netbox_id: record for record in Vm.search([('netbox_id', '!=', 0)])}
+        by_external = {record.netbox_id: record for record in Vm.search([('netbox_id', '!=', 0)])}
+        tombstoned = self._tombstoned_ids('virtualization.virtualmachine')
+        seen = set()
         count = 0
         for item in self._iterate(session, base, '/virtualization/virtual-machines/'):
             status = (item.get('status') or {}).get('value') or 'active'
@@ -349,14 +472,22 @@ class ZenlenetNetbox(models.AbstractModel):
                 'partner_id': self._partner_by_tenant(item.get('tenant')),
                 'netbox_synced': fields.Datetime.now(),
             }
+            seen.add(item['id'])
             if not values['datacenter_id']:
                 continue
-            record = existing.get(item['id'])
+            if item['id'] in tombstoned and item['id'] not in by_external:
+                continue
+            record = by_external.get(item['id'])
             if record:
-                record.with_context(netbox_skip_push=True).write(values)
+                record.with_context(netbox_skip_push=True).write(self._keep_commercial(values, record))
             else:
-                existing[item['id']] = Vm.with_context(netbox_skip_push=True).create(values)
+                if not values.get('partner_id'):
+                    values.pop('partner_id', None)
+                record = Vm.with_context(netbox_skip_push=True).create(values)
+            by_external[item['id']] = record
+            self._remember_binding('virtualization.virtualmachine', item['id'], 'zenlenet.vm', record.id)
             count += 1
+        self._tombstone_absent('virtualization.virtualmachine', 'zenlenet.vm', seen, by_external)
         return count
 
     def _sync_circuits(self, session, base):
@@ -371,7 +502,11 @@ class ZenlenetNetbox(models.AbstractModel):
             side = (term.get('term_side') or '').upper()
             if circuit.get('id') and side in ('A', 'Z'):
                 ends.setdefault(circuit['id'], {})[side] = self._termination_with_vlan(session, base, term)
-        existing = {record.name: record for record in Line.search([])}
+        by_external = {record.netbox_id: record for record in Line.search([('netbox_id', '!=', 0)])}
+        name_owner = {record.name: record.netbox_id or 0 for record in Line.search([])}
+        unlinked = {record.name: record for record in Line.search([('netbox_id', '=', 0)])}
+        tombstoned = self._tombstoned_ids('circuits.circuit')
+        seen = set()
         count = 0
         for item in self._iterate(session, base, '/circuits/circuits/'):
             kind_name = (item.get('type') or {}).get('name') or ''
@@ -395,14 +530,27 @@ class ZenlenetNetbox(models.AbstractModel):
                 values['datacenter_id'] = values['a_site_id']
             if rate:
                 values['commit_rate'] = int(rate / 1000)
-            if rate and not (existing.get(item['cid']) and existing[item['cid']].bandwidth):
+            decision = pick_remote(by_external, name_owner, item['id'], item['cid'], tombstoned)
+            if decision in ('tombstone', 'conflict'):
+                continue
+            record = by_external.get(item['id']) or unlinked.get(item['cid'])
+            if rate and not (record and record.bandwidth):
                 values['bandwidth'] = f'{int(rate / 1000)}M' if rate >= 1000 else f'{rate}K'
-            record = existing.get(item['cid'])
             if record:
-                record.with_context(netbox_skip_push=True).write(values)
+                record.with_context(netbox_skip_push=True).write(self._keep_commercial(values, record))
             else:
-                existing[item['cid']] = Line.with_context(netbox_skip_push=True).create(values)
+                if not values.get('partner_id'):
+                    values.pop('partner_id', None)
+                if not values.get('supplier_id'):
+                    values.pop('supplier_id', None)
+                record = Line.with_context(netbox_skip_push=True).create(values)
+            by_external[item['id']] = record
+            name_owner[record.name] = item['id']
+            unlinked.pop(item['cid'], None)
+            self._remember_binding('circuits.circuit', item['id'], 'zenlenet.line', record.id)
+            seen.add(item['id'])
             count += 1
+        self._tombstone_absent('circuits.circuit', 'zenlenet.line', seen, by_external)
         return count
 
     def _termination_with_vlan(self, session, base, term):
@@ -472,14 +620,25 @@ class ZenlenetNetbox(models.AbstractModel):
     def _tenant_for(self, session, base, partner):
         if not partner:
             return None
+        binding = self.env['zenlenet.binding'].sudo().search([
+            ('source', '=', 'netbox'),
+            ('object_type', '=', 'tenancy.tenant'),
+            ('res_ref', '=', partner.id),
+            ('tombstoned', '=', False),
+        ], limit=1)
+        if binding and str(binding.external_id).isdigit():
+            return int(binding.external_id)
         found = list(self._iterate(session, base, '/tenancy/tenants/', {'name': partner.name}))
-        if found:
-            return found[0]['id']
-        created = self._write(session, base, 'POST', '/tenancy/tenants/', {
-            'name': partner.name,
-            'slug': f'kh-{partner.id}',
-        })
-        return created.get('id')
+        tenant_id = found[0]['id'] if found else None
+        if not tenant_id:
+            created = self._write(session, base, 'POST', '/tenancy/tenants/', {
+                'name': partner.name,
+                'slug': f'kh-{partner.id}',
+            })
+            tenant_id = created.get('id')
+        if tenant_id:
+            self._remember_binding('tenancy.tenant', tenant_id, 'res.partner', partner.id)
+        return tenant_id
 
     @api.model
     def push_addresses(self, addresses):
