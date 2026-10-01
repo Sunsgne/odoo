@@ -27,15 +27,6 @@
     <menuitem id="menu_flow" name="资源工单" parent="menu_work" action="action_flow" sequence="10"/>
     <menuitem id="menu_tickets" name="服务工单" parent="menu_work" action="action_tickets" sequence="20"/>
     <menuitem id="menu_labor" name="人力" parent="menu_work" action="action_labor" sequence="25"/>
-    <menuitem id="menu_holds" name="资源预留" parent="menu_work" action="action_holds" sequence="16" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_allocator,zenlenet_ops.group_manager"/>
-    <menuitem id="menu_changes" name="变更" parent="menu_work" action="action_changes" sequence="26"/>
-    <menuitem id="menu_exits" name="退订" parent="menu_work" action="action_exits" sequence="27"/>
-    <menuitem id="menu_bindings" name="外部绑定" parent="menu_work" action="action_bindings" sequence="28" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_manager"/>
-    <menuitem id="menu_operations" name="操作" parent="menu_work" action="action_operations" sequence="29" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_manager"/>
-    <menuitem id="menu_jobs" name="执行" parent="menu_work" action="action_jobs" sequence="31" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_manager"/>
-    <menuitem id="menu_clouds" name="云连接" parent="menu_work" action="action_clouds" sequence="32"/>
-    <menuitem id="menu_inbox" name="收件箱" parent="menu_work" action="action_inbox" sequence="33" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_manager"/>
-    <menuitem id="menu_rollouts" name="灰度" parent="menu_work" action="action_rollouts" sequence="34" groups="zenlenet_ops.group_manager"/>
     <menuitem id="menu_shadows" name="影子计费" parent="menu_fin_billing" action="action_shadows" sequence="26" groups="zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
     <menuitem id="menu_disputes" name="账单争议" parent="menu_fin_billing" action="action_disputes" sequence="27" groups="zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
     <menuitem id="menu_hooks" name="客户订阅" parent="menu_fin_billing" action="action_hooks" sequence="28" groups="zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
@@ -64,4 +55,7 @@
     <menuitem id="menu_products" name="产品与定价" parent="menu_setup" action="action_products" sequence="20"/>
     <menuitem id="menu_templates" name="通告模板" parent="menu_setup" action="action_templates" sequence="30"/>
     <menuitem id="menu_task_templates" name="交付任务模板" parent="menu_setup" action="action_task_templates" sequence="40"/>
+    <menuitem id="menu_bindings" name="外部绑定" parent="menu_setup" action="action_bindings" sequence="50"/>
+    <menuitem id="menu_inbox" name="收件箱" parent="menu_setup" action="action_inbox" sequence="60"/>
+    <menuitem id="menu_rollouts" name="灰度" parent="menu_setup" action="action_rollouts" sequence="70"/>
 </odoo>

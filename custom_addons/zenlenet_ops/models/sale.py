@@ -39,6 +39,11 @@ class SaleOrder(models.Model):
     zenlenet_contract_total = fields.Monetary(string='合约期总额', compute='_compute_zenlenet_totals', store=True)
     zenlenet_setup_billed = fields.Boolean(string='一次性费用已出账', copy=False)
     zenlenet_flow_ids = fields.One2many('zenlenet.flow', 'order_id', string='交付工单')
+    zenlenet_hold_ids = fields.One2many('zenlenet.hold', 'order_id', string='预留')
+    zenlenet_job_ids = fields.One2many('zenlenet.job', 'order_id', string='执行')
+    zenlenet_cloud_ids = fields.One2many('zenlenet.cloud', 'order_id', string='云连接')
+    zenlenet_change_ids = fields.One2many('zenlenet.change', 'order_id', string='变更')
+    zenlenet_exit_ids = fields.One2many('zenlenet.exit.step', 'order_id', string='退订')
     zenlenet_flow_count = fields.Integer(compute='_compute_zenlenet_links')
     zenlenet_contract_id = fields.Many2one('zenlenet.contract', string='合同', compute='_compute_zenlenet_links')
     zenlenet_contract_state = fields.Selection(related='zenlenet_contract_id.state', string='合同状态')
@@ -117,6 +122,10 @@ class SaleOrder(models.Model):
                 'title': f'{partner.name} 网络服务协议',
             })
         self.message_post(body=f'合同 {contract.name}')
+
+    def action_ensure_exit(self):
+        self._ensure_exit()
+        return True
 
     def action_open_flows(self):
         self.ensure_one()

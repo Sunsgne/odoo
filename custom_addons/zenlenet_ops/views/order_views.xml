@@ -51,14 +51,7 @@
                             <field name="zenlenet_term_months" readonly="state == 'sale'"/>
                             <field name="zenlenet_bill_mode" readonly="state == 'sale'"/>
                             <field name="zenlenet_graph_ref" invisible="zenlenet_bill_mode != 'p95'"/>
-                            <field name="zenlenet_commercial_start"/>
-                            <field name="zenlenet_technical_ready"/>
-                            <field name="zenlenet_customer_accepted"/>
                             <field name="zenlenet_billing_start"/>
-                            <field name="zenlenet_technical_disabled"/>
-                            <field name="zenlenet_metering_cutoff"/>
-                            <field name="zenlenet_capacity_released"/>
-                            <field name="zenlenet_supplier_ceased"/>
                             <field name="zenlenet_suspended_on" invisible="zenlenet_stage != 'suspended'"/>
                             <field name="zenlenet_parent_id" invisible="not zenlenet_parent_id"/>
                         </group>
@@ -95,18 +88,80 @@
                         <field name="amount_total" invisible="1"/>
                     </group>
                     <field name="note" readonly="state == 'sale'"/>
-                    <separator string="交付进度" invisible="state != 'sale'"/>
-                    <field name="zenlenet_flow_ids" readonly="1" nolabel="1" invisible="state != 'sale'">
-                        <list limit="20">
-                            <field name="name"/>
-                            <field name="state" widget="badge"/>
-                            <field name="datacenter_id"/>
-                            <field name="pending_count" string="待分配"/>
-                            <field name="risk" widget="badge"/>
-                            <field name="planned_date"/>
-                            <field name="user_id" widget="many2one_avatar_user"/>
-                        </list>
-                    </field>
+                    <notebook invisible="state != 'sale'">
+                        <page string="交付" name="flows">
+                            <field name="zenlenet_flow_ids" readonly="1">
+                                <list limit="20">
+                                    <field name="name"/>
+                                    <field name="move"/>
+                                    <field name="state" widget="badge"/>
+                                    <field name="datacenter_id"/>
+                                    <field name="pending_count" string="待分配"/>
+                                    <field name="user_id" widget="many2one_avatar_user"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="预留" name="holds">
+                            <field name="zenlenet_hold_ids">
+                                <list editable="bottom">
+                                    <field name="object_type"/>
+                                    <field name="res_ref"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="执行" name="jobs">
+                            <field name="zenlenet_job_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="kind"/>
+                                    <field name="device_id"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="云连接" name="clouds">
+                            <field name="zenlenet_cloud_ids">
+                                <list>
+                                    <field name="provider"/>
+                                    <field name="vlan"/>
+                                    <field name="bandwidth"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="变更" name="changes">
+                            <field name="zenlenet_change_ids">
+                                <list>
+                                    <field name="summary"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="退订" name="exit">
+                            <button name="action_ensure_exit" type="object" string="生成退订事项" invisible="zenlenet_exit_ids"/>
+                            <group>
+                                <group>
+                                    <field name="zenlenet_commercial_start"/>
+                                    <field name="zenlenet_technical_ready"/>
+                                    <field name="zenlenet_customer_accepted"/>
+                                </group>
+                                <group>
+                                    <field name="zenlenet_technical_disabled"/>
+                                    <field name="zenlenet_metering_cutoff"/>
+                                    <field name="zenlenet_capacity_released"/>
+                                    <field name="zenlenet_supplier_ceased"/>
+                                </group>
+                            </group>
+                            <field name="zenlenet_exit_ids">
+                                <list>
+                                    <field name="kind"/>
+                                    <field name="state" widget="badge"/>
+                                    <field name="done_on"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
                 </sheet>
                 <chatter/>
             </form>
