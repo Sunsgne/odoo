@@ -3,12 +3,20 @@ import io
 import json
 
 from odoo import http
+from odoo.exceptions import UserError
 from odoo.http import request
 
 
 class ZenlenetPortal(http.Controller):
     @http.route('/zenlenet/prefixes.csv', type='http', auth='user')
     def prefixes(self, **kwargs):
+        from odoo.addons.zenlenet_ops.remain import inventory_export_allowed
+        user = request.env.user
+        if not inventory_export_allowed(
+            user.has_group('zenlenet_ops.group_finance'),
+            user.has_group('zenlenet_ops.group_manager'),
+        ):
+            return request.make_json_response({'error': 'forbidden'}, status=403)
         labels = dict(request.env['zenlenet.address']._fields['status'].selection)
         counts = {}
         for row in request.env['zenlenet.address'].search_read([], ['block', 'pop', 'status']):
@@ -63,3 +71,48 @@ class ZenlenetPortal(http.Controller):
             )
             done += 1
         return request.make_json_response({'imported': done, 'missing': missing})
+
+    @http.route('/zenlenet/inbox', type='http', auth='public', methods=['POST'], csrf=False, save_session=False)
+    def inbox(self, **kwargs):
+        from odoo.addons.zenlenet_ops.loop import payload_hash
+        raw = request.httprequest.get_data(as_text=True) or ''
+        env = request.env(su=True)
+        secret = (env['ir.config_parameter'].get_param('zenlenet.webhook_secret') or '').strip()
+        given = request.httprequest.headers.get('X-Zenlenet-Signature') or ''
+        if not secret or given != secret:
+            return request.make_json_response({'error': 'unauthorized'}, status=401)
+        try:
+            payload = json.loads(raw or '{}')
+        except ValueError:
+            return request.make_json_response({'error': 'invalid json'}, status=400)
+        event_key = str(payload.get('event_key') or '').strip()
+        if not event_key:
+            return request.make_json_response({'error': 'event_key'}, status=400)
+        try:
+            row = env['zenlenet.inbox'].receive(event_key, payload_hash(raw), payload.get('version') or 0, raw)
+        except UserError:
+            return request.make_json_response({'error': 'conflict'}, status=409)
+        return request.make_json_response({'id': row.id, 'state': row.state})
+
+    @http.route('/zenlenet/mine', type='http', auth='user')
+    def mine(self, **kwargs):
+        from odoo.addons.zenlenet_ops.remain import portal_partner_id
+        user = request.env.user
+        partner_id = portal_partner_id(not user.share, user.partner_id.commercial_partner_id.id)
+        if not partner_id:
+            return request.redirect('/odoo')
+        orders = request.env['sale.order'].search([
+            ('partner_id', 'child_of', partner_id),
+            ('state', '=', 'sale'),
+        ])
+        invoices = request.env['account.move'].search([
+            ('partner_id', 'child_of', partner_id),
+            ('move_type', '=', 'out_invoice'),
+            ('state', '=', 'posted'),
+        ])
+        body = ['<h1>服务</h1><ul>']
+        body.extend(f'<li>{order.name}</li>' for order in orders)
+        body.append('</ul><h1>账单</h1><ul>')
+        body.extend(f'<li>{invoice.name}</li>' for invoice in invoices)
+        body.append('</ul>')
+        return request.make_response(''.join(body), headers=[('Content-Type', 'text/html; charset=utf-8')])

@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_inbox_list" model="ir.ui.view">
+        <field name="name">zenlenet.inbox.list</field>
+        <field name="model">zenlenet.inbox</field>
+        <field name="arch" type="xml">
+            <list>
+                <header>
+                    <button name="action_apply" type="object" string="处理"/>
+                </header>
+                <field name="event_key"/>
+                <field name="version"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_inbox" model="ir.actions.act_window">
+        <field name="name">收件箱</field>
+        <field name="res_model">zenlenet.inbox</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="view_inbox_form" model="ir.ui.view">
+        <field name="name">zenlenet.inbox.form</field>
+        <field name="model">zenlenet.inbox</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_apply" type="object" string="处理" invisible="state != 'new'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <field name="event_key"/>
+                        <field name="version"/>
+                        <field name="payload_digest"/>
+                        <field name="payload"/>
+                        <field name="company_id" invisible="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_job_list" model="ir.ui.view">
+        <field name="name">zenlenet.job.list</field>
+        <field name="model">zenlenet.job</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="kind"/>
+                <field name="order_id"/>
+                <field name="device_id"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_job_form" model="ir.ui.view">
+        <field name="name">zenlenet.job.form</field>
+        <field name="model">zenlenet.job</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_plan" type="object" string="计划" invisible="state != 'draft'"/>
+                    <button name="action_execute" type="object" string="执行" invisible="state != 'planned'"/>
+                    <button name="action_verify" type="object" string="核对" invisible="state != 'unknown'"/>
+                    <button name="action_fail" type="object" string="失败" invisible="state not in ('planned', 'unknown')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,planned,unknown,verified"/>
+                </header>
+                <sheet>
+                    <group>
+                        <field name="name" readonly="state != 'draft'"/>
+                        <field name="kind" readonly="state != 'draft'"/>
+                        <field name="order_id"/>
+                        <field name="device_id"/>
+                        <field name="image"/>
+                        <field name="evidence"/>
+                        <field name="company_id" invisible="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_jobs" model="ir.actions.act_window">
+        <field name="name">执行</field>
+        <field name="res_model">zenlenet.job</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_cloud_list" model="ir.ui.view">
+        <field name="name">zenlenet.cloud.list</field>
+        <field name="model">zenlenet.cloud</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="order_id"/>
+                <field name="provider"/>
+                <field name="vlan"/>
+                <field name="bandwidth"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_cloud_form" model="ir.ui.view">
+        <field name="name">zenlenet.cloud.form</field>
+        <field name="model">zenlenet.cloud</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_wait" type="object" string="等待对方" invisible="state != 'draft'"/>
+                    <button name="action_accept" type="object" string="对方已接受" invisible="state != 'waiting'"/>
+                    <button name="action_fail" type="object" string="失败" invisible="state not in ('draft', 'waiting')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,waiting,accepted"/>
+                </header>
+                <sheet>
+                    <group>
+                        <field name="order_id" readonly="state != 'draft'"/>
+                        <field name="provider" readonly="state != 'draft'"/>
+                        <field name="vlan"/>
+                        <field name="bandwidth"/>
+                        <field name="company_id" invisible="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_clouds" model="ir.actions.act_window">
+        <field name="name">云连接</field>
+        <field name="res_model">zenlenet.cloud</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_shadow_list" model="ir.ui.view">
+        <field name="name">zenlenet.shadow.list</field>
+        <field name="model">zenlenet.shadow</field>
+        <field name="arch" type="xml">
+            <list>
+                <header>
+                    <button name="action_build_current" type="object" string="对本月做影子对比" display="always" groups="zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
+                </header>
+                <field name="period"/>
+                <field name="partner_id"/>
+                <field name="contract_amount"/>
+                <field name="charge_amount"/>
+                <field name="delta"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_shadows" model="ir.actions.act_window">
+        <field name="name">影子计费</field>
+        <field name="res_model">zenlenet.shadow</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_rollout_list" model="ir.ui.view">
+        <field name="name">zenlenet.rollout.list</field>
+        <field name="model">zenlenet.rollout</field>
+        <field name="arch" type="xml">
+            <list>
+                <header>
+                    <button name="action_advance" type="object" string="进入下一阶段"/>
+                </header>
+                <field name="datacenter_id"/>
+                <field name="product"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_rollout_form" model="ir.ui.view">
+        <field name="name">zenlenet.rollout.form</field>
+        <field name="model">zenlenet.rollout</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_advance" type="object" string="进入下一阶段" invisible="state == 'bill'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="shadow,hold,change,bill"/>
+                </header>
+                <sheet>
+                    <group>
+                        <field name="datacenter_id" readonly="state != 'shadow'"/>
+                        <field name="product" readonly="state != 'shadow'"/>
+                        <field name="company_id" invisible="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_rollouts" model="ir.actions.act_window">
+        <field name="name">灰度</field>
+        <field name="res_model">zenlenet.rollout</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_dispute_list" model="ir.ui.view">
+        <field name="name">zenlenet.dispute.list</field>
+        <field name="model">zenlenet.dispute</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="invoice_id"/>
+                <field name="partner_id"/>
+                <field name="amount"/>
+                <field name="state" widget="badge"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_dispute_form" model="ir.ui.view">
+        <field name="name">zenlenet.dispute.form</field>
+        <field name="model">zenlenet.dispute</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_accept" type="object" string="接受" invisible="state != 'draft'" groups="zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
+                    <button name="action_reject" type="object" string="驳回" invisible="state != 'draft'" groups="zenlenet_ops.group_finance,zenlenet_ops.group_manager"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <field name="invoice_id" readonly="state != 'draft'"/>
+                        <field name="amount" readonly="state != 'draft'"/>
+                        <field name="reason" readonly="state != 'draft'"/>
+                        <field name="charge_id"/>
+                        <field name="currency_id" invisible="1"/>
+                        <field name="company_id" invisible="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_disputes" model="ir.actions.act_window">
+        <field name="name">账单争议</field>
+        <field name="res_model">zenlenet.dispute</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_hook_list" model="ir.ui.view">
+        <field name="name">zenlenet.hook.list</field>
+        <field name="model">zenlenet.hook</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="partner_id"/>
+                <field name="event"/>
+                <field name="active_hook"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_hook_form" model="ir.ui.view">
+        <field name="name">zenlenet.hook.form</field>
+        <field name="model">zenlenet.hook</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_queue" type="object" string="检查启用" invisible="not active_hook"/>
+                </header>
+                <sheet>
+                    <group>
+                        <field name="partner_id"/>
+                        <field name="event"/>
+                        <field name="url"/>
+                        <field name="active_hook"/>
+                        <field name="company_id" invisible="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_hooks" model="ir.actions.act_window">
+        <field name="name">客户订阅</field>
+        <field name="res_model">zenlenet.hook</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_line_protect" model="ir.ui.view">
+        <field name="name">zenlenet.line.protect</field>
+        <field name="model">zenlenet.line</field>
+        <field name="inherit_id" ref="view_line_form"/>
+        <field name="arch" type="xml">
+            <field name="bandwidth" position="after">
+                <field name="protect_id"/>
+            </field>
+        </field>
+    </record>
+    <record id="view_datacenter_power" model="ir.ui.view">
+        <field name="name">zenlenet.datacenter.power</field>
+        <field name="model">zenlenet.datacenter</field>
+        <field name="inherit_id" ref="view_datacenter_form"/>
+        <field name="arch" type="xml">
+            <field name="power_used_kw" position="after">
+                <button name="action_check_power" type="object" string="核对电力" class="btn-link"/>
+            </field>
+        </field>
+    </record>
+</odoo>

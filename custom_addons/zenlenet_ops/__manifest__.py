@@ -1,6 +1,6 @@
 {
     'name': '运营后台',
-    'version': '19.0.4.19.13',
+    'version': '19.0.4.19.14',
     'category': 'Sales',
     'summary': '数据中心、线路、IP；客户、报价、合同、出账；业务流转与工单',
     'author': 'ZENLENET PTE. LTD.',
@@ -36,6 +36,7 @@
         'views/usage_views.xml',
         'views/charge_views.xml',
         'views/loop_views.xml',
+        'views/remain_views.xml',
         'views/credit_views.xml',
         'data/labor.xml',
         'views/labor_views.xml',
