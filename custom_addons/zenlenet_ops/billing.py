@@ -1,4 +1,4 @@
-"""Billing periods and contract terms. No Odoo imports."""
+"""Billing periods and contract terms. No obss imports."""
 
 import calendar
 from datetime import date, timedelta

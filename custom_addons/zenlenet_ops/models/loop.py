@@ -3,7 +3,7 @@ from odoo.exceptions import UserError
 
 from odoo.addons.zenlenet_ops.loop import can_rebind, capacity_ready, hold_allows, operation_result, payload_hash
 
-SOURCES = [('netbox', 'NetBox'), ('monitor', '监控'), ('odoo', '运营')]
+SOURCES = [('netbox', 'NetBox'), ('monitor', '监控'), ('obss', '运营')]
 HOLD_OBJECTS = [('prefix', '地址段'), ('address', '地址'), ('line', '线路')]
 HOLD_STATES = [('draft', '草稿'), ('held', '预留中'), ('unknown', '结果未知'), ('released', '已释放')]
 CHANGE_STATES = [('draft', '草稿'), ('approved', '已批准'), ('done', '已完成'), ('cancel', '已取消')]
@@ -25,7 +25,7 @@ class ZenlenetBinding(models.Model):
     source = fields.Selection(SOURCES, string='来源', required=True, default='netbox')
     object_type = fields.Char(string='对象类型', required=True)
     external_id = fields.Char(string='外部编号', required=True)
-    odoo_model = fields.Char(string='本系统模型')
+    obss_model = fields.Char(string='本系统模型')
     res_ref = fields.Integer(string='本系统编号')
     tombstoned = fields.Boolean(string='已删除', default=False, index=True)
     company_id = fields.Many2one('res.company', default=lambda self: self.env.company, required=True)
@@ -36,7 +36,7 @@ class ZenlenetBinding(models.Model):
     )
 
     @api.model
-    def register(self, source, object_type, external_id, odoo_model=None, res_ref=None):
+    def register(self, source, object_type, external_id, obss_model=None, res_ref=None):
         found = self.search([
             ('source', '=', source),
             ('object_type', '=', object_type),
@@ -50,7 +50,7 @@ class ZenlenetBinding(models.Model):
             'source': source,
             'object_type': object_type,
             'external_id': external_id,
-            'odoo_model': odoo_model,
+            'obss_model': obss_model,
             'res_ref': res_ref or 0,
         })
 

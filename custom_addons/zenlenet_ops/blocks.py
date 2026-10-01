@@ -1,4 +1,4 @@
-"""IP block labels shared by the address import. No Odoo imports."""
+"""IP block labels shared by the address import. No obss imports."""
 
 import ipaddress
 

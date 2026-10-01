@@ -1,4 +1,4 @@
-"""Billing measurements that do not depend on Odoo.
+"""Billing measurements that do not depend on obss.
 
 95th percentile is nearest-rank on the aggregated series. Missing samples stay
 missing. A counter that goes backwards is a restart, not negative usage.

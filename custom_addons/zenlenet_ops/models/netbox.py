@@ -208,12 +208,12 @@ class ZenlenetNetbox(models.AbstractModel):
                 continue
         return found
 
-    def _remember_binding(self, object_type, external_id, odoo_model, res_id):
+    def _remember_binding(self, object_type, external_id, obss_model, res_id):
         self.env['zenlenet.binding'].sudo().register(
-            'netbox', object_type, str(external_id), odoo_model, res_id,
+            'netbox', object_type, str(external_id), obss_model, res_id,
         )
 
-    def _tombstone_absent(self, object_type, odoo_model, seen, by_external):
+    def _tombstone_absent(self, object_type, obss_model, seen, by_external):
         Binding = self.env['zenlenet.binding'].sudo()
         for external_id, record in by_external.items():
             if external_id in seen:
@@ -231,7 +231,7 @@ class ZenlenetNetbox(models.AbstractModel):
                     'source': 'netbox',
                     'object_type': object_type,
                     'external_id': str(external_id),
-                    'odoo_model': odoo_model,
+                    'obss_model': obss_model,
                     'res_ref': record.id,
                     'tombstoned': True,
                 })

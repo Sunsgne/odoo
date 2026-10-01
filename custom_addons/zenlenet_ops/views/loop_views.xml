@@ -11,7 +11,7 @@
                 <field name="source"/>
                 <field name="object_type"/>
                 <field name="external_id"/>
-                <field name="odoo_model"/>
+                <field name="obss_model"/>
                 <field name="res_ref"/>
                 <field name="tombstoned"/>
             </list>
@@ -30,7 +30,7 @@
                         <field name="source" readonly="tombstoned"/>
                         <field name="object_type" readonly="tombstoned"/>
                         <field name="external_id" readonly="tombstoned"/>
-                        <field name="odoo_model" readonly="tombstoned"/>
+                        <field name="obss_model" readonly="tombstoned"/>
                         <field name="res_ref" readonly="tombstoned"/>
                         <field name="tombstoned"/>
                         <field name="company_id" invisible="1"/>

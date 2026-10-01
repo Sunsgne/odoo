@@ -1,4 +1,4 @@
-"""Ticket SLA and state order. No Odoo imports."""
+"""Ticket SLA and state order. No obss imports."""
 
 from datetime import timedelta
 

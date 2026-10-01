@@ -1,4 +1,4 @@
-"""Person-assigned handoff. No Odoo imports."""
+"""Person-assigned handoff. No obss imports."""
 
 # Which concrete resource a demand line may hold. Anything else (云主机、托管、转售) needs no network resource.
 RESOURCE_SLOT = {

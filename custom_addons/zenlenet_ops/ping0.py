@@ -1,7 +1,7 @@
 """Turn a prefix into the /24s Ping0 should be asked about, and read its answer.
 
 Ping0 classifies a segment, so one host stands for the whole /24.
-No Odoo imports: the daily job and the tests both call these helpers.
+No obss imports: the daily job and the tests both call these helpers.
 """
 
 import ipaddress

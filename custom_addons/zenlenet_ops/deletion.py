@@ -2,7 +2,7 @@
 
 Only 运营主管 may delete business records, and only while the record has not yet produced anything
 other people depend on (invoices, allocated resources, audit history). Every rule works on a plain
-snapshot dict so it can be unit tested without an Odoo registry.
+snapshot dict so it can be unit tested without an obss registry.
 """
 
 MANAGER_ONLY = '只有「运营主管」可以删除记录。其他岗位请用取消 / 终止 / 释放代替删除。'

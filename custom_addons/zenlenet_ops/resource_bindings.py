@@ -55,7 +55,7 @@ def site_line_domain(site_id, region):
     """Lines that belong on this site: either end, the site itself, or the same region.
 
     Prefix notation needs one ``|`` fewer than the number of leaves. An extra
-    operator makes Odoo reject the domain and the site page fails to open.
+    operator makes obss reject the domain and the site page fails to open.
     """
     leaves = [
         ('datacenter_id', '=', site_id),

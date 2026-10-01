@@ -40,8 +40,8 @@ class ZenlenetPortal(http.Controller):
             ('is_company', '=', True),
         ], limit=1)
         if not partner:
-            return request.redirect('/odoo/contacts')
-        return request.redirect(f'/odoo/contacts/{partner.id}')
+            return request.redirect('/obss/contacts')
+        return request.redirect(f'/obss/contacts/{partner.id}')
 
     @http.route('/zenlenet/usage', type='http', auth='public', methods=['POST'], csrf=False, save_session=False)
     def usage(self, **kwargs):
@@ -100,7 +100,7 @@ class ZenlenetPortal(http.Controller):
         user = request.env.user
         partner_id = portal_partner_id(not user.share, user.partner_id.commercial_partner_id.id)
         if not partner_id:
-            return request.redirect('/odoo')
+            return request.redirect('/obss')
         orders = request.env['sale.order'].search([
             ('partner_id', 'child_of', partner_id),
             ('state', '=', 'sale'),
