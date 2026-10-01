@@ -38,7 +38,7 @@
                 <field name="commit_mbps"/>
                 <field name="p95_mbps"/>
                 <field name="samples" optional="hide"/>
-                <field name="pool" optional="show"/>
+                <field name="bandwidth_group" optional="show"/>
                 <field name="max_mbps" optional="show"/>
                 <field name="avg_mbps" optional="hide"/>
                 <field name="billable_mbps"/>

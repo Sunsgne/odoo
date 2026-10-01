@@ -27,7 +27,7 @@ class ZenlenetUsage(models.Model):
     billable_mbps = fields.Float(string='计费 (Mbps)', compute='_compute_billable', store=True)
     overage_mbps = fields.Float(string='超量 (Mbps)', compute='_compute_billable', store=True)
     samples = fields.Text(string='采样')
-    pool = fields.Char(string='带宽组', index=True)
+    bandwidth_group = fields.Char(string='带宽组', index=True)
     source = fields.Selection([('cacti', 'Cacti'), ('csv', 'CSV 导入'), ('manual', '手工')], default='manual', required=True)
     graph_ref = fields.Char(string='Cacti 图 ID')
     imported_at = fields.Datetime(string='采集时间', default=fields.Datetime.now)
@@ -74,8 +74,8 @@ class ZenlenetUsage(models.Model):
             raise UserError('请先勾选用量。')
         groups = {}
         for row in self:
-            pool = (row.pool or '').strip()
-            key = (row.partner_id.id, row.period, pool or f'order:{row.order_id.id}')
+            group_name = (row.bandwidth_group or '').strip()
+            key = (row.partner_id.id, row.period, group_name or f'order:{row.order_id.id}')
             groups.setdefault(key, self.env['zenlenet.usage'])
             groups[key] |= row
         charges = self.env['zenlenet.charge']
@@ -98,7 +98,7 @@ class ZenlenetUsage(models.Model):
                 amount = commit_overage_amount(measured, commit, price, overage_price)
             else:
                 amount = round(max(commit, float(measured)) * float(price or 0), 2)
-            label = batch[0].pool or order.name or batch[0].period
+            label = batch[0].bandwidth_group or order.name or batch[0].period
             charges |= self.env['zenlenet.charge'].register(f'p95:{group_key[0]}:{group_key[1]}:{group_key[2]}', {
                 'name': f'95 带宽 {batch[0].period} {label} · {measured:g}M',
                 'kind': 'p95',
