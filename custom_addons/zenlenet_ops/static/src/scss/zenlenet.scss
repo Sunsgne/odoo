@@ -1,8 +1,28 @@
-// 尊领 home page and console polish. Uses obss Bootstrap variables so it follows the active theme.
+// 尊领 console: Material elevation + Roboto/Noto, navy shell, cyan actions.
+
+:root {
+    --zl-navy: #0c1732;
+    --zl-navy-2: #152445;
+    --zl-cyan: #00b0d0;
+    --zl-cyan-dark: #0098b4;
+    --zl-ink: #1c2430;
+    --zl-muted: #626466;
+    --zl-line: #e6eaee;
+    --zl-canvas: #f5f8fa;
+    --zl-paper: #ffffff;
+    --zl-shadow-1: 0 1px 2px rgba(12, 23, 50, 0.06), 0 1px 3px rgba(12, 23, 50, 0.08);
+    --zl-shadow-2: 0 4px 12px rgba(12, 23, 50, 0.08);
+    --zl-radius: 8px;
+    --zl-font: Roboto, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+.o_web_client {
+    font-family: var(--zl-font);
+}
 
 .o_zl_home {
     .o_form_sheet_bg {
-        background: var(--body-bg, #f8f9fa);
+        background: var(--zl-canvas);
     }
     .o_form_sheet_bg,
     .o_form_sheet_bg > .o_form_sheet {
@@ -28,23 +48,30 @@
         max-width: 720px;
         input {
             width: 100%;
-            height: 42px;
-            border: 1px solid var(--border-color, #dee2e6);
-            border-radius: 8px;
-            padding: 0 14px;
+            height: 48px;
+            border: 1px solid var(--zl-line);
+            border-radius: 24px;
+            padding: 0 20px;
             font-size: 15px;
-            background: #fff;
+            background: var(--zl-paper);
+            box-shadow: var(--zl-shadow-1);
+            transition: box-shadow 0.15s ease, border-color 0.15s ease;
+            &:focus {
+                outline: 0;
+                border-color: var(--zl-cyan);
+                box-shadow: 0 0 0 3px rgba(0, 176, 208, 0.18);
+            }
         }
         .o_zl_hits {
             position: absolute;
             z-index: 30;
             left: 0;
             right: 0;
-            top: 46px;
-            background: #fff;
-            border: 1px solid var(--border-color, #dee2e6);
-            border-radius: 8px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            top: 54px;
+            background: var(--zl-paper);
+            border: 1px solid var(--zl-line);
+            border-radius: var(--zl-radius);
+            box-shadow: var(--zl-shadow-2);
             max-height: 420px;
             overflow: auto;
         }
@@ -53,18 +80,18 @@
             width: 100%;
             text-align: left;
             gap: 12px;
-            padding: 8px 12px;
+            padding: 10px 14px;
             border: 0;
             border-bottom: 1px solid #f1f3f5;
-            background: #fff;
+            background: var(--zl-paper);
             color: inherit;
             &:hover {
-                background: #f8f9fa;
+                background: #eef8fb;
             }
         }
         .o_zl_kind {
             flex: 0 0 72px;
-            color: var(--primary, #714b67);
+            color: var(--zl-cyan-dark);
             font-weight: 600;
         }
         .o_zl_label {
@@ -88,28 +115,29 @@
         flex-direction: column;
         align-items: center;
         gap: 4px;
-        padding: 14px 10px;
-        border: 1px solid var(--border-color, #dee2e6);
-        border-radius: 12px;
-        background: #fff;
+        padding: 16px 12px;
+        border: 1px solid var(--zl-line);
+        border-radius: var(--zl-radius);
+        background: var(--zl-paper);
         color: inherit;
-        transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+        box-shadow: var(--zl-shadow-1);
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
         .fa {
             font-size: 1.35rem;
-            color: var(--primary, #714b67);
+            color: var(--zl-cyan);
         }
         span {
             font-weight: 600;
         }
         small {
-            color: var(--text-muted, #6c757d);
+            color: var(--zl-muted);
             font-size: 0.75rem;
             white-space: nowrap;
         }
         &:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
-            border-color: var(--primary, #714b67);
+            box-shadow: var(--zl-shadow-2);
+            border-color: var(--zl-cyan);
         }
     }
     .o_zl_arrow {
@@ -128,18 +156,20 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 2px;
-        padding: 16px 18px;
-        border-radius: 4px;
-        border: 1px solid #e6eaee;
-        border-top: 3px solid #00b0d0;
-        background: #fff;
-        color: #313233;
+        padding: 18px 20px;
+        border-radius: var(--zl-radius);
+        border: 1px solid var(--zl-line);
+        border-top: 3px solid var(--zl-cyan);
+        background: var(--zl-paper);
+        color: var(--zl-ink);
         text-align: left;
         min-height: 110px;
-        transition: box-shadow 0.12s ease;
+        box-shadow: var(--zl-shadow-1);
+        transition: box-shadow 0.15s ease, transform 0.15s ease;
         &:hover {
-            box-shadow: 0 4px 12px rgba(12, 23, 50, 0.06);
-            color: #313233;
+            box-shadow: var(--zl-shadow-2);
+            transform: translateY(-1px);
+            color: var(--zl-ink);
         }
         .o_zl_kpi_value {
             font-size: 2rem;
@@ -175,10 +205,11 @@
         gap: 12px;
     }
     .o_zl_stat {
-        background: #fff;
-        border: 1px solid #e6eaee;
-        border-radius: 4px;
+        background: var(--zl-paper);
+        border: 1px solid var(--zl-line);
+        border-radius: var(--zl-radius);
         padding: 14px 16px;
+        box-shadow: var(--zl-shadow-1);
         display: flex;
         flex-direction: column;
         gap: 4px;
@@ -209,20 +240,22 @@
         gap: 12px;
         min-height: 72px;
         padding: 14px 16px;
-        border: 1px solid #e6eaee;
-        border-radius: 4px;
-        background: #fff;
+        border: 1px solid var(--zl-line);
+        border-radius: var(--zl-radius);
+        background: var(--zl-paper);
+        box-shadow: var(--zl-shadow-1);
         text-align: left;
-        color: #313233;
+        color: var(--zl-ink);
+        transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
         .fa {
-            width: 36px;
-            height: 36px;
-            border-radius: 4px;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             background: #e8f7fb;
-            color: #00b0d0;
+            color: var(--zl-cyan);
             font-size: 16px;
             flex-shrink: 0;
         }
@@ -231,8 +264,10 @@
             font-size: 14px;
         }
         &:hover {
-            border-color: #00b0d0;
-            color: #313233;
+            border-color: var(--zl-cyan);
+            box-shadow: var(--zl-shadow-2);
+            transform: translateY(-1px);
+            color: var(--zl-ink);
         }
     }
     .o_field_widget.o_readonly_modifier {
@@ -355,31 +390,33 @@
 
 // Kanban cards sit on the same light canvas as the other lists.
 .o_kanban_renderer .o_kanban_record {
-    border-radius: 4px;
-    border-color: #e6eaee;
+    border-radius: var(--zl-radius);
+    border-color: var(--zl-line);
+    box-shadow: var(--zl-shadow-1);
 }
 
-// Laplace shell: navy bar, cyan actions, gray canvas, white panels, 4px corners.
+// Shell: navy bar, cyan actions, Material paper panels.
 .o_web_client {
-    background: #f5f8fa;
-    color: #313233;
+    background: var(--zl-canvas);
+    color: var(--zl-ink);
     .o_main_navbar {
-        background: #0c1732;
+        background: var(--zl-navy);
         border-bottom: 0;
         color: #fff;
+        box-shadow: 0 2px 8px rgba(12, 23, 50, 0.28);
         .o_menu_brand,
         .o_menu_sections .o_nav_entry,
         .o_menu_sections .dropdown-toggle,
         .o_menu_systray .o_nav_entry,
         .o_menu_systray button,
         .o_menu_toggle {
-            background: #0c1732;
+            background: var(--zl-navy);
             color: #fff;
         }
         .o_menu_sections .o_nav_entry:hover,
         .o_menu_sections .dropdown-toggle:hover,
         .o_menu_sections .dropdown.show > .dropdown-toggle {
-            background: #152445;
+            background: var(--zl-navy-2);
             color: #7ee7f6;
         }
         .o_menu_brand {
@@ -391,49 +428,68 @@
     .o_form_view,
     .o_list_view,
     .o_kanban_view {
-        background: #f5f8fa;
+        background: var(--zl-canvas);
     }
     .btn-primary {
-        background-color: #00b0d0;
-        border-color: #00b0d0;
-        border-radius: 4px;
+        background-color: var(--zl-cyan);
+        border-color: var(--zl-cyan);
+        border-radius: 6px;
+        box-shadow: none;
+        text-transform: none;
+        font-weight: 500;
         &:hover, &:focus, &:active {
-            background-color: #0098b4;
-            border-color: #0098b4;
+            background-color: var(--zl-cyan-dark);
+            border-color: var(--zl-cyan-dark);
         }
     }
-    .btn-secondary, .btn-outline-primary, .btn-outline-secondary {
-        border-radius: 4px;
+    .btn-secondary, .btn-outline-primary, .btn-outline-secondary, .btn-light {
+        border-radius: 6px;
+        text-transform: none;
     }
     .o_form_view a,
     .o_list_view a,
     .btn-link {
-        color: #00b0d0;
+        color: var(--zl-cyan);
     }
-    .dropdown-menu .dropdown-item {
-        color: #313233;
-        &:hover, &:focus {
-            color: #00b0d0;
-            background: #f5f8fa;
+    .dropdown-menu {
+        border-radius: var(--zl-radius);
+        box-shadow: var(--zl-shadow-2);
+        border-color: var(--zl-line);
+        .dropdown-item {
+            color: var(--zl-ink);
+            &:hover, &:focus {
+                color: var(--zl-cyan-dark);
+                background: #eef8fb;
+            }
         }
     }
     .o_form_view .o_form_sheet {
-        border: 1px solid #e6eaee;
-        border-radius: 4px;
-        box-shadow: none;
+        border: 1px solid var(--zl-line);
+        border-radius: var(--zl-radius);
+        box-shadow: var(--zl-shadow-1);
+        background: var(--zl-paper);
     }
     .o_list_renderer {
-        background: #fff;
-        border: 1px solid #e6eaee;
-        border-radius: 4px;
+        background: var(--zl-paper);
+        border: 1px solid var(--zl-line);
+        border-radius: var(--zl-radius);
+        box-shadow: var(--zl-shadow-1);
         thead {
-            background: #f5f8fa;
-            color: #626466;
+            background: #f0f4f7;
+            color: var(--zl-muted);
+        }
+        .o_data_row:hover {
+            background: #eef8fb;
         }
     }
     .o_control_panel {
         background: transparent;
         border-bottom: 0;
+    }
+    .o_searchview {
+        border-radius: 20px;
+        background: var(--zl-paper);
+        box-shadow: var(--zl-shadow-1);
     }
 }
 
