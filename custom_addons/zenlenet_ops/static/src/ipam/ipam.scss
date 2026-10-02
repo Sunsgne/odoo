@@ -26,7 +26,8 @@ $zl-primary: #00b0d0;
         align-items: center;
         justify-content: center;
         form {
-            width: min(640px, 92%);
+            width: 640px;
+            max-width: 92%;
             display: flex;
             flex-direction: column;
             gap: 8px;
