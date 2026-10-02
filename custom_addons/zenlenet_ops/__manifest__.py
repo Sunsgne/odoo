@@ -1,6 +1,6 @@
 {
     'name': '运营后台',
-    'version': '19.0.4.19.21',
+    'version': '19.0.4.19.22',
     'category': 'Sales',
     'summary': '数据中心、线路、IP；客户、报价、合同、出账；业务流转与工单',
     'author': 'ZENLENET PTE. LTD.',
@@ -46,6 +46,7 @@
         'views/config_views.xml',
         'views/month_views.xml',
         'views/home_views.xml',
+        'views/copilot_views.xml',
         'views/menus.xml',
         'data/shell.xml',
         'views/silence.xml',
@@ -54,6 +55,11 @@
     'assets': {
         'web.assets_backend': [
             'zenlenet_ops/static/src/scss/zenlenet.scss',
+            'zenlenet_ops/static/src/shell/shell.scss',
+            'zenlenet_ops/static/src/shell/sidebar.js',
+            'zenlenet_ops/static/src/shell/sidebar.xml',
+            'zenlenet_ops/static/src/shell/webclient.js',
+            'zenlenet_ops/static/src/shell/webclient.xml',
             'zenlenet_ops/static/src/obss_path.js',
             'zenlenet_ops/static/src/user_menu.js',
             'zenlenet_ops/static/src/home/home_search.js',
@@ -76,6 +82,9 @@
             'zenlenet_ops/static/src/purchase/purchase.scss',
             'zenlenet_ops/static/src/purchase/purchase.js',
             'zenlenet_ops/static/src/purchase/purchase.xml',
+            'zenlenet_ops/static/src/copilot/copilot.scss',
+            'zenlenet_ops/static/src/copilot/copilot.js',
+            'zenlenet_ops/static/src/copilot/copilot.xml',
         ],
         'web.report_assets_common': [
             'zenlenet_ops/static/src/scss/report.scss',

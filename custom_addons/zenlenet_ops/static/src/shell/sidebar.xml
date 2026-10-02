@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="zenlenet_ops.Sidebar">
+        <aside class="o_zl_sidebar">
+            <t t-foreach="groups" t-as="group" t-key="group.label">
+                <div class="o_zl_side_group">
+                    <div class="o_zl_side_label" t-out="group.label"/>
+                    <button t-foreach="group.items" t-as="item" t-key="item.key"
+                        t-att-class="isActive(item.key) ? 'o_zl_side_item active' : 'o_zl_side_item'"
+                        t-on-click="() => this.open(item)" type="button">
+                        <i t-att-class="'fa ' + item.icon" aria-hidden="true"/>
+                        <span t-out="item.label"/>
+                    </button>
+                </div>
+            </t>
+        </aside>
+    </t>
+
+</templates>

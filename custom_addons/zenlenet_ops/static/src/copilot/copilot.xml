@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="zenlenet_ops.Copilot">
+        <div class="o_action zl-copilot">
+            <header class="zl-copilot-head">
+                <h1>运营副驾</h1>
+                <p>按当前待办、工单、收款与资源状态，给出优先处理建议。</p>
+            </header>
+            <div class="zl-copilot-chips">
+                <button t-foreach="prompts" t-as="prompt" t-key="prompt"
+                    t-att-class="state.active === prompt ? 'on' : ''"
+                    t-on-click="() => this.pick(prompt)"
+                    t-out="prompt"/>
+            </div>
+            <form class="zl-copilot-ask" t-on-submit="ask">
+                <input type="text" t-att-value="state.query" t-on-input="onInput"/>
+                <button type="submit" t-att-disabled="state.busy">提问</button>
+            </form>
+            <div class="zl-copilot-hits" t-if="state.hits.length">
+                <button t-foreach="state.hits" t-as="hit" t-key="hit.key or hit_index"
+                    class="zl-copilot-hit" t-on-click="() => this.open(hit)">
+                    <b t-out="hit.kind"/>
+                    <span t-out="hit.label"/>
+                </button>
+            </div>
+        </div>
+    </t>
+
+</templates>

@@ -27,8 +27,9 @@ class ZenlenetShell(models.AbstractModel):
         self.env['zenlenet.prefix'].sudo().search([])._compute_inherited()
         self.env['res.partner']._zenlenet_migrate_suppliers()
         self.env['zenlenet.flow.resource'].sudo().search([('service_type', '=', 'ip'), ('address_id', '!=', False), ('prefix_id', '=', False)]).write({'service_type': 'ip_single'})
-        brand = self.env['ir.config_parameter'].sudo().get_param('zenlenet.brand')
-        if brand and root and root.name != brand:
+        brand = self.env['ir.config_parameter'].sudo().get_param('zenlenet.brand') or 'OBSS 运营业务支撑'
+        self.env['ir.config_parameter'].sudo().set_param('zenlenet.brand', brand)
+        if root and root.name != brand:
             root.name = brand
         contracts = self.env['zenlenet.contract'].sudo().search([])
         contracts._compute_currency()

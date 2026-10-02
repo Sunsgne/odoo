@@ -1,0 +1,88 @@
+.zl-copilot {
+    height: 100%;
+    overflow: auto;
+    background: #fff;
+    padding: 28px 32px 40px;
+    font-family: var(--zl-font, Roboto, "Noto Sans SC", sans-serif);
+
+    .zl-copilot-head {
+        margin-bottom: 18px;
+        h1 {
+            margin: 0 0 6px;
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f1f1f;
+        }
+        p {
+            margin: 0;
+            color: #8c8c8c;
+            font-size: 14px;
+        }
+    }
+    .zl-copilot-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 16px;
+        button {
+            border: 1px solid #d9d9d9;
+            background: #fff;
+            border-radius: 8px;
+            padding: 8px 14px;
+            color: #434343;
+            &:hover { border-color: #1677ff; color: #1677ff; }
+            &.on {
+                border-color: #1677ff;
+                color: #1677ff;
+                background: #e6f4ff;
+            }
+        }
+    }
+    .zl-copilot-ask {
+        display: flex;
+        align-items: stretch;
+        max-width: 920px;
+        border: 1px solid #d9d9d9;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        input {
+            flex: 1;
+            border: 0;
+            outline: 0;
+            padding: 12px 16px;
+            font-size: 15px;
+        }
+        button {
+            border: 0;
+            background: #1677ff;
+            color: #fff;
+            padding: 0 22px;
+            font-weight: 500;
+            &:disabled { opacity: 0.6; }
+        }
+    }
+    .zl-copilot-hits {
+        margin-top: 18px;
+        max-width: 920px;
+        border: 1px solid #f0f0f0;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .zl-copilot-hit {
+        display: flex;
+        gap: 12px;
+        width: 100%;
+        text-align: left;
+        border: 0;
+        border-bottom: 1px solid #f5f5f5;
+        background: #fff;
+        padding: 12px 14px;
+        b {
+            flex: 0 0 72px;
+            color: #1677ff;
+        }
+        &:hover { background: #f5f9ff; }
+    }
+}

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="zenlenet_ops.WebClient">
+        <div class="o_zl_shell" t-att-class="{ 'o_zl_shell_fullscreen': state.fullscreen }">
+            <t t-if="!state.fullscreen">
+                <NavBar/>
+            </t>
+            <div class="o_zl_body">
+                <t t-if="!state.fullscreen">
+                    <ZenlenetSidebar/>
+                </t>
+                <div class="o_zl_main">
+                    <ActionContainer/>
+                </div>
+            </div>
+            <MainComponentsContainer/>
+        </div>
+    </t>
+
+</templates>
