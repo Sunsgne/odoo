@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_duty_region_list" model="ir.ui.view">
+        <field name="name">zenlenet.duty.region.list</field>
+        <field name="model">zenlenet.duty.region</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="country"/>
+                <field name="tz"/>
+                <field name="week_start"/>
+                <field name="state" widget="badge"/>
+                <field name="note" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_duty_region_form" model="ir.ui.view">
+        <field name="name">zenlenet.duty.region.form</field>
+        <field name="model">zenlenet.duty.region</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="code"/>
+                        <field name="country"/>
+                        <field name="tz"/>
+                        <field name="week_start"/>
+                        <field name="state"/>
+                        <field name="note"/>
+                        <field name="company_id" groups="base.group_multi_company"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_duty_regions" model="ir.actions.act_window">
+        <field name="name">区域</field>
+        <field name="res_model">zenlenet.duty.region</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_duty_group_list" model="ir.ui.view">
+        <field name="name">zenlenet.duty.group.list</field>
+        <field name="model">zenlenet.duty.group</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="member_ids" widget="many2many_tags"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_duty_group_form" model="ir.ui.view">
+        <field name="name">zenlenet.duty.group.form</field>
+        <field name="model">zenlenet.duty.group</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="code"/>
+                        <field name="state"/>
+                        <field name="note"/>
+                        <field name="member_ids" widget="many2many_tags"/>
+                        <field name="company_id" groups="base.group_multi_company"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_duty_groups" model="ir.actions.act_window">
+        <field name="name">分组</field>
+        <field name="res_model">zenlenet.duty.group</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_duty_shift_list" model="ir.ui.view">
+        <field name="name">zenlenet.duty.shift.list</field>
+        <field name="model">zenlenet.duty.shift</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="region_id"/>
+                <field name="start"/>
+                <field name="end"/>
+                <field name="group_id"/>
+                <field name="kind"/>
+                <field name="remote"/>
+                <field name="need"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_duty_shift_form" model="ir.ui.view">
+        <field name="name">zenlenet.duty.shift.form</field>
+        <field name="model">zenlenet.duty.shift</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="code"/>
+                        <field name="region_id"/>
+                        <field name="group_id"/>
+                        <field name="start"/>
+                        <field name="end"/>
+                        <field name="kind"/>
+                        <field name="remote"/>
+                        <field name="need"/>
+                        <field name="state"/>
+                        <field name="note"/>
+                        <field name="company_id" groups="base.group_multi_company"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_duty_shifts" model="ir.actions.act_window">
+        <field name="name">班次</field>
+        <field name="res_model">zenlenet.duty.shift</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_duty_sheet_list" model="ir.ui.view">
+        <field name="name">zenlenet.duty.sheet.list</field>
+        <field name="model">zenlenet.duty.sheet</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="region_ids" widget="many2many_tags"/>
+                <field name="state" widget="badge"/>
+                <field name="note" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_duty_sheet_form" model="ir.ui.view">
+        <field name="name">zenlenet.duty.sheet.form</field>
+        <field name="model">zenlenet.duty.sheet</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_publish" type="object" string="发布" invisible="state == 'published'" class="btn-primary"/>
+                </header>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="code"/>
+                        <field name="region_ids" widget="many2many_tags"/>
+                        <field name="state"/>
+                        <field name="note"/>
+                        <field name="company_id" groups="base.group_multi_company"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_duty_sheets" model="ir.actions.act_window">
+        <field name="name">排班表</field>
+        <field name="res_model">zenlenet.duty.sheet</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_duty_swap_list" model="ir.ui.view">
+        <field name="name">zenlenet.duty.swap.list</field>
+        <field name="model">zenlenet.duty.swap</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sheet_id"/>
+                <field name="applicant_id"/>
+                <field name="date"/>
+                <field name="from_shift_id"/>
+                <field name="target_id"/>
+                <field name="to_shift_id"/>
+                <field name="reason"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_duty_swap_form" model="ir.ui.view">
+        <field name="name">zenlenet.duty.swap.form</field>
+        <field name="model">zenlenet.duty.swap</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_submit" type="object" string="提交" invisible="state != 'draft'" class="btn-primary"/>
+                    <button name="action_peer" type="object" string="同意" invisible="state != 'peer'" class="btn-primary"/>
+                    <button name="action_approve" type="object" string="批准" invisible="state != 'lead'" class="btn-primary" groups="zenlenet_ops.group_manager"/>
+                    <button name="action_refuse" type="object" string="拒绝" invisible="state not in ('peer', 'lead')"/>
+                    <button name="action_withdraw" type="object" string="撤回" invisible="state not in ('peer', 'lead')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,peer,lead,approved"/>
+                </header>
+                <sheet>
+                    <group>
+                        <field name="sheet_id" readonly="state != 'draft'"/>
+                        <field name="date" readonly="state != 'draft'"/>
+                        <field name="applicant_id" readonly="state != 'draft'"/>
+                        <field name="from_shift_id" readonly="state != 'draft'"/>
+                        <field name="target_id" readonly="state != 'draft'"/>
+                        <field name="to_shift_id" readonly="state != 'draft'"/>
+                        <field name="reason" readonly="state != 'draft'"/>
+                        <field name="company_id" groups="base.group_multi_company"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_duty_swaps" model="ir.actions.act_window">
+        <field name="name">换班</field>
+        <field name="res_model">zenlenet.duty.swap</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="action_duty_swaps_mine" model="ir.actions.act_window">
+        <field name="name">待我处理</field>
+        <field name="res_model">zenlenet.duty.swap</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">['|', '&amp;', ('state', '=', 'peer'), ('target_id', '=', uid), ('state', '=', 'lead')]</field>
+    </record>
+
+    <record id="action_duty_calendar" model="ir.actions.client">
+        <field name="name">排班日历</field>
+        <field name="tag">zenlenet_duty</field>
+    </record>
+    <record id="action_duty_stats" model="ir.actions.client">
+        <field name="name">排班统计</field>
+        <field name="tag">zenlenet_duty</field>
+        <field name="context">{'duty_panel': 'stat'}</field>
+    </record>
+    <record id="action_duty_pref" model="ir.actions.client">
+        <field name="name">个人设置</field>
+        <field name="tag">zenlenet_duty</field>
+        <field name="context">{'duty_panel': 'pref'}</field>
+    </record>
+</odoo>

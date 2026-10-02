@@ -61,6 +61,7 @@
                         <button type="action" name="%(zenlenet_ops.action_ipam)d" class="o_zl_app"><i class="fa fa-sitemap" title="地址管理"/><b>地址管理</b></button>
                         <button type="action" name="%(zenlenet_ops.action_purchases)d" class="o_zl_app" groups="zenlenet_ops.group_procurement,zenlenet_ops.group_delivery,zenlenet_ops.group_manager"><i class="fa fa-shopping-cart" title="采购计划"/><b>采购计划</b></button>
                         <button type="action" name="%(zenlenet_ops.action_itam)d" class="o_zl_app" groups="zenlenet_ops.group_procurement,zenlenet_ops.group_delivery,zenlenet_ops.group_manager"><i class="fa fa-server" title="资产"/><b>资产</b></button>
+                        <button type="action" name="%(zenlenet_ops.action_duty_calendar)d" class="o_zl_app"><i class="fa fa-calendar-check-o" title="排班"/><b>排班</b></button>
                     </div>
                 </sheet>
             </form>

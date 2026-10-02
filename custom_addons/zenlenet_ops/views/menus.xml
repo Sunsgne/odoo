@@ -49,6 +49,17 @@
     <menuitem id="menu_assets" name="资产" parent="menu_supply" action="action_assets" sequence="22"/>
     <menuitem id="menu_asset_tasks" name="资产任务" parent="menu_supply" action="action_asset_tasks" sequence="24"/>
 
+    <menuitem id="menu_duty" name="排班" parent="menu_root" sequence="35"/>
+    <menuitem id="menu_duty_calendar" name="排班日历" parent="menu_duty" action="action_duty_calendar" sequence="10"/>
+    <menuitem id="menu_duty_sheets" name="排班表" parent="menu_duty" action="action_duty_sheets" sequence="20" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_service,zenlenet_ops.group_manager"/>
+    <menuitem id="menu_duty_shifts" name="班次" parent="menu_duty" action="action_duty_shifts" sequence="30" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_service,zenlenet_ops.group_manager"/>
+    <menuitem id="menu_duty_groups" name="分组" parent="menu_duty" action="action_duty_groups" sequence="40" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_service,zenlenet_ops.group_manager"/>
+    <menuitem id="menu_duty_swaps" name="换班" parent="menu_duty" action="action_duty_swaps" sequence="50"/>
+    <menuitem id="menu_duty_swaps_mine" name="待我处理" parent="menu_duty" action="action_duty_swaps_mine" sequence="60"/>
+    <menuitem id="menu_duty_regions" name="区域" parent="menu_duty" action="action_duty_regions" sequence="70" groups="zenlenet_ops.group_delivery,zenlenet_ops.group_service,zenlenet_ops.group_manager"/>
+    <menuitem id="menu_duty_pref" name="个人设置" parent="menu_duty" action="action_duty_pref" sequence="80"/>
+    <menuitem id="menu_duty_stats" name="排班统计" parent="menu_duty" action="action_duty_stats" sequence="90"/>
+
     <menuitem id="menu_setup" name="设置" parent="menu_root" sequence="90" groups="zenlenet_ops.group_manager"/>
     <menuitem id="menu_settings_general" name="系统设置" parent="menu_setup" action="action_settings" sequence="5"/>
     <menuitem id="menu_users" name="用户与角色" parent="menu_setup" action="action_users" sequence="10"/>

@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="zenlenet_ops.Duty">
+        <div class="o_action zl-duty" t-if="state.board">
+            <header class="zl-duty-bar">
+                <div class="zl-duty-tabs">
+                    <button t-foreach="state.board.sheets" t-as="sheet" t-key="sheet.id"
+                        t-att-class="state.board.sheet_id === sheet.id ? 'active' : ''"
+                        t-on-click="() => this.pickSheet(sheet.id)">
+                        <t t-out="sheet.name"/>
+                    </button>
+                </div>
+                <div class="zl-duty-tools">
+                    <button class="btn btn-light btn-sm" t-on-click="() => this.move(-1)">&lt;</button>
+                    <input type="date" class="form-control form-control-sm" t-att-value="state.board.anchor" t-on-change="onAnchor"/>
+                    <button class="btn btn-light btn-sm" t-on-click="() => this.move(1)">&gt;</button>
+                    <button class="btn btn-light btn-sm" t-on-click="today">今天</button>
+                    <select class="form-select form-select-sm" t-on-change="onRegion">
+                        <option value="">区域</option>
+                        <option t-foreach="state.board.regions" t-as="region" t-key="region.id" t-att-value="region.id" t-out="region.name"/>
+                    </select>
+                    <select class="form-select form-select-sm" t-on-change="onUser">
+                        <option value="">人员</option>
+                        <option t-foreach="state.board.users" t-as="user" t-key="user.id" t-att-value="user.id" t-out="user.name"/>
+                    </select>
+                    <select class="form-select form-select-sm" t-on-change="onShift">
+                        <option value="">班次</option>
+                        <option t-foreach="state.board.shifts" t-as="shift" t-key="shift.id" t-att-value="shift.id" t-out="shift.name"/>
+                    </select>
+                    <select class="form-select form-select-sm" t-on-change="onKind">
+                        <option value="">类型</option>
+                        <option value="day">白班</option>
+                        <option value="night">夜班</option>
+                        <option value="onsite">现场</option>
+                    </select>
+                    <button t-att-class="state.board.mode === 'month' ? 'btn btn-sm btn-light' : 'btn btn-sm btn-primary'" t-on-click="() => this.setMode('week')">周视图</button>
+                    <button t-att-class="state.board.mode === 'month' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-light'" t-on-click="() => this.setMode('month')">月视图</button>
+                    <button class="btn btn-light btn-sm" t-on-click="() => this.show('stat')">统计</button>
+                    <button class="btn btn-light btn-sm" t-on-click="() => this.show('pref')">个人设置</button>
+                    <button class="btn btn-secondary btn-sm" t-on-click="openSheets">排班表</button>
+                    <button class="btn btn-secondary btn-sm" t-on-click="openShifts">班次</button>
+                </div>
+            </header>
+
+            <div class="zl-duty-body">
+                <div class="zl-duty-grid" t-if="state.panel === 'calendar'">
+                    <div class="zl-duty-week" t-foreach="weeks()" t-as="week" t-key="week_index">
+                        <section t-foreach="week" t-as="column" t-key="column.date" t-att-class="column.in_month ? '' : 'muted'">
+                            <header>
+                                <b t-out="column.weekday"/>
+                                <span t-out="column.date"/>
+                                <em t-if="column.today">今天</em>
+                            </header>
+                            <article t-foreach="column.regions" t-as="region" t-key="region.id">
+                                <div class="zl-duty-region">
+                                    <b t-out="region.name"/>
+                                    <span t-out="region.offset"/>
+                                </div>
+                                <button t-foreach="region.shifts" t-as="shift" t-key="shift.cell_id or shift.shift_id"
+                                    t-attf-class="zl-duty-card #{shift.kind} #{shift.short ? 'short' : ''}"
+                                    t-on-click="() => this.openCell(shift)">
+                                    <div class="zl-duty-card-top">
+                                        <b t-out="shift.name"/>
+                                        <span t-att-class="shift.short ? 'gap' : 'ok'" t-out="shift.filled + '/' + shift.need"/>
+                                    </div>
+                                    <div class="zl-duty-time">
+                                        <t t-out="shift.start"/> → <t t-out="shift.end"/>
+                                        <em t-if="shift.overnight">+1d</em>
+                                        <em t-if="shift.remote">远程</em>
+                                    </div>
+                                    <div class="zl-duty-people">
+                                        <span t-foreach="shift.people" t-as="person" t-key="person.id" t-out="person.name"/>
+                                    </div>
+                                </button>
+                            </article>
+                        </section>
+                    </div>
+                </div>
+
+                <aside class="zl-duty-side" t-if="state.panel === 'calendar' and state.cell">
+                    <header>
+                        <b t-out="state.cell.name"/>
+                        <span t-out="state.cell.date"/>
+                        <button class="btn btn-link btn-sm" t-on-click="closeCell">关闭</button>
+                    </header>
+                    <label>人数 <input type="number" class="form-control form-control-sm" t-att-value="state.cell.need" t-on-change="setNeed"/></label>
+                    <ul>
+                        <li t-foreach="state.cell.people" t-as="person" t-key="person.id">
+                            <label>
+                                <input type="checkbox" t-att-checked="person.on" t-on-change="() => this.toggle(person)"/>
+                                <t t-out="person.name"/>
+                            </label>
+                        </li>
+                    </ul>
+                    <button class="btn btn-secondary btn-sm" t-on-click="openSwap">换班</button>
+                </aside>
+
+                <section class="zl-duty-extra" t-if="state.panel === 'stat'">
+                    <div class="zl-duty-kpis">
+                        <div><b t-out="state.board.stats.need"/> <span>总排班数</span></div>
+                        <div><b t-out="state.board.stats.filled"/> <span>已分配</span></div>
+                        <div><b t-out="state.board.stats.rate + '%'"/> <span>覆盖率</span></div>
+                        <div><b t-out="state.board.stats.swaps"/> <span>换班申请</span></div>
+                        <div><b t-out="state.board.stats.approved"/> <span>已通过</span></div>
+                    </div>
+                    <table class="table table-sm">
+                        <thead><tr><th>人员</th><th>次数</th></tr></thead>
+                        <tbody>
+                            <tr t-foreach="state.board.stats.people" t-as="row" t-key="row.id">
+                                <td t-out="row.name"/>
+                                <td t-out="row.count"/>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <button class="btn btn-light btn-sm" t-on-click="() => this.show('calendar')">排班日历</button>
+                </section>
+
+                <section class="zl-duty-extra" t-if="state.panel === 'pref'">
+                    <div class="zl-duty-pref">
+                        <label>周历显示</label>
+                        <select class="form-select" t-model="state.pref.week_start">
+                            <option value="sun">星期日</option>
+                            <option value="mon">星期一</option>
+                        </select>
+                        <label>排班偏好</label>
+                        <select class="form-select" t-model="state.pref.prefer">
+                            <option value="any">不限</option>
+                            <option value="day">白班</option>
+                            <option value="night">夜班</option>
+                        </select>
+                        <button class="btn btn-primary" t-on-click="savePref">保存设置</button>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </t>
+
+</templates>

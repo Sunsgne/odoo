@@ -23,6 +23,7 @@ from . import usage
 from . import charge
 from . import credit
 from . import labor
+from . import duty
 from . import home
 from . import report
 from . import loader

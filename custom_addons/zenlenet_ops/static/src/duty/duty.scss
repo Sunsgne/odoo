@@ -1,0 +1,134 @@
+.zl-duty {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: #f4f7fb;
+    color: #1c2430;
+
+    .zl-duty-bar {
+        background: #fff;
+        border-bottom: 1px solid #e3e8ef;
+        padding: 10px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .zl-duty-tabs, .zl-duty-tools {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+    }
+    .zl-duty-tabs button {
+        border: 0;
+        background: #eef2f7;
+        border-radius: 4px;
+        padding: 4px 10px;
+        &.active { background: #1f6feb; color: #fff; }
+    }
+    .zl-duty-tools .form-select,
+    .zl-duty-tools .form-control { width: auto; }
+    .zl-duty-body {
+        flex: 1;
+        display: flex;
+        min-height: 0;
+    }
+    .zl-duty-grid {
+        flex: 1;
+        overflow: auto;
+        padding: 12px;
+    }
+    .zl-duty-week {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(180px, 1fr));
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    .zl-duty-week > section {
+        background: #fff;
+        border: 1px solid #e3e8ef;
+        border-radius: 6px;
+        padding: 8px;
+        min-height: 120px;
+        &.muted { opacity: 0.45; }
+        header {
+            display: flex;
+            gap: 6px;
+            align-items: baseline;
+            margin-bottom: 6px;
+            b { font-size: 16px; }
+            span { color: #667; font-size: 12px; }
+            em { margin-left: auto; font-style: normal; color: #1f6feb; font-size: 12px; }
+        }
+    }
+    .zl-duty-region {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        color: #5c6b7a;
+        margin: 6px 0 4px;
+    }
+    .zl-duty-card {
+        display: block;
+        width: 100%;
+        text-align: left;
+        border: 0;
+        border-radius: 6px;
+        padding: 6px 8px;
+        margin-bottom: 6px;
+        background: #e8f1ff;
+        &.night { background: #d5e4ff; }
+        &.onsite { background: #fff4dc; }
+        &.short { outline: 1px solid #e0a100; }
+    }
+    .zl-duty-card-top, .zl-duty-time, .zl-duty-people {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    .zl-duty-card-top {
+        justify-content: space-between;
+        .ok, .gap {
+            border-radius: 10px;
+            padding: 0 6px;
+            font-size: 12px;
+            background: #fff;
+        }
+        .gap { color: #a15c00; }
+    }
+    .zl-duty-time { font-size: 12px; color: #345; }
+    .zl-duty-time em { font-style: normal; color: #1f6feb; }
+    .zl-duty-people span {
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 4px;
+        padding: 0 4px;
+        font-size: 12px;
+    }
+    .zl-duty-side, .zl-duty-extra {
+        width: 280px;
+        background: #fff;
+        border-left: 1px solid #e3e8ef;
+        padding: 12px;
+        overflow: auto;
+    }
+    .zl-duty-extra { width: 100%; }
+    .zl-duty-side header, .zl-duty-pref, .zl-duty-kpis {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+    }
+    .zl-duty-side ul { list-style: none; padding: 0; margin: 8px 0; }
+    .zl-duty-side li { margin: 4px 0; }
+    .zl-duty-kpis div {
+        background: #f4f7fb;
+        border-radius: 6px;
+        padding: 10px 14px;
+        min-width: 110px;
+        b { display: block; font-size: 22px; }
+        span { color: #667; }
+    }
+    .zl-duty-pref { flex-direction: column; align-items: stretch; max-width: 320px; }
+}
