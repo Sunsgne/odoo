@@ -2,27 +2,78 @@
 <templates xml:space="preserve">
     <t t-name="zenlenet_ops.Itam">
         <div class="o_action zl-itam" t-if="state.board">
-            <div class="zl-itam-top">
-                <div class="zl-itam-total">
-                    <b t-out="state.board.total"/>
-                    <span>资产</span>
-                </div>
-                <div class="zl-itam-split">
-                    <div><b t-out="state.board.owned"/> 自有</div>
-                    <div><b t-out="state.board.other"/> 非自有</div>
-                    <div><b t-out="state.board.in_rack"/> 在架</div>
-                    <div><b t-out="state.board.repairing"/> 维修中</div>
-                </div>
-                <div class="zl-itam-links">
-                    <button class="btn btn-primary btn-sm" t-on-click="openAssets">资产</button>
-                    <button class="btn btn-secondary btn-sm" t-on-click="openTasks">任务</button>
-                </div>
+            <div class="zl-itam-nav">
+                <button class="active">总览</button>
+                <button t-on-click="openAssets">资产管理</button>
+                <button t-on-click="openTasks">任务管理</button>
             </div>
-            <div class="zl-itam-grid">
-                <button t-foreach="state.board.categories" t-as="row" t-key="row.key" class="zl-itam-card" t-on-click="() => this.openCategory(row.key)">
-                    <b t-out="row.count"/>
-                    <span t-out="row.label"/>
+            <div class="zl-itam-cats">
+                <button t-att-class="state.category ? '' : 'on'" t-on-click="() => this.pickCategory('')">全部</button>
+                <button t-foreach="state.board.categories" t-as="row" t-key="row.key"
+                    t-att-class="state.category === row.key ? 'on' : ''"
+                    t-on-click="() => this.pickCategory(row.key)">
+                    <t t-out="row.label"/>
+                    <span t-out="row.count"/>
                 </button>
+            </div>
+            <div class="zl-itam-dash">
+                <section>
+                    <h3>资产总量 <b t-out="state.board.total"/></h3>
+                    <div class="zl-itam-shares">
+                        <div><b t-out="state.board.owned_share + '%'"/> <span>自有资产 <t t-out="state.board.owned"/></span></div>
+                        <div><b t-out="state.board.other_share + '%'"/> <span>非自有资产 <t t-out="state.board.other"/></span></div>
+                    </div>
+                </section>
+                <section>
+                    <h3>资产分布</h3>
+                    <div class="zl-itam-places">
+                        <div><b t-out="state.board.places.in_rack"/> <span>在机柜内</span></div>
+                        <div><b t-out="state.board.places.stock"/> <span>在仓库内</span></div>
+                        <div><b t-out="state.board.places.unknown"/> <span>未知</span></div>
+                        <div><b t-out="state.board.places.repair"/> <span>维修</span></div>
+                        <div><b t-out="state.board.places.loan"/> <span>外借</span></div>
+                    </div>
+                </section>
+                <section>
+                    <h3>数据中心</h3>
+                    <ul>
+                        <li t-foreach="state.board.datacenters" t-as="row" t-key="row.label"><span t-out="row.label"/><b t-out="row.count"/></li>
+                    </ul>
+                </section>
+                <section>
+                    <h3>机房</h3>
+                    <ul>
+                        <li t-foreach="state.board.rooms" t-as="row" t-key="row.label"><span t-out="row.label"/><b t-out="row.count"/></li>
+                    </ul>
+                </section>
+                <section>
+                    <h3>保质期</h3>
+                    <ul>
+                        <li t-foreach="state.board.warranties" t-as="row" t-key="row.key"><span t-out="row.label"/><b t-out="row.count"/></li>
+                    </ul>
+                </section>
+                <section>
+                    <h3>资产型号</h3>
+                    <ul>
+                        <li t-foreach="state.board.models" t-as="row" t-key="row.label"><span t-out="row.label"/><b t-out="row.count"/></li>
+                    </ul>
+                </section>
+                <section>
+                    <h3>资产属主</h3>
+                    <ul>
+                        <li t-foreach="state.board.owners" t-as="row" t-key="row.key"><span t-out="row.label"/><b t-out="row.count"/></li>
+                    </ul>
+                </section>
+                <aside>
+                    <h3>进行中任务</h3>
+                    <ul>
+                        <li t-foreach="state.board.tasks" t-as="task" t-key="task.id" t-on-click="() => this.openTask(task.id)">
+                            <b t-out="task.name"/>
+                            <span t-out="task.kind"/>
+                            <span t-if="task.asset" t-out="task.asset"/>
+                        </li>
+                    </ul>
+                </aside>
             </div>
         </div>
     </t>

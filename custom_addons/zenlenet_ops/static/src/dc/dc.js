@@ -22,6 +22,8 @@ export class ZenlenetDatacenter extends Component {
             filter: "free",
             pick: null,
             loading: false,
+            view: "cards",
+            regionName: "",
         });
         onWillStart(() => this.refresh());
     }
@@ -30,6 +32,9 @@ export class ZenlenetDatacenter extends Component {
         const sites = await this.orm.call("zenlenet.datacenter", "dc_tree", [this.state.search]);
         this.state.sites = sites;
         this.state.loose = await this.orm.call("zenlenet.datacenter", "dc_loose_count", []);
+        if (this.state.view === "cards") {
+            return;
+        }
         const still = this.state.selectedId === 0 || sites.some((site) => site.id === this.state.selectedId);
         const next = still ? this.state.selectedId : sites[0]?.id;
         if (next || next === 0) {
@@ -39,6 +44,18 @@ export class ZenlenetDatacenter extends Component {
             this.state.detail = null;
             this.state.pick = null;
         }
+    }
+
+    showCards() {
+        this.state.view = "cards";
+        this.state.selectedId = null;
+        this.state.detail = null;
+        this.state.pick = null;
+    }
+
+    async openSite(id) {
+        this.state.view = "detail";
+        await this.select(id);
     }
 
     async onSearch(ev) {

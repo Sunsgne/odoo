@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="zenlenet_ops.PurchaseBoard">
+        <div class="o_action zl-plan">
+            <div class="zl-plan-tabs">
+                <button t-foreach="queues" t-as="queue" t-key="queue[0]"
+                    t-att-class="state.queue === queue[0] ? 'on' : ''"
+                    t-on-click="() => this.pick(queue[0])">
+                    <t t-out="queue[1]"/>
+                </button>
+            </div>
+            <div class="zl-plan-bar">
+                <input type="search" class="form-control form-control-sm" t-att-value="state.query" t-on-input="onQuery" t-on-keydown="(ev) => ev.key === 'Enter' ? this.search() : null"/>
+                <button class="btn btn-primary btn-sm" t-on-click="search">查询</button>
+                <button class="btn btn-primary btn-sm" t-if="state.queue === 'plan'" t-on-click="createPlan">新增计划</button>
+            </div>
+            <table class="table table-sm" t-if="state.queue === 'plan'">
+                <thead>
+                    <tr><th>计划编号</th><th>计划名称</th><th>合同编号</th><th>设备数量</th><th>状态</th><th>创建时间</th><th></th></tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="state.rows" t-as="row" t-key="row.id">
+                        <td t-out="row.name"/>
+                        <td t-out="row.resource"/>
+                        <td t-out="row.contract_code"/>
+                        <td t-out="row.devices"/>
+                        <td t-out="row.state_label"/>
+                        <td t-out="row.created"/>
+                        <td><button class="btn btn-link btn-sm" t-on-click="() => this.openPlan(row.id)">编辑</button></td>
+                    </tr>
+                </tbody>
+            </table>
+            <table class="table table-sm" t-else="">
+                <thead>
+                    <tr><th>资产序列号</th><th>计划</th><th>类型</th><th>型号</th><th>厂商</th><th>厂商序列号</th><th>状态</th><th></th></tr>
+                </thead>
+                <tbody>
+                    <tr t-foreach="state.rows" t-as="row" t-key="row.id">
+                        <td t-out="row.sn"/>
+                        <td t-out="row.plan"/>
+                        <td t-out="row.category"/>
+                        <td t-out="row.model"/>
+                        <td t-out="row.maker"/>
+                        <td t-out="row.maker_sn"/>
+                        <td t-out="row.state_label"/>
+                        <td>
+                            <button class="btn btn-link btn-sm" t-on-click="() => this.step(row)" t-out="stepLabel(row.state)"/>
+                            <button class="btn btn-link btn-sm" t-on-click="() => this.openDevice(row.id)">编辑</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </t>
+</templates>

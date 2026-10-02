@@ -41,10 +41,7 @@
 
     <menuitem id="menu_supply" name="采购与资产" parent="menu_root" sequence="50" groups="zenlenet_ops.group_procurement,zenlenet_ops.group_delivery,zenlenet_ops.group_manager"/>
     <menuitem id="menu_suppliers" name="供应商" parent="menu_supply" action="action_suppliers" sequence="5"/>
-    <menuitem id="menu_purchases" name="采购计划" parent="menu_supply" action="action_purchases" sequence="10"/>
-    <menuitem id="menu_purchase_inbound" name="设备入库" parent="menu_supply" action="action_purchase_inbound" sequence="12"/>
-    <menuitem id="menu_purchase_sign" name="设备签收" parent="menu_supply" action="action_purchase_sign" sequence="14"/>
-    <menuitem id="menu_purchase_accept" name="采购验收" parent="menu_supply" action="action_purchase_accept" sequence="16"/>
+    <menuitem id="menu_purchases" name="采购" parent="menu_supply" action="action_purchase_board" sequence="10"/>
     <menuitem id="menu_itam" name="资产总览" parent="menu_supply" action="action_itam" sequence="20"/>
     <menuitem id="menu_assets" name="资产" parent="menu_supply" action="action_assets" sequence="22"/>
     <menuitem id="menu_asset_tasks" name="资产任务" parent="menu_supply" action="action_asset_tasks" sequence="24"/>

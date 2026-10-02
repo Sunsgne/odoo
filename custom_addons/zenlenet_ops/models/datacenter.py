@@ -1,6 +1,8 @@
 import logging
 
 from odoo import api, fields, models
+
+from odoo.addons.zenlenet_ops.boards import power_ratio
 from odoo.exceptions import UserError
 
 from odoo.addons.zenlenet_ops.resource_bindings import binding_text, mbps_of, site_line_domain, split_end
@@ -150,6 +152,20 @@ class ZenlenetDatacenter(models.Model):
                 [('datacenter_id', 'in', sites.ids)], ['datacenter_id'], ['__count'],
             )
         }
+        line_count = {
+            record.id: count
+            for record, count in Line._read_group(
+                [('datacenter_id', 'in', sites.ids), ('stopped', '=', False)],
+                ['datacenter_id'], ['__count'],
+            )
+        }
+        prefix_count = {
+            record.id: count
+            for record, count in Prefix._read_group(
+                [('datacenter_id', 'in', sites.ids)],
+                ['datacenter_id'], ['__count'],
+            )
+        }
         Vm = self.env['zenlenet.vm']
         sellable_vm = {
             record.id: count
@@ -168,8 +184,12 @@ class ZenlenetDatacenter(models.Model):
             'sellable_lines': sellable_line.get(site.id, 0),
             'sellable_vms': sellable_vm.get(site.id, 0),
             'device_count': device_count.get(site.id, 0) + asset_count.get(site.id, 0),
+            'line_count': line_count.get(site.id, 0),
+            'prefix_count': prefix_count.get(site.id, 0),
             'power_kw': site.power_kw or 0,
             'power_used_kw': site.power_used_kw or 0,
+            'power_percent': power_ratio(site.power_used_kw, site.power_kw)['percent'],
+            'power_over': power_ratio(site.power_used_kw, site.power_kw)['over'],
         } for site in sites]
 
     def dc_site(self):

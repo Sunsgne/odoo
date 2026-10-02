@@ -9,10 +9,21 @@ export class ZenlenetItam extends Component {
     setup() {
         this.orm = useService("orm");
         this.action = useService("action");
-        this.state = useState({ board: null });
-        onWillStart(async () => {
-            this.state.board = await this.orm.call("zenlenet.asset", "itam_board", []);
-        });
+        this.state = useState({ board: null, category: "" });
+        onWillStart(() => this.load());
+    }
+
+    async load() {
+        this.state.board = await this.orm.call("zenlenet.asset", "itam_board", [this.state.category || false]);
+    }
+
+    async pickCategory(key) {
+        if (this.state.category === key && key) {
+            this.openCategory(key);
+            return;
+        }
+        this.state.category = key;
+        await this.load();
     }
 
     openCategory(key) {
@@ -31,6 +42,16 @@ export class ZenlenetItam extends Component {
 
     openTasks() {
         this.action.doAction("zenlenet_ops.action_asset_tasks");
+    }
+
+    openTask(id) {
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            name: "任务",
+            res_model: "zenlenet.asset.task",
+            res_id: id,
+            views: [[false, "form"]],
+        });
     }
 }
 

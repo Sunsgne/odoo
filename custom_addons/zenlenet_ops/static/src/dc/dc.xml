@@ -2,11 +2,48 @@
 <templates xml:space="preserve">
 
     <t t-name="zenlenet_ops.Datacenter">
-        <div class="o_action zl-dc">
-            <aside class="zl-dc-tree">
+        <div t-attf-class="o_action zl-dc #{state.view === 'cards' ? 'zl-dc-cards-mode' : ''}">
+            <section class="zl-campus" t-if="state.view === 'cards'">
+                <div class="zl-campus-bar">
+                    <button t-att-class="state.regionName ? 'btn btn-sm btn-light' : 'btn btn-sm btn-primary'" t-on-click="() => this.state.regionName = ''">全部</button>
+                    <button t-foreach="regions" t-as="region" t-key="region.name"
+                        t-att-class="state.regionName === region.name ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-light'"
+                        t-on-click="() => this.state.regionName = region.name">
+                        <t t-out="region.name"/>
+                    </button>
+                    <span class="zl-campus-gap"/>
+                    <button t-att-class="state.siteState === 'active' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-light'" t-on-click="() => this.setSiteState('active')">在用</button>
+                    <button t-att-class="state.siteState === 'planning' ? 'btn btn-sm btn-primary' : 'btn btn-sm btn-light'" t-on-click="() => this.setSiteState('planning')">规划中</button>
+                    <button t-att-class="state.siteState ? 'btn btn-sm btn-light' : 'btn btn-sm btn-primary'" t-on-click="() => this.setSiteState('')">全部状态</button>
+                    <input type="search" class="form-control form-control-sm" t-att-value="state.search" t-on-input="onSearch"/>
+                </div>
+                <div class="zl-campus-groups">
+                    <div t-foreach="regions" t-as="region" t-key="region.name" t-if="!state.regionName || state.regionName === region.name">
+                        <h3 t-out="region.name"/>
+                        <div class="zl-campus-grid">
+                            <button t-foreach="region.sites" t-as="site" t-key="site.id" class="zl-campus-card" t-on-click="() => this.openSite(site.id)">
+                                <b t-out="site.name"/>
+                                <span t-if="site.facility" t-out="site.facility"/>
+                                <div class="zl-campus-nums">
+                                    <span><b t-out="site.device_count"/> 设备</span>
+                                    <span><b t-out="site.prefix_count"/> 地址段</span>
+                                    <span><b t-out="site.line_count"/> 线路</span>
+                                </div>
+                                <div t-attf-class="zl-campus-power #{site.power_over ? 'over' : ''}">
+                                    <span>功耗 <t t-out="site.power_used_kw"/> / <t t-out="site.power_kw"/> kW</span>
+                                    <i><b t-attf-style="width: {{ site.power_percent }}%"/></i>
+                                    <em t-out="site.power_percent + '%'"/>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <aside class="zl-dc-tree" t-if="state.view !== 'cards'">
                 <div class="zl-dc-tree-head">
                     <input type="search" class="form-control form-control-sm" t-att-value="state.search" t-on-input="onSearch"/>
                     <button class="btn btn-primary btn-sm" t-on-click="() => this.editSite(false)" title="新机房"><i class="fa fa-plus"/></button>
+                    <button class="btn btn-light btn-sm" t-on-click="showCards">园区</button>
                 </div>
                 <div class="zl-dc-state">
                     <button type="button" t-attf-class="btn btn-sm #{state.siteState ? 'btn-light' : 'btn-primary'}" t-on-click="() => this.setSiteState('')">全部</button>

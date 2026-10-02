@@ -2,6 +2,8 @@
 
 from odoo import api, fields, models
 
+from odoo.addons.zenlenet_ops.boards import place_bucket, share, top_counts, warranty_bucket
+
 ASSET_CATEGORIES = [
     ('host', '主机'),
     ('network', '网络设备'),
@@ -76,26 +78,71 @@ class ZenlenetAssetItam(models.Model):
         return super().create(vals_list)
 
     @api.model
-    def itam_board(self):
+    def itam_board(self, category=False):
         labels = dict(self._fields['category'].selection)
+        domain = [('category', '=', category)] if category else []
         counts = {key: 0 for key in labels}
         unset = 0
-        for category, count in self._read_group([], ['category'], ['__count']):
-            key = category[0] if isinstance(category, tuple) else category
+        for key, count in self._read_group([], ['category'], ['__count']):
+            key = key[0] if isinstance(key, tuple) else key
             if key in counts:
                 counts[key] = count
             else:
                 unset += count
-        owned = self.search_count([('ownership', '=', 'owned')])
-        total = self.search_count([])
+        assets = self.search(domain)
+        places = {'in_rack': 0, 'stock': 0, 'unknown': 0, 'repair': 0, 'loan': 0}
+        owners = {key: 0 for key, _label in OWNERSHIP}
+        warranties = {'expired_year': 0, 'expired': 0, 'within_year': 0, 'over_year': 0, 'unknown': 0}
+        today = fields.Date.context_today(self)
+        model_pairs = {}
+        dc_pairs = {}
+        room_pairs = {}
+        for asset in assets:
+            places[place_bucket(asset.availability, asset.repair_state)] += 1
+            if asset.ownership in owners:
+                owners[asset.ownership] += 1
+            warranties[warranty_bucket(today, asset.warranty_end)] += 1
+            model_pairs[asset.model or ''] = model_pairs.get(asset.model or '', 0) + 1
+            dc_name = asset.datacenter_id.region or asset.datacenter_id.city or asset.city or ''
+            room_name = asset.datacenter_id.name or asset.pop or ''
+            dc_pairs[dc_name] = dc_pairs.get(dc_name, 0) + 1
+            room_pairs[room_name] = room_pairs.get(room_name, 0) + 1
+        total = len(assets)
+        owned = owners.get('owned', 0)
+        tasks = self.env['zenlenet.asset.task'].search(
+            [('state', '=', 'open')] + ([('category', '=', category)] if category else []),
+            limit=12,
+        )
+        kind_labels = dict(TASK_KINDS)
         return {
             'total': total,
             'owned': owned,
             'other': total - owned,
-            'in_rack': self.search_count([('availability', '=', 'in_rack')]),
-            'repairing': self.search_count([('repair_state', '=', 'repairing')]),
+            'owned_share': share(owned, total),
+            'other_share': share(total - owned, total),
+            'places': places,
+            'in_rack': places['in_rack'],
+            'repairing': places['repair'],
             'unset': unset,
+            'category': category or '',
             'categories': [{'key': key, 'label': label, 'count': counts[key]} for key, label in labels.items()],
+            'warranties': [
+                {'key': 'expired_year', 'label': '过期超过一年', 'count': warranties['expired_year']},
+                {'key': 'expired', 'label': '已过保', 'count': warranties['expired']},
+                {'key': 'within_year', 'label': '质保一年内', 'count': warranties['within_year']},
+                {'key': 'over_year', 'label': '质保超过一年', 'count': warranties['over_year']},
+                {'key': 'unknown', 'label': '未知', 'count': warranties['unknown']},
+            ],
+            'models': top_counts(model_pairs.items()),
+            'owners': [{'key': key, 'label': label, 'count': owners[key]} for key, label in OWNERSHIP],
+            'datacenters': top_counts(dc_pairs.items()),
+            'rooms': top_counts(room_pairs.items()),
+            'tasks': [{
+                'id': task.id,
+                'name': task.name,
+                'kind': kind_labels.get(task.kind, task.kind),
+                'asset': task.asset_id.name or '',
+            } for task in tasks],
         }
 
 

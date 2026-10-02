@@ -47,16 +47,15 @@ export class ZenlenetIpam extends Component {
             pendingFlows: [],
             bulkCustomerQuery: "",
             bulkCustomers: [],
+            home: !this.props.action?.context?.ipam_prefix_id,
         });
         onWillStart(async () => {
             this.state.domains = await this.orm.call("zenlenet.prefix", "ipam_domains", []);
             await this.loadTree();
-            const first = this.roots[0];
             const wanted = this.props.action?.context?.ipam_prefix_id;
             if (wanted) {
+                this.state.home = false;
                 await this.select(wanted);
-            } else if (first) {
-                await this.select(first.id);
             }
         });
     }
@@ -150,7 +149,15 @@ export class ZenlenetIpam extends Component {
             this.notification.add("没有匹配", { type: "warning" });
             return;
         }
+        this.state.home = false;
         await this.select(found.prefix_id);
+    }
+
+    async enterTree() {
+        this.state.home = false;
+        if (!this.state.selectedId && this.roots[0]) {
+            await this.select(this.roots[0].id);
+        }
     }
 
     openDomains() {

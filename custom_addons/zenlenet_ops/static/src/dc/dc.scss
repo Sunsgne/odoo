@@ -11,6 +11,56 @@ $zl-primary: #00b0d0;
 
     .font-monospace { font-family: SFMono-Regular, Menlo, Consolas, "Noto Sans Mono CJK SC", monospace; }
 
+    &.zl-dc-cards-mode { flex-direction: column !important; }
+    .zl-campus {
+        flex: 1;
+        overflow: auto;
+        padding: 12px 16px 24px;
+    }
+    .zl-campus-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+        margin-bottom: 14px;
+        input { width: 180px; margin-left: auto; }
+    }
+    .zl-campus-groups h3 { font-size: 14px; margin: 12px 0 8px; }
+    .zl-campus-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 10px;
+    }
+    .zl-campus-card {
+        text-align: left;
+        background: #fff;
+        border: 1px solid #e3e8ef;
+        border-radius: 6px;
+        padding: 12px;
+        b { display: block; }
+        .zl-campus-nums {
+            display: flex;
+            gap: 12px;
+            margin: 8px 0;
+            color: #556;
+            b { display: inline; }
+        }
+    }
+    .zl-campus-power {
+        font-size: 12px;
+        color: #556;
+        i {
+            display: block;
+            height: 6px;
+            background: #e8eef5;
+            border-radius: 3px;
+            margin-top: 4px;
+            b { display: block; height: 100%; width: 0; background: #1f6feb; border-radius: 3px; }
+        }
+        &.over i b { background: #d1242f; }
+        &.over { color: #d1242f; }
+    }
+
     .zl-dc-tree {
         width: 280px;
         flex: 0 0 280px;

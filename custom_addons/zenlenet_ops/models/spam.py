@@ -17,6 +17,28 @@ class ZenlenetPurchaseSpam(models.Model):
         for record in self:
             record.device_count = len(record.device_ids)
 
+    @api.model
+    def plan_rows(self, query=''):
+        domain = []
+        if query:
+            domain = ['|', '|', '|',
+                ('name', 'ilike', query),
+                ('resource', 'ilike', query),
+                ('contract_code', 'ilike', query),
+                ('supplier_id.name', 'ilike', query),
+            ]
+        labels = dict(self._fields['state'].selection)
+        return [{
+            'id': row.id,
+            'name': row.name or '',
+            'resource': row.resource or '',
+            'contract_code': row.contract_code or '',
+            'devices': row.device_count,
+            'state': row.state,
+            'state_label': labels.get(row.state, ''),
+            'created': fields.Datetime.to_string(row.create_date) if row.create_date else '',
+        } for row in self.search(domain, limit=200)]
+
 
 class ZenlenetPurchaseDevice(models.Model):
     _name = 'zenlenet.purchase.device'
@@ -60,6 +82,31 @@ class ZenlenetPurchaseDevice(models.Model):
             'signed_on': fields.Datetime.now(),
         })
         return True
+
+    @api.model
+    def queue_rows(self, state, query=''):
+        domain = [('state', '=', state)]
+        if query:
+            domain = ['&'] + domain + ['|', '|', '|',
+                ('asset_sn', 'ilike', query),
+                ('manufacturer_sn', 'ilike', query),
+                ('model_name', 'ilike', query),
+                ('purchase_id.name', 'ilike', query),
+            ]
+        labels = dict(self._fields['state'].selection)
+        categories = dict(self._fields['category'].selection)
+        return [{
+            'id': row.id,
+            'sn': row.asset_sn or '',
+            'plan': row.purchase_id.name or '',
+            'plan_id': row.purchase_id.id,
+            'category': categories.get(row.category, ''),
+            'model': row.model_name or '',
+            'maker': row.manufacturer or '',
+            'maker_sn': row.manufacturer_sn or '',
+            'state': row.state,
+            'state_label': labels.get(row.state, ''),
+        } for row in self.search(domain, limit=200)]
 
     def action_accept(self):
         Asset = self.env['zenlenet.asset']

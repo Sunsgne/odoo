@@ -20,6 +20,22 @@ $zl-primary: #00b0d0;
         input { width: 220px; }
         select { width: 160px; }
     }
+    .zl-ipam-home {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        form {
+            width: min(640px, 92%);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: #fff;
+            border: 1px solid #e3e8ef;
+            border-radius: 8px;
+            padding: 24px;
+        }
+    }
     .zl-ipam-body {
         display: flex;
         flex: 1;

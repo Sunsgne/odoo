@@ -23,7 +23,21 @@
 
     <t t-name="zenlenet_ops.Ipam">
         <div class="o_action zl-ipam">
-            <div class="zl-ipam-find">
+            <div class="zl-ipam-home" t-if="state.home">
+                <form t-on-submit.prevent="runFind">
+                    <select class="form-select" t-att-value="state.domainId || ''" t-on-change="onDomain">
+                        <option value="">管理域</option>
+                        <option t-foreach="state.domains" t-as="domain" t-key="domain.id" t-att-value="domain.id">
+                            <t t-out="domain.name"/>
+                        </option>
+                    </select>
+                    <input type="search" class="form-control" t-att-value="state.addressQuery" t-on-input="(ev) => this.state.addressQuery = ev.target.value"/>
+                    <input type="search" class="form-control" t-att-value="state.objectQuery" t-on-input="(ev) => this.state.objectQuery = ev.target.value"/>
+                    <button class="btn btn-primary" type="submit">搜索</button>
+                    <button class="btn btn-light" type="button" t-on-click="enterTree">地址树</button>
+                </form>
+            </div>
+            <div class="zl-ipam-find" t-if="!state.home">
                 <label>管理域</label>
                 <select class="form-select form-select-sm" t-att-value="state.domainId || ''" t-on-change="onDomain">
                     <option value="">全部</option>
@@ -37,8 +51,9 @@
                 <input type="search" class="form-control form-control-sm" t-att-value="state.objectQuery" t-on-input="(ev) => this.state.objectQuery = ev.target.value" t-on-keydown="onFindKey"/>
                 <button class="btn btn-primary btn-sm" t-on-click="runFind">搜索</button>
                 <button class="btn btn-secondary btn-sm" t-on-click="openDomains">管理域</button>
+                <button class="btn btn-light btn-sm" t-on-click="() => this.state.home = true">首页</button>
             </div>
-            <div class="zl-ipam-body">
+            <div class="zl-ipam-body" t-if="!state.home">
             <aside class="zl-ipam-tree">
                 <div class="zl-ipam-tree-head">
                     <input type="search" class="form-control form-control-sm" t-att-value="state.search" t-on-input="onSearch"/>

@@ -124,6 +124,10 @@
             </search>
         </field>
     </record>
+    <record id="action_purchase_board" model="ir.actions.client">
+        <field name="name">采购</field>
+        <field name="tag">zenlenet_purchase_board</field>
+    </record>
     <record id="action_purchases" model="ir.actions.act_window">
         <field name="name">采购</field>
         <field name="res_model">zenlenet.purchase</field>
